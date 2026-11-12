@@ -10,6 +10,7 @@ W, H, RADIUS = 432, 514, 106  # Bip Max screen
 SCALE = 3  # supersample for smooth text
 
 WHITE, DIM, GOLD, TEAL = (255, 255, 255), (156, 163, 175), (250, 204, 21), (45, 212, 191)
+RED, ORANGE, NIGHT, AOD = (248, 113, 113), (251, 146, 60), (167, 139, 250), (138, 138, 138)  # watchface/index.js
 # Arabic text uses the same bundled font as the face (tools/gen-font.py) when present, so the edit
 # previews and icon match the watch; SF Arabic otherwise (and for the weather digit images).
 _NASKH = Path(__file__).resolve().parent.parent / "assets" / "bip-max" / "fonts" / "naskh.ttf"
@@ -97,12 +98,13 @@ class Canvas:
         self.draw = ImageDraw.Draw(self.im)
 
     def text(self, box, s, size, color, system=False):
-        if not all(ord(c) < 0x0600 for c in s):  # SF Arabic has no hyphen/dash/middle dot/plus/%
-            bad = set("·–—-+%") & set(s)
-            assert not bad, f"glyphs missing in SF Arabic {bad!r} in {s!r}"
         x, y, w, h = box
         latin = all(ord(c) < 0x0600 for c in s)
-        f = ImageFont.truetype(LATIN_FONT if latin else (SF_ARABIC if system else ARABIC_FONT), size * SCALE)
+        path = LATIN_FONT if latin else (SF_ARABIC if system else ARABIC_FONT)
+        if path == SF_ARABIC:  # SF Arabic has no hyphen/dash/middle dot/plus/%
+            bad = set("·–—-+%") & set(s)
+            assert not bad, f"glyphs missing in SF Arabic {bad!r} in {s!r}"
+        f = ImageFont.truetype(path, size * SCALE)
         kw = {} if latin else {"direction": "rtl", "language": "ar"}
         cx = (x - self.ox + w / 2) * SCALE
         cy = (y - self.oy + h / 2) * SCALE

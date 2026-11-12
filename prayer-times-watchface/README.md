@@ -9,6 +9,16 @@ An offline Zepp OS watchface for the Bip Max (432×514, deviceSource `11206915`)
 
 Everything is computed on the watch. It needs no phone, app-side code or network, so it works with Gadgetbridge.
 
+![Prayers page, night and voluntary prayers, prohibited times, and always-on display](../docs/watchface/pages.png)
+
+*Left to right: prayers (default page), night and voluntary prayers, prohibited times (the current window in red), always-on display.*
+
+![Countdown line states](../docs/watchface/countdown.png)
+
+*Countdown line: normal, last 10 minutes before an adhan, waiting for iqama, last third of the night.*
+
+Screenshots are rendered from the face's own layout and prayer logic (`tools/gen-docs.py`) for Cairo on 12 Nov 2026, so they match what the watch shows.
+
 ## Pages (tap the prayer grid to cycle; waking the screen returns to page 1)
 
 1. **Prayers:** a 2×3 grid (Fajr, Sunrise, Dhuhr / Asr, Maghrib, Isha; Dhuhr becomes الجمعة on Fridays). The next prayer is gold, with a countdown above.
@@ -103,6 +113,7 @@ tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits, lib/edi
 tools/gen-preview.py       ← renders assets/bip-max/icon.png (picker preview, 294×350) from the real layout
 tools/render.py            ← shared drawing for the above (layout boxes mirror watchface/index.js)
 tools/preview-data.mjs     ← sample face data for the previews, computed by lib/
+tools/gen-docs.py          ← README screenshots in ../docs/watchface/ (scenes from tools/docs-data.mjs)
 tools/gen-font.py          ← builds the Naskh subset (see Font); tools/fetch-fonts.sh downloads its pinned sources
 
 test/verify.mjs            ← Hijri vs ICU; prayer wrapper vs adhan in Africa/Cairo; event windows; countdown logic

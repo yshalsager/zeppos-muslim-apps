@@ -7,13 +7,14 @@
 uv = "latest"
 
 [tasks.gen]
-description = "Regenerate the Hijri table, font, edit previews and picker preview"
+description = "Regenerate the Hijri table, font, edit previews, picker preview and README screenshots"
 run = [
   "node tools/gen-hijri-table.mjs",
   "tools/fetch-fonts.sh",
   "uv run --no-project --with fonttools --with uharfbuzz python3 -I tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
   "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-edit-assets.py",
   "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-preview.py",
+  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-docs.py",
 ]
 
 [tasks.test]
