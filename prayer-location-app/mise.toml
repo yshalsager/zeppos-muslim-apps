@@ -1,0 +1,13 @@
+# Location companion. node, pnpm and zeus come from the root mise.toml.
+
+[tools]
+uv = "latest"
+
+[tasks.gen]
+description = "Regenerate the app icon"
+run = "uv run -q --no-project --with pillow python3 -I tools/gen-icon.py"
+
+[tasks.build]
+description = "Build the location companion .zab"
+depends = [":gen"]
+run = "zeus build"

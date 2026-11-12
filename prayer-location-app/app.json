@@ -1,0 +1,28 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 24847,
+    "appName": "Prayer Location",
+    "appType": "app",
+    "version": { "code": 1, "name": "1.0.0" },
+    "icon": "icon.png",
+    "vender": "custom",
+    "description": "Gets GPS location for the Prayer Times watchface"
+  },
+  "permissions": ["device:os.geolocation"],
+  "runtime": {
+    "apiVersion": { "compatible": "3.0.0", "target": "3.0.0", "minVersion": "3.0.0" }
+  },
+  "targets": {
+    "bip-max": {
+      "module": { "page": { "pages": ["page/index"] } },
+      "platforms": [{ "name": "bip-max", "deviceSource": 11206915 }],
+      "designWidth": 432
+    }
+  },
+  "i18n": {
+    "en-US": { "appName": "Prayer Location" },
+    "ar-EG": { "appName": "موقع الصلاة" }
+  },
+  "defaultLanguage": "en-US"
+}
