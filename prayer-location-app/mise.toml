@@ -7,7 +7,13 @@ uv = "latest"
 description = "Regenerate the app icon"
 run = "uv run -q --no-project --with pillow python3 -I tools/gen-icon.py"
 
+# :build prunes zeus's source archive (.ip-package) for sideloading; :build-store keeps it.
 [tasks.build]
-description = "Build the location companion .zab"
+description = "Build a lean location companion .zab (no source archive)"
+depends = [":gen"]
+run = ["zeus build", "zeus prune --ip"]
+
+[tasks.build-store]
+description = "Like :build, but keep zeus's source archive for a Zepp store submission"
 depends = [":gen"]
 run = "zeus build"

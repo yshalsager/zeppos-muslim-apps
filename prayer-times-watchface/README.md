@@ -112,16 +112,18 @@ test/verify.mjs            ← Hijri vs ICU; prayer wrapper vs adhan in Africa/C
 
 The repo is a mise monorepo: shared tools are in the root `mise.toml`, and this folder's tasks are in `./mise.toml`. Run them from this folder, or from anywhere in the repo as `mise run //prayer-times-watchface:build`.
 ```sh
-mise run :build            # fonts + generated assets → tests → dist/*.zab
+mise run :build            # fonts + generated assets → tests → lean dist/*.zab (~335 KB)
+mise run :build-store      # same, but keeps zeus's source archive (for a Zepp store submission)
 mise run :gen              # only regenerate (Hijri table, font, edit previews, picker icon)
 mise run :test             # only the math/countdown checks
 ```
 - The Python generators run under `uv`. Pillow is built from source on the first run (a few minutes, then cached) so that it links Homebrew's `libraqm` (`brew install libraqm`), which is needed to draw Arabic in the previews. The PyPI wheel has no RTL support.
 - The source fonts are downloaded to `.cache/fonts/` at pinned versions and verified by checksum.
+- **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source (~75% of its size) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
 
 Install:
 ```sh
-zeus build                 # → dist/*.zab (what :build runs last)
+zeus build                 # → dist/*.zab (what :build runs, followed by `zeus prune --ip`)
 zeus preview               # QR code → scan from Zepp app (Developer Mode) to install on watch
 # or: zeus bridge  →  connect / install   (Zepp app Developer Mode → Bridge on)
 ```
