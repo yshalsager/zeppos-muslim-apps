@@ -1,0 +1,27 @@
+# Monorepo: each app has its own mise.toml with its tasks; tools and settings here are shared.
+#   mise run //prayer-times-watchface:build     (or `mise run :build` inside the folder)
+#   mise tasks --all                            lists every project's tasks
+monorepo_root = true
+
+[monorepo]
+config_roots = ["prayer-times-watchface", "prayer-location-app"]
+
+[tools]
+node = "26"
+pnpm = "12"
+"npm:@zeppos/zeus-cli" = "latest"
+
+[tools."http:zepp-simulator"]
+version = "2.1.2"
+url = "https://upload-cdn.zepp.com/zepp-applet-and-wechat-applet/20260717/simulator-{{ version }}-macos-arm64.dmg"
+checksum = "sha256:a773f4f8bc7411418c80999241dba5824f4303eb438b0b411976d11aa479e592"
+bin = "simulator.dmg"
+postinstall = 'bash "$MISE_CONFIG_ROOT/scripts/install-simulator.sh"'
+os = ["macos"]
+
+[settings]
+npm.package_manager = "pnpm"
+
+[tasks.simulator]
+description = "Launch the mise-managed Zepp OS Simulator"
+run = 'open "$(mise where http:zepp-simulator)/simulator.app"'
