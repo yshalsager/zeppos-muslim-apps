@@ -1,0 +1,26 @@
+# Prayer Times watchface. Tasks run in this folder; node, pnpm and zeus come from the root mise.toml.
+#   mise run :build   regenerates everything, tests, and builds dist/*.zab
+# The Python tools run under uv with their dependencies, so no global Python packages are needed.
+# Pillow is built from source so it links Homebrew's libraqm (RTL Arabic shaping); the PyPI wheel has no raqm.
+
+[tools]
+uv = "latest"
+
+[tasks.gen]
+description = "Regenerate the Hijri table, font, edit previews and picker preview"
+run = [
+  "node tools/gen-hijri-table.mjs",
+  "tools/fetch-fonts.sh",
+  "uv run --no-project --with fonttools --with uharfbuzz python3 -I tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
+  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-edit-assets.py",
+  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-preview.py",
+]
+
+[tasks.test]
+description = "Verify the prayer/Hijri math and countdown logic"
+run = ["pnpm install --frozen-lockfile --silent", "pnpm -s test"]
+
+[tasks.build]
+description = "Regenerate assets, run the tests, and build the watchface .zab"
+depends = [":gen", ":test"]
+run = "zeus build"
