@@ -61,9 +61,10 @@ def makruh(d, s):  # page 3: label on the right, range on the left
 
 def aod(d, s):  # watchface/index.js buildAod(): dim text only
     c = Canvas()
-    c.text((16, 100, W - 32, 44), d["hijri"], 30, AOD)
-    c.text((0, 150, W, 120), s["time"], 112, AOD, system=True)
-    c.text((16, 280, W - 32, 44), s["next"], 30, AOD)
+    c.text((16, 84, W - 32, 44), d["hijri"], 30, AOD)
+    c.text((0, 130, W, 120), s["time"], 112, AOD, system=True)
+    c.text((16, 248, W - 32, 36), d["greg"], 26, AOD)
+    c.text((16, 292, W - 32, 44), s["next"], 30, AOD)
     return c
 
 

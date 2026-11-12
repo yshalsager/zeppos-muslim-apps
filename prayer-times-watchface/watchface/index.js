@@ -280,9 +280,10 @@ WatchFace({
   buildAod() {
     // AMOLED always-on: few lit pixels, no fills.
     const L = show_level.ONLY_AOD
-    w.aodHijri = arText({ x: 16, y: 100, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
-    w.aodTime = text({ x: 0, y: 150, w: W, h: 120, text_size: 112, color: C_AOD }, L)
-    w.aodNext = arText({ x: 16, y: 280, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
+    w.aodHijri = arText({ x: 16, y: 84, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
+    w.aodTime = text({ x: 0, y: 130, w: W, h: 120, text_size: 112, color: C_AOD }, L)
+    w.aodGreg = arText({ x: 16, y: 248, w: W - 32, h: 36, text_size: 26, color: C_AOD }, L)
+    w.aodNext = arText({ x: 16, y: 292, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
   },
 
   refresh(full) {
@@ -321,7 +322,9 @@ WatchFace({
       }
       const wd = time.getDay() // 1..7, Monday = 1
       const fallback = state.fallbackLocation ? '  •  القاهرة' : ''
-      setText(w.greg, rtl(`${WEEKDAYS_AR[wd % 7]}  ${digits(d)}/${digits(m)}/${digits(y)}${fallback}`))
+      const greg = rtl(`${WEEKDAYS_AR[wd % 7]}  ${digits(d)}/${digits(m)}/${digits(y)}${fallback}`)
+      setText(w.greg, greg)
+      setText(w.aodGreg, greg)
     }
     const t = state.today
 

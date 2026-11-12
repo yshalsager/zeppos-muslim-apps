@@ -81,7 +81,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 
 **Pages:** all widgets are created up front. Switching pages only toggles visibility. A transparent `BUTTON` (`tap.png`) over the grid and extras row cycles the pages on tap.
 
-**Always-on display:** a separate `ONLY_AOD` layer shows the Hijri date, the time and the next-prayer line in dim grey with no fills (few lit pixels). It's updated by the same refresh as the normal layer.
+**Always-on display:** a separate `ONLY_AOD` layer shows the Hijri date, the time, the Gregorian date line and the next-prayer line in dim grey with no fills (few lit pixels). It's updated by the same refresh as the normal layer.
 
 **Weather:** the current temperature is drawn by the firmware (`TEXT_IMG` + `WEATHER_CURRENT`). Watchface JS can only read the daily forecast, which supplies the condition word.
 
