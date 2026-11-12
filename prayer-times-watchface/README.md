@@ -100,7 +100,7 @@ Arabic text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subset of
 watchface/index.js         ← UI (normal + AOD + edit slots), lifecycle and refresh (see How it works)
 config.js                  ← defaults (fallback location, per-prayer minute offsets, 12/24h, custom values)
 
-lib/prayer.js              ← adhan-js wrapper (npm, bundled by zeus) → local minutes; night portions, makruh windows
+lib/prayer.js              ← adhan-js wrapper (npm, MIT, bundled by zeus) → local minutes; night portions, makruh windows
 lib/countdown.js           ← countdown line: next prayer, iqama, progress, last 10 min, last third of the night
 lib/hijri.js               ← Hijri conversion (Umm al-Qura table + tabular fallback)
 lib/hijri-table.js         ← GENERATED month-length table, 1440–1500 AH
@@ -140,6 +140,8 @@ zeus preview               # QR code → scan from Zepp app (Developer Mode) to 
 ```
 
 Gadgetbridge can also install a `.zab`/`.zpk` directly: open the file with Gadgetbridge (the File Installer).
+
+**Simulator:** `mise run simulator`, boot the Bip Max image, then `zeus dev` here. The emulator clock runs on UTC, so prayer times look shifted there.
 
 ## Verify the math
 
