@@ -122,7 +122,7 @@ def add_presentation_forms(font, chars):
 
 
 LATIN_SANS = "0123456789/:.%°"
-ARABIC_SANS = "٠١٢٣٤٥٦٧٨٩٪٫"
+ARABIC_SANS = "٠١٢٣٤٥٦٧٨٩٪"
 
 
 def sans_instance(path):
@@ -138,10 +138,11 @@ def replace_glyphs(font, donor, chars):
     cmap, dcmap = font.getBestCmap(), donor.getBestCmap()
     dset = donor.getGlyphSet()
     glyf, hmtx = font["glyf"], font["hmtx"]
-    done = 0
+    done, skipped = 0, []
     for ch in chars:
         name, dname = cmap.get(ord(ch)), dcmap.get(ord(ch))
         if not name or not dname:
+            skipped.append(f"U+{ord(ch):04X}" + ("" if name else " (not in subset)"))
             continue
         rec = DecomposingRecordingPen(dset)  # donor composites (e.g. %) become plain outlines
         dset[dname].draw(rec)
@@ -151,6 +152,8 @@ def replace_glyphs(font, donor, chars):
         glyf[name].recalcBounds(glyf)
         hmtx[name] = (round(dset[dname].width * scale), getattr(glyf[name], "xMin", 0))
         done += 1
+    if skipped:
+        print(f"sans glyphs kept from the source font: {', '.join(skipped)}")
     return done
 
 
@@ -162,7 +165,10 @@ def main(src, latin_sans, arabic_sans):
     opts.name_languages = ["*"]
     opts.hinting = False
     opts.notdef_outline = True
+    # SIL tables fontTools can't subset (Silt) or the watch never reads (JSTF): drop them explicitly
+    opts.drop_tables += ["Silt", "JSTF"]
     font = TTFont(src)
+    font.recalcTimestamp = False  # keep the source's head.modified so rebuilds are byte-identical
     sub = subset.Subsetter(opts)
     sub.populate(text=text)
     sub.subset(font)
