@@ -1,0 +1,12 @@
+{
+  "name": "prayer-times-watchface",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "test": "node test/verify.mjs"
+  },
+  "dependencies": {
+    "adhan": "4.4.3"
+  }
+}
