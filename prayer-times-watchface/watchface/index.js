@@ -448,8 +448,8 @@ WatchFace({
         const e = eventsFor(state.ed, state.tz, { ...face, method: resolveMethod(face, state.cc) })
         return { fajr: fmtTime(e.fajr), asr: fmtTime(e.asr), isha: fmtTime(e.isha) }
       },
-      setCity: (name, lat, lon, cc) => {
-        if (!saveCity(name, lat, lon, cc)) return menu.message(T.menu.cantSave)
+      setCity: (name, lat, lon, cc, latin) => {
+        if (!saveCity(name, lat, lon, cc, latin)) return menu.message(T.menu.cantSave)
         state.cacheKey = '' // location changed: recompute
         menu.close()
       },
