@@ -12,6 +12,7 @@ export default {
   weekdays: ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'],
   hijriDate: (p) => `${p.d} ${p.mon} ${p.y}H`,
   date: (p) => `${p.wd} ${p.d} ${p.mon} ${p.y}`,
+  dateShort: (p) => `${p.wd} ${p.d} ${p.mon}`,
   nextIn: (prayer, left) => `${prayer} dalam ${left}`,
   iqamaIn: (prayer, left) => `Iqamah ${prayer} dalam ${left}`,
   minutes: (n) => `${n} min`,
@@ -25,7 +26,7 @@ export default {
   makruh: { dawn: 'Selepas Subuh', sunrise: 'Syuruk', zawal: 'Istiwa', afterAsr: 'Selepas Asar', sunset: 'Terbenam' },
   fallbackPlace: 'Kaherah',
   fromApp: 'Aplikasi',
-  coords: (lat, lon) => `${lat}°, ${lon}°`,
+  coords: (lat, lon) => `${lat},${lon}`,
   methods: {
     egypt: 'Mesir', makkah: 'Umm al-Qura', mwl: 'Liga Muslim Sedunia', karachi: 'Karachi',
     isna: 'ISNA', dubai: 'Dubai', kuwait: 'Kuwait', qatar: 'Qatar', singapore: 'Singapura',

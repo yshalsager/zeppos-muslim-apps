@@ -6,6 +6,7 @@ import { dayEvents, nightPortions, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown } from '../lib/countdown.js'
 import { CONFIG } from '../config.js'
+import { layout } from '../lib/layout.js'
 import {
   strings, hijriLine, gregLine, nextLine, extraItems, rangeLine, prayerName, line, MAKRUH_KEYS,
 } from '../lib/i18n/text.js'
@@ -32,7 +33,8 @@ const isFriday = false
 
 const COLORS = { teal: 'teal', gold: 'gold', orange: 'orange', night: 'night' }
 const hijri = hijriLine(T, hijriFromEpochDay(ed, 0), digits)
-const greg = gregLine(T, { weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), d, m, y }, digits)
+// with the fallback place, as the face shows it until a location is set
+const greg = gregLine(T, { weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), d, m, y }, digits, T.fallbackPlace, layout().greg)
 
 function prayersPage(nowMin) {
   const cd = countdown(t, nowMin, { ...ctx, iqama })

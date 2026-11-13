@@ -6,6 +6,7 @@ import { countdown, URGENT_MIN } from '../lib/countdown.js'
 import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepCoord, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
 import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
 import { LANGS, LANG_CODES, resolveLang } from '../lib/i18n/index.js'
+import { gregLine } from '../lib/i18n/text.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
 import { layout, DESIGN } from '../lib/layout.js'
 import { CONFIG } from '../config.js'
@@ -298,6 +299,28 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   }
   check(resolveLang('auto', 13) === 'ar' && resolveLang('auto', 17) === 'tr' && resolveLang('auto', 0) === 'en' &&
     resolveLang('auto', undefined) === 'en' && resolveLang('fr', 13) === 'fr', 'language resolution')
+// Date line: the year only without a place; a long place is cut with "…" (tools/gen-text-width.py
+// checks the fit in the real fonts), a short one or coordinates are kept whole.
+{
+  const box = layout().greg
+  const day = { weekday: 3, d: 30, m: 9, y: 2026 }
+  for (const lang of LANG_CODES) {
+    const T = LANGS[lang]
+    const id = (s) => String(s)
+    check(gregLine(T, day, id).includes('2026') && !gregLine(T, day, id, T.fallbackPlace, box).includes('2026'), 'date line year', lang)
+    check(gregLine(T, day, id, T.fallbackPlace, box).endsWith(T.fallbackPlace), 'date line short place', lang)
+    // coordinates: to 0.1° when they fit, else whole degrees, never cut (worst: long date, 3-digit longitude)
+    for (let weekday = 0; weekday < 7; weekday++) {
+      for (let m = 1; m <= 12; m++) {
+        const s = gregLine(T, { weekday, d: 28, m, y: 2026 }, id, [T.coords('-36.8', '-174.8'), T.coords('-37', '-175')], box)
+        check(!s.endsWith('…'), 'date line coordinates not cut', lang, s)
+      }
+    }
+    const long = gregLine(T, day, id, 'Santo Domingo de los Colorados', box)
+    check(long.endsWith('…') && long.length < 40, 'date line long place cut', lang, long)
+    check(gregLine(T, day, id, 'Santo Domingo de los Colorados').endsWith('Colorados'), 'date line without box keeps the place', lang)
+  }
+}
   console.log(`i18n: ${LANG_CODES.join(', ')} have every key of ar.js`)
 }
 

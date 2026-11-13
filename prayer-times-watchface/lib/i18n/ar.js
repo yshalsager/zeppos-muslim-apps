@@ -14,6 +14,7 @@ export default {
   // { d, y }: formatted numbers; mon: month name; m: formatted month number; wd: weekday
   hijriDate: (p) => `${p.d} ${p.mon} ${p.y} هـ`,
   date: (p) => `${p.wd}  ${p.d}/${p.m}/${p.y}`,
+  dateShort: (p) => `${p.wd}  ${p.d}/${p.m}`, // without the year: the date line when a place follows it
   nextIn: (prayer, left) => `${prayer} بعد ${left}`,
   iqamaIn: (prayer, left) => `إقامة ${prayer} بعد ${left}`,
   minutes: (n) => `${n} د`,
@@ -27,7 +28,7 @@ export default {
   makruh: { dawn: 'من الفجر', sunrise: 'الشروق', zawal: 'الاستواء', afterAsr: 'بعد العصر', sunset: 'الغروب' },
   fallbackPlace: 'القاهرة', // config.js's fallback location
   fromApp: 'التطبيق', // place shown when the companion app's location is used
-  coords: (lat, lon) => `${lat}°، ${lon}°`, // typed-in coordinates on the date line; numbers already formatted
+  coords: (lat, lon) => `${lat}،${lon}`, // typed-in coordinates on the date line; numbers already formatted
   methods: {
     egypt: 'الهيئة المصرية', makkah: 'أم القرى', mwl: 'رابطة العالم', karachi: 'كراتشي',
     isna: 'أمريكا الشمالية', dubai: 'دبي', kuwait: 'الكويت', qatar: 'قطر', singapore: 'سنغافورة',

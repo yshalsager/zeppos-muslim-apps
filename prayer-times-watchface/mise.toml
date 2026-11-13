@@ -17,7 +17,7 @@ description = "Install the JavaScript dependencies (adhan), used by the tests an
 run = "pnpm install --frozen-lockfile --silent"
 
 [tasks.gen]
-description = "Write the app IDs, and regenerate the Hijri table, font, edit previews, picker preview and README screenshots"
+description = "Write the app IDs, and regenerate the Hijri table, font, edit previews, date-line widths, picker preview and README screenshots"
 depends = [":deps"]
 run = [
   "python3 -I ../scripts/app-ids.py prayer-times-watchface",
@@ -25,6 +25,7 @@ run = [
   "tools/fetch-fonts.sh",
   "{{vars.py_font}} tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
   "{{vars.py_img}} tools/gen-edit-assets.py",
+  "{{vars.py_img}} tools/gen-text-width.py",
   "{{vars.py_img}} tools/gen-preview.py",
   "{{vars.py_img}} tools/gen-docs.py",
 ]
@@ -62,7 +63,7 @@ run = "zeus build"
 description = "Regenerate and check the committed assets, run the tests, and build a lean .zab (CI)"
 depends = [":gen", ":test"]
 run = [
-  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/weather-icons.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
+  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/weather-icons.js prayer-times-watchface/lib/hijri-table.js prayer-times-watchface/lib/text-width.js docs/watchface",
   "zeus build",
   "zeus prune --ip",
 ]

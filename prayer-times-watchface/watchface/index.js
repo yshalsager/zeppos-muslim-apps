@@ -20,7 +20,7 @@ import { WEATHER_ICONS } from '../lib/weather-icons.js'
 import { layout, DESIGN } from '../lib/layout.js'
 import { resolveLang } from '../lib/i18n/index.js'
 import {
-  strings, line, hijriLine, gregLine, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
+  strings, line, hijriLine, gregLine, fitBox, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
 } from '../lib/i18n/text.js'
 
 const { createWidget, deleteWidget, widget, align, prop, show_level, event } = ui
@@ -83,7 +83,8 @@ function fmtClock(minOfDay) {
   return S.is24h ? pad(h) + ':' + mm : (h % 12 || 12) + ':' + mm
 }
 const fmtTime = (min) => (isNaN(min) ? '—' : digits(fmtClock(min)))
-const fmtCoord = (v) => (v < 0 ? '-' : '') + digits(Math.abs(v).toFixed(1))
+// a coordinate to `decimals` places, with no sign when it rounds to zero (-0.04 → 0.0)
+const fmtCoord = (v, decimals = 1) => (Number(v.toFixed(decimals)) < 0 ? '-' : '') + digits(Math.abs(v).toFixed(decimals))
 
 // Local timezone offset in hours, derived from the Time sensor so it follows the
 // phone's timezone and DST without relying on QuickJS's Date timezone support.
@@ -439,7 +440,7 @@ WatchFace({
       watchLang: () => resolveLang('auto', watchLanguage()),
       digits,
       accent: C_TEAL,
-      place: () => state.place || T.fromApp,
+      place: () => fitBox(T, state.place || T.fromApp, LY.menu.row[0].value), // the Location row's value
       message: (s) => menu.message(s),
       close: () => menu.close(),
       changed: () => { settingsChanged = true },
@@ -529,9 +530,12 @@ WatchFace({
         place: loc.source === 'fallback' ? T.fallbackPlace
           : loc.source === 'city' ? (!T.rtl && loc.latin) || loc.name
           : loc.source === 'coords' ? T.coords(fmtCoord(loc.lat), fmtCoord(loc.lon)) : '',
+        // the date line falls back to whole degrees when 0.1° doesn't fit (the menu shows them exactly)
+        placeLine: loc.source === 'coords'
+          ? [T.coords(fmtCoord(loc.lat), fmtCoord(loc.lon)), T.coords(fmtCoord(loc.lat, 0), fmtCoord(loc.lon, 0))] : null,
         cc: loc.cc,
       }
-      const greg = gregLine(T, { weekday: time.getDay() % 7, d, m, y }, digits, state.place) // getDay(): Monday = 1
+      const greg = gregLine(T, { weekday: time.getDay() % 7, d, m, y }, digits, state.placeLine || state.place, LY.greg) // getDay(): Monday = 1
       setText(w.aodGreg, greg)
       if (w.time) {
         for (const k of PRAYER_ORDER) {

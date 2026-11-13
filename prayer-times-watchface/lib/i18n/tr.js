@@ -12,6 +12,7 @@ export default {
   weekdays: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
   hijriDate: (p) => `${p.d} ${p.mon} ${p.y}`,
   date: (p) => `${p.wd} ${p.d} ${p.mon} ${p.y}`,
+  dateShort: (p) => `${p.wd} ${p.d} ${p.mon}`,
   // "vakti" keeps the suffix the same for every prayer name
   nextIn: (prayer, left) => `${prayer} vaktine ${left}`,
   iqamaIn: (prayer, left) => `${prayer} kametine ${left}`,
@@ -26,7 +27,7 @@ export default {
   makruh: { dawn: 'İmsaktan', sunrise: 'Güneş', zawal: 'İstiva', afterAsr: 'İkindiden', sunset: 'Gün batımı' },
   fallbackPlace: 'Kahire',
   fromApp: 'Uygulama',
-  coords: (lat, lon) => `${lat}°, ${lon}°`,
+  coords: (lat, lon) => `${lat},${lon}`,
   methods: {
     egypt: 'Mısır', makkah: "Ümmü'l-Kura", mwl: 'Rabıta', karachi: 'Karaçi',
     isna: 'ISNA', dubai: 'Dubai', kuwait: 'Kuveyt', qatar: 'Katar', singapore: 'Singapur',

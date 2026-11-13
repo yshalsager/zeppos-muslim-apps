@@ -6,6 +6,7 @@ import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { CONFIG } from '../config.js'
 import { countdown } from '../lib/countdown.js'
 import { strings, hijriLine, gregLine, nextLine } from '../lib/i18n/text.js'
+import { layout } from '../lib/layout.js'
 
 const [y, m, d, nowMin, tz] = [2026, 11, 12, 10 * 60 + 9, 2]
 const AR = '٠١٢٣٤٥٦٧٨٩'
@@ -32,7 +33,7 @@ console.log(JSON.stringify({
   // the face as it looks with default settings (preview icon)
   hijri: hijriLine(T, hijriFromEpochDay(ed, 0), ar),
   time: ar(clock(nowMin)),
-  greg: gregLine(T, { weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), d, m, y }, ar),
+  greg: gregLine(T, { weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), d, m, y }, ar, T.fallbackPlace, layout().greg), // as the face shows it with the fallback location
   next: nextLine(T, { next, left }, false, ar),
   cells: cells(t),
   progress,

@@ -3,7 +3,7 @@
 An offline Zepp OS watchface for the Bip Max (432×514, deviceSource `11206915`). It shows:
 - the time
 - the Hijri date (Umm al-Qura)
-- the Gregorian date
+- the Gregorian date and the place the times are for
 - the next prayer with a countdown
 - all six times, with the next one highlighted
 
@@ -105,6 +105,10 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 
 ![Settings menu in English](../docs/watchface/menu-en.png)
 
+**Date line:** "Thu 12 Nov 2026", or with a place "Thu 12 Nov  •  Cairo": the year is dropped then (the Hijri line above has one), since the line beside ⚙ is only 336 px. A place that still doesn't fit is cut with "…"; typed-in coordinates fall back to whole degrees instead ("34,-118"), and the menu's Location row shows them exactly.
+- **Measuring:** the watch can't measure text in our font, so `lib/i18n/text.js` adds up estimated character widths from `lib/text-width.js`. `tools/gen-text-width.py` generates them by shaping every date and city name with HarfBuzz, in the bundled Naskh font for Arabic and in Noto Sans as a stand-in for the system font. Letters get a 15% (Naskh) or 3% (system font) margin. A cut Arabic name gets 6 px more, because its last letter takes its wider final form.
+- **Check:** the generator builds every city's date line on each language's three widest dates with the face's own code. It fails if any line is wider than the box in the real font. On those dates, 13–30% of city names are shortened, depending on the language. The menu's Location row shortens long names the same way.
+
 **Always-on display:** a separate `ONLY_AOD` layer shows the Hijri date, the time, the Gregorian date line and the next-prayer line in dim grey with no fills (few lit pixels). It's updated by the same refresh as the normal layer.
 
 **Weather:** the condition icon and the temperature are drawn by the firmware, so the face's code reads no weather. An earlier version read today's forecast (the legacy `hmSensor` weather sensor) for a condition word, which didn't show on the Bip Max.
@@ -138,6 +142,7 @@ devices.json               ← the screens the face is built for (one app.json t
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 
 lib/layout.js              ← every box the face draws, scaled from the Bip Max design to the screen
+lib/text-width.js          ← GENERATED estimated character widths, to shorten long place names (tools/gen-text-width.py)
 lib/prayer.js              ← adhan-js wrapper (npm, MIT, bundled by zeus) → local minutes; night portions, makruh windows
 lib/countdown.js           ← countdown line: next prayer, iqama, progress, last 10 min, last third of the night
 lib/hijri.js               ← Hijri conversion (Umm al-Qura table + tabular fallback)
@@ -160,6 +165,7 @@ tools/gen-preview.py       ← renders assets/<target>/icon.png (picker preview,
 tools/render.py            ← shared drawing for the above (boxes from lib/layout.js via tools/layout-data.mjs)
 tools/layout-data.mjs      ← prints lib/layout.js's boxes for one devices.json target, for the Python generators
 tools/uax9.py              ← Unicode bidi runs for render.py (what FriBiDi does inside libraqm)
+tools/gen-text-width.py    ← lib/text-width.js from every date-line string (tools/date-line-texts.mjs), then checks every city's date line fits
 tools/preview-data.mjs     ← sample face data for the previews, computed by lib/
 tools/gen-docs.py          ← README screenshots in ../docs/watchface/ (scenes from tools/docs-data.mjs)
 tools/gen-cities.py        ← city list from GeoNames (`mise run :gen-cities`, not part of :build; tools/fetch-geonames.sh downloads ~210 MB)
