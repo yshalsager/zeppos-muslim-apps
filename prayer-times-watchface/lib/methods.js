@@ -1,14 +1,11 @@
 // Calculation methods as the face menu shows them, and the automatic choice by country.
 // Keys are lib/prayer.js METHODS (test/verify.mjs checks they match).
 
-// [key, short Arabic name] in menu order
-export const METHOD_LIST = [
-  ['egypt', 'الهيئة المصرية'], ['makkah', 'أم القرى'], ['mwl', 'رابطة العالم'], ['karachi', 'كراتشي'],
-  ['isna', 'أمريكا الشمالية'], ['dubai', 'دبي'], ['kuwait', 'الكويت'], ['qatar', 'قطر'],
-  ['singapore', 'سنغافورة'], ['turkey', 'تركيا (ديانت)'], ['tehran', 'طهران'], ['uiof', 'اتحاد فرنسا'],
-  ['moonsighting', 'لجنة الأهلة'],
+// Menu order; the names are in lib/i18n (methods)
+export const METHOD_KEYS = [
+  'egypt', 'makkah', 'mwl', 'karachi', 'isna', 'dubai', 'kuwait', 'qatar',
+  'singapore', 'turkey', 'tehran', 'uiof', 'moonsighting',
 ]
-export const METHOD_NAMES = Object.fromEntries(METHOD_LIST)
 
 // The method each country's mosques or official calendar commonly use (ISO 3166 codes, as in the
 // city files). Anywhere else: Muslim World League, the usual default for Europe and the Far East.

@@ -30,13 +30,14 @@ ARABIC_FONT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
 SYSTEM_ARABIC = _FONTS / "NotoSansArabic.ttf"
 LATIN_FONT = _FONTS / "NotoSans.ttf"
 
-# Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js
+# Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js. Written for right-to-left;
+# mirror() flips a box for left-to-right languages, as index.js box() does.
 HIJRI = ((16, 34, W - 32, 44), 32)
 CLOCK = ((0, 80, W, 120), 112)
 GREG = ((48, 198, W - 96, 36), 26)
-GEAR = (20, 204)  # ⚙ at the end of the date line (opens the settings menu)
+GEAR = (20, 204, 24, 24)  # ⚙ at the end of the date line (opens the settings menu)
 NEXT = ((16, 240, W - 32, 44), 30)
-BAR = (116, 287, 200, 4)  # progress toward the next prayer (x, y, w, h), fills right-to-left
+BAR = (116, 287, 200, 4)  # progress toward the next prayer (x, y, w, h), fills in reading direction
 TRACK = (38, 38, 38)
 
 # Prayer grid: 2 rows x 3 columns, filled right-to-left (Fajr | Sunrise | Dhuhr) (Asr | Maghrib | Isha)
@@ -51,6 +52,11 @@ def grid_x(col):
 COMP_Y, COMP_H, COMP_W = 442, 52, 120
 COMP_X = [276, 156, 36]
 ICON = 24  # icon size in px
+
+
+def mirror(box, rtl=True):
+    x, y, w, h = box
+    return box if rtl else (W - x - w, y, w, h)
 
 
 def sample_data():
@@ -172,10 +178,11 @@ def digit_image(ch, size, color=WHITE):
 
 
 class Canvas:
-    """A transparent region of the screen at (ox, oy, w, h), drawn in screen coordinates."""
+    """A transparent region of the screen at (ox, oy, w, h), drawn in screen coordinates.
+    rtl=False: the face in a left-to-right language (mirrored layout, system font for words)."""
 
-    def __init__(self, ox=0, oy=0, w=W, h=H):
-        self.ox, self.oy, self.w, self.h = ox, oy, w, h
+    def __init__(self, ox=0, oy=0, w=W, h=H, rtl=True):
+        self.ox, self.oy, self.w, self.h, self.rtl = ox, oy, w, h, rtl
         self.im = Image.new("RGBA", (w * SCALE, h * SCALE), (0, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.im)
 
@@ -185,8 +192,8 @@ class Canvas:
         digits (e.g. "+٠.١")."""
         x, y, w, h = box
         latin = all(ord(c) < 0x0600 for c in s)
-        path = LATIN_FONT if latin else (SYSTEM_ARABIC if system else ARABIC_FONT)
-        rtl = not latin and not ltr
+        path = LATIN_FONT if latin else (SYSTEM_ARABIC if system or not self.rtl else ARABIC_FONT)
+        rtl = self.rtl and not latin and not ltr
         f = font(path, size * SCALE)
         while fit and size > 14 and f.width(s, rtl) > (w - 8) * SCALE:
             size -= 1
@@ -202,13 +209,17 @@ class Canvas:
         ink.putalpha(alpha)
         self.im.alpha_composite(ink)
 
+    def mx(self, box):
+        return mirror(box, self.rtl)
+
     def bar(self, frac, color):
         x, y, w, h = BAR
         box = lambda a, b: [(a - self.ox) * SCALE, (y - self.oy) * SCALE, (b - self.ox) * SCALE, (y + h - self.oy) * SCALE]  # noqa: E731
         self.draw.rounded_rectangle(box(x, x + w), radius=2 * SCALE, fill=TRACK)
         fw = round(w * frac)
         if fw >= 2:
-            self.draw.rounded_rectangle(box(x + w - fw, x + w), radius=2 * SCALE, fill=color)
+            fx = self.mx((x + w - fw, y, fw, h))[0]
+            self.draw.rounded_rectangle(box(fx, fx + fw), radius=2 * SCALE, fill=color)
 
     def icon(self, name, x, y, size=ICON, color=DIM):
         _draw_icon(self.draw, name, (x - self.ox) * SCALE, (y - self.oy) * SCALE, size * SCALE, color)
@@ -217,8 +228,8 @@ class Canvas:
         for i, c in enumerate(cells):
             row, col = divmod(i, 3)
             x, y = grid_x(col), GRID_Y + row * GRID_ROW_H
-            self.text((x, y, GRID_CELL_W, 30), c["name"], 24, GOLD if c["on"] else DIM)
-            self.text((x, y + 28, GRID_CELL_W, 38), c["time"], 32, GOLD if c["on"] else WHITE, system=True)
+            self.text(self.mx((x, y, GRID_CELL_W, 30)), c["name"], 24, GOLD if c["on"] else DIM)
+            self.text(self.mx((x, y + 28, GRID_CELL_W, 38)), c["time"], 32, GOLD if c["on"] else WHITE, system=True)
 
     def paste_icon(self, name, x, y, size=ICON, color=DIM):
         """An icon with see-through parts (e.g. the gear's hole), as the watch draws its PNG."""
@@ -232,17 +243,19 @@ class Canvas:
         self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
 
     def complication(self, slot, kind, value):
-        """Extras cell: icon on the right, value to its left (weather: temperature + condition)."""
+        """Extras cell: icon first in reading order, then the value (weather: temperature + condition)."""
         x, y = COMP_X[slot], COMP_Y
         if kind == "none":
             return
         if kind == "weather":
             temp, cond = value
-            self.text((x + COMP_W - 56, y, 56, COMP_H), temp, 26, WHITE, system=True)
-            self.text((x, y, COMP_W - 58, COMP_H), cond, 20, DIM)
+            self.text(self.mx((x + COMP_W - 56, y, 56, COMP_H)), temp, 26, WHITE, system=True)
+            if cond:
+                self.text(self.mx((x, y, COMP_W - 58, COMP_H)), cond, 20, DIM)
             return
-        self.icon(kind, x + COMP_W - ICON - 4, y + (COMP_H - ICON) // 2)
-        self.text((x, y, COMP_W - ICON - 8, COMP_H), value, 24, WHITE, system=True)
+        ix, iy, _, _ = self.mx((x + COMP_W - ICON - 4, y + (COMP_H - ICON) // 2, ICON, ICON))
+        self.icon(kind, ix, iy)
+        self.text(self.mx((x, y, COMP_W - ICON - 8, COMP_H)), value, 24, WHITE, system=True)
 
     def image(self, size=None):
         im = self.im.resize((self.w, self.h), Image.LANCZOS)

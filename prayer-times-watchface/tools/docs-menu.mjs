@@ -1,10 +1,11 @@
 // Prints settings-menu screens as JSON for tools/gen-docs.py (README screenshots). Runs the face's
 // real code (watchface/index.js, menu.js, screens.js) on stub @zos modules, taps through the menu
-// and records what's visible. Run: node --import ./tools/zos-stub/register.mjs tools/docs-menu.mjs
+// and records what's visible. Run: node --import ./tools/zos-stub/register.mjs tools/docs-menu.mjs [lang]
 import { stub, tap } from './zos-stub/stub.mjs'
 
-// Settings shown: "standard" iqama and an extra Fajr at 14.6°
-stub.storage.settings = JSON.stringify({ iqama: [20, 15, 15, 10, 15], extraFajrAngle: 14.6 })
+// Settings shown: "standard" iqama and an extra Fajr at 14.6°, in the given language (default ar)
+const language = process.argv[2] || 'ar'
+stub.storage.settings = JSON.stringify({ iqama: [20, 15, 15, 10, 15], extraFajrAngle: 14.6, language })
 let face
 globalThis.WatchFace = (o) => { face = o }
 await import('../watchface/index.js')

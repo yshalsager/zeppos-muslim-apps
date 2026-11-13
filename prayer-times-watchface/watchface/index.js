@@ -1,7 +1,7 @@
 import ui from '@zos/ui'
 import { Time } from '@zos/sensor'
 import { getScene, SCENE_AOD } from '@zos/app'
-import { getTimeFormat, TIME_FORMAT_24 } from '@zos/settings'
+import { getTimeFormat, TIME_FORMAT_24, getLanguage } from '@zos/settings'
 import { launchApp, SYSTEM_APP_WEATHER, SYSTEM_APP_STATUS, SYSTEM_APP_HR } from '@zos/router'
 import { CONFIG } from '../config.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
@@ -11,12 +11,16 @@ import { SETTINGS_KEY, sanitizeSettings, effectiveSettings, resolveMethod } from
 import { autoMethod } from '../lib/methods.js'
 import { createMenu } from './menu.js'
 import { rootScreen } from './screens.js'
-import { dayEvents, nightPortions, PRAYER_ORDER, PRAYER_NAMES_AR, JUMUAH_AR } from '../lib/prayer.js'
+import { dayEvents, nightPortions, PRAYER_ORDER } from '../lib/prayer.js'
 import { countdown } from '../lib/countdown.js'
-import { hijriFromEpochDay, epochDay, HIJRI_MONTHS_AR, WEEKDAYS_AR } from '../lib/hijri.js'
-import { makeSensors, forecastToday, WEATHER_AR } from '../lib/extras.js'
+import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
+import { makeSensors, forecastToday } from '../lib/extras.js'
+import { resolveLang } from '../lib/i18n/index.js'
+import {
+  strings, line, hijriLine, gregLine, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
+} from '../lib/i18n/text.js'
 
-const { createWidget, widget, align, prop, show_level, event } = ui
+const { createWidget, deleteWidget, widget, align, prop, show_level, event } = ui
 const dataType = ui.data_type || (typeof hmUI !== 'undefined' ? hmUI.data_type : {})
 
 // Bip Max: 432 x 514, designWidth 432 => px(n) === n
@@ -34,13 +38,20 @@ const C_AOD = 0x8a8a8a
 
 const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩'
 const pad = (n) => (n < 10 ? '0' + n : '' + n)
-const RLM = '\u200F'
-// Force right-to-left layout only for text that starts with a digit (e.g. "٢ جمادى…", "٤:٤٨ - ٦:١٨").
-// Don't put RLM before an Arabic letter: the watch's shaper treats it as joining, so a leading
-// alef is drawn in its connected (final) form — "الخميس" got a tail on its first letter.
-const ARABIC_LETTER = /^[\u0621-\u064A\u0671-\u06D3]/
-const rtl = (s) => (ARABIC_LETTER.test(s) ? s : RLM + s)
 const FRIDAY = 5 // Time.getDay(): Monday = 1
+
+// Language (lib/i18n): T holds its strings. Layout below is written for right-to-left (Arabic);
+// box() mirrors a rectangle for left-to-right languages, so reading order matches the language.
+let lang = ''
+let T = strings('ar')
+const watchLanguage = () => {
+  try {
+    return getLanguage()
+  } catch (e) {
+    return undefined
+  }
+}
+const box = (r) => (T.rtl ? r : { ...r, x: W - r.x - r.w })
 
 // Pages cycled by tapping the lower half of the face; waking the screen returns to page 0.
 const PAGE_PRAYERS = 0
@@ -49,21 +60,18 @@ const PAGE_MAKRUH = 2 // prohibited windows
 const PAGE_COUNT = 3
 const GRID = { x: 16, y: 290, w: W - 32, h: 216 } // tap area: prayer grid + extras row
 const DATE_TAP = { x: 16, y: 194, w: W - 32, h: 44 } // tap area: Gregorian date line → settings menu
-// Prayer grid: 2 rows x 3 columns, right-to-left — keep in sync with tools/render.py
+// Prayer grid: 2 rows x 3 columns, right-to-left (mirrored by box()) — keep in sync with tools/render.py
 const gridX = (col) => 16 + (2 - col) * 134
 const CELL_W = 132
-// Extras row: slot 0 is the rightmost
+// Extras row: slot 0 is the rightmost (leftmost when mirrored)
 const COMP_Y = 442
 const COMP_H = 52
 const COMP_W = 120
 const COMP_X = [276, 156, 36]
 const ICON = 24
-// Progress toward the next prayer: thin bar under the countdown line, filling right-to-left.
+// Progress toward the next prayer: thin bar under the countdown line, filling in reading direction.
 const BAR = { x: 116, y: 287, w: 200, h: 4 } // keep in sync with tools/render.py
-
-const MAKRUH_ROWS = [
-  ['dawn', 'من الفجر'], ['sunrise', 'الشروق'], ['zawal', 'الاستواء'], ['afterAsr', 'بعد العصر'], ['sunset', 'الغروب'],
-]
+const GEAR = { x: 20, y: 204, w: 24, h: 24 } // at the end of the date line
 
 let S = { ...CONFIG } // effective settings (lib/settings.js effectiveSettings) + location
 const digits = (s) => (S.arabicDigits ? String(s).replace(/\d/g, (d) => AR_DIGITS[d]) : String(s))
@@ -106,24 +114,28 @@ const system24h = () => {
 // Hijri date for a day (optionally advancing at Maghrib), with the given settings
 function hijriText(ed, nowMin, maghrib, set) {
   const afterMaghrib = set.hijriDayStartsAtMaghrib && nowMin >= maghrib
-  const h = hijriFromEpochDay(ed + (afterMaghrib ? 1 : 0), set.hijriOffsetDays)
-  return rtl(`${digits(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]} ${digits(h.year)} هـ`)
+  return hijriLine(T, hijriFromEpochDay(ed + (afterMaghrib ? 1 : 0), set.hijriOffsetDays), digits)
 }
 
 // Long-press the face → Edit: one slot per look (digits, extras row). Returns { key: value }.
+// Built once per face load, so slots and previews follow the language the face was loaded with.
 function buildEditGroups() {
   const chosen = {}
+  const dir = T.rtl ? 'rtl' : 'ltr'
   for (const g of EDIT_GROUPS) {
-    const [x, y, w, h] = g.rect
+    const [rx, y, w, h] = g.rect
+    const { x } = box({ x: rx, w })
+    const defaultType = g.defaultType[dir]
     const group = createWidget(widget.WATCHFACE_EDIT_GROUP, {
       edit_id: g.editId,
       x, y, w, h,
       select_image: g.select,
       un_select_image: g.unselect,
-      default_type: g.defaultType,
-      optional_types: g.options.map((o) => ({
-        type: o.type, preview: o.preview, title_en: o.title, title_sc: o.title, title_tc: o.title,
-      })),
+      default_type: defaultType,
+      optional_types: g.options.map((o) => {
+        const title = T.edit[o.label]
+        return { type: o.type, preview: o.preview[dir], title_en: title, title_sc: title, title_tc: title }
+      }),
       count: g.options.length,
       tips_BG: 'edit/tips_bg.png',
       // centred just above the slot (below it for the top slot); only the focused slot shows it
@@ -133,7 +145,7 @@ function buildEditGroups() {
       tips_margin: 8,
     })
     const type = group.getProperty(prop.CURRENT_TYPE)
-    const opt = g.options.find((o) => o.type === type) || g.options.find((o) => o.type === g.defaultType)
+    const opt = g.options.find((o) => o.type === type) || g.options.find((o) => o.type === defaultType)
     chosen[g.key] = opt.value
   }
   return chosen
@@ -151,19 +163,25 @@ let state = { key: '' }
 let page = PAGE_PRAYERS
 let sensors = null
 let w = {} // widgets
+let made = [] // every widget built by make(): deleted when the language changes the layout
 let face = null // face-menu settings (lib/settings.js), saved in the face's storage
 let edit = null // Edit-slot choices
 let menu = null // settings menu (watchface/menu.js)
 let settingsChanged = false
 
+const make = (type, opts) => {
+  const wd = createWidget(type, opts)
+  made.push(wd)
+  return wd
+}
 function text(opts, level = show_level.ONLY_NORMAL) {
-  return createWidget(widget.TEXT, {
+  return make(widget.TEXT, {
     align_h: align.CENTER_H, align_v: align.CENTER_V, color: C_WHITE, show_level: level, ...opts,
   })
 }
-// Arabic text (names, dates, labels) in the bundled Naskh font when config.js sets arabicFont;
-// clock and times stay in the system font.
-const arText = (opts, level) => text(CONFIG.arabicFont ? { ...opts, font: CONFIG.arabicFont } : opts, level)
+// Words (names, dates, labels): for Arabic, the bundled Naskh font when config.js sets arabicFont;
+// other languages, the clock and the times use the system font.
+const arText = (opts, level) => text(T.rtl && CONFIG.arabicFont ? { ...opts, font: CONFIG.arabicFont } : opts, level)
 // Write-only-on-change: refresh() runs every minute (also on the always-on screen) and on every
 // wake, and most values don't change. Every text/colour/visibility write must go through these
 // three, or the remembered value goes stale.
@@ -184,7 +202,7 @@ const setText = (wd, s) => {
 const TAP_MAX_MS = 600
 const TAP_MAX_MOVE = 24 // px
 const tap = (area, onTap, onPress) => {
-  const wd = createWidget(widget.FILL_RECT, { ...area, color: 0x000000, alpha: 0, show_level: show_level.ONLY_NORMAL })
+  const wd = make(widget.FILL_RECT, { ...area, color: 0x000000, alpha: 0, show_level: show_level.ONLY_NORMAL })
   let down = null
   wd.addEventListener(event.CLICK_DOWN, (e) => {
     down = { t: Date.now(), x: e && e.x, y: e && e.y }
@@ -227,6 +245,7 @@ WatchFace({
   build() {
     time = new Time()
     face = sanitizeSettings(readJSON(SETTINGS_KEY, null), CONFIG)
+    this.pickLanguage()
     edit = buildEditGroups() // also in the always-on instance: it reads the chosen settings
     S = this.settingsFor({ lat: CONFIG.lat, lon: CONFIG.lon, cc: CONFIG.country }) // refresh() re-reads the location
 
@@ -245,31 +264,64 @@ WatchFace({
       resume_call: () => {
         if (menu) menu.close()
         page = PAGE_PRAYERS
-        this.refresh(true)
+        if (!isAodScene() && this.pickLanguage()) this.relayout() // 'auto' and the watch's language changed
+        else this.refresh(true)
       },
     })
   },
 
+  // Sets T from the face setting and the watch's language; true if the language changed.
+  pickLanguage() {
+    const next = resolveLang(face.language, face.language === 'auto' ? watchLanguage() : undefined)
+    if (next === lang) return false
+    lang = next
+    T = strings(lang)
+    return true
+  },
+
+  // Rebuilds the face's widgets for a new language (direction, font and texts). Edit slots stay as
+  // built until the face reloads. Deferred: it can be reached from a tap handler of a widget it deletes.
+  relayout() {
+    const run = () => {
+      for (const wd of made) {
+        try { deleteWidget(wd) } catch (e) { console.log('deleteWidget failed: ' + e) }
+      }
+      made = []
+      last.clear()
+      w = {}
+      menu = null
+      this.menuRoot = null
+      page = PAGE_PRAYERS
+      state = { key: '' }
+      this.buildNormal()
+      this.buildTaps()
+      this.buildAod()
+      this.refresh(true)
+    }
+    if (typeof setTimeout === 'function') setTimeout(run, 0)
+    else run()
+  },
+
   buildNormal() {
-    createWidget(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: show_level.ONLY_NORMAL })
+    make(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: show_level.ONLY_NORMAL })
     w.hijri = arText({ x: 16, y: 34, w: W - 32, h: 44, text_size: 32, color: C_GOLD })
     w.time = text({ x: 0, y: 80, w: W, h: 120, text_size: 112 })
     w.greg = arText({ x: 48, y: 198, w: W - 96, h: 36, text_size: 26, color: C_DIM })
     // ⚙ at the end of the date line: tapping the line opens the settings menu
-    createWidget(widget.IMG, { x: 20, y: 204, src: 'icons/gear.png', show_level: show_level.ONLY_NORMAL })
+    make(widget.IMG, { ...box(GEAR), src: 'icons/gear.png', show_level: show_level.ONLY_NORMAL })
     w.next = arText({ x: 16, y: 240, w: W - 32, h: 44, text_size: 30, color: C_TEAL })
     const bar = { ...BAR, radius: 2, show_level: show_level.ONLY_NORMAL }
-    w.barTrack = createWidget(widget.FILL_RECT, { ...bar, color: C_TRACK })
-    w.barFill = createWidget(widget.FILL_RECT, { ...bar, color: C_TEAL })
+    w.barTrack = make(widget.FILL_RECT, { ...bar, color: C_TRACK })
+    w.barFill = make(widget.FILL_RECT, { ...bar, color: C_TEAL })
 
-    // Page 0 — 2 rows x 3 columns, read right-to-left: (Fajr | Sunrise | Dhuhr) (Asr | Maghrib | Isha)
+    // Page 0 — 2 rows x 3 columns in reading order: (Fajr | Sunrise | Dhuhr) (Asr | Maghrib | Isha)
     w.cells = {}
     PRAYER_ORDER.forEach((k, i) => {
       const x = gridX(i % 3)
       const y = 296 + Math.floor(i / 3) * 70
       w.cells[k] = {
-        name: arText({ x, y, w: CELL_W, h: 30, text_size: 24, color: C_DIM, text: PRAYER_NAMES_AR[k] }),
-        time: text({ x, y: y + 28, w: CELL_W, h: 38, text_size: 32 }),
+        name: arText({ ...box({ x, y, w: CELL_W, h: 30 }), text_size: 24, color: C_DIM, text: T.prayers[k] }),
+        time: text({ ...box({ x, y: y + 28, w: CELL_W, h: 38 }), text_size: 32 }),
       }
     })
     w.gridCells = PRAYER_ORDER.flatMap((k) => [w.cells[k].name, w.cells[k].time])
@@ -286,8 +338,8 @@ WatchFace({
         const num = (i) => `wnum/${S.arabicDigits ? 'ar' : 'la'}_${i}.png`
         // Current temperature, drawn by the firmware; the transparent invalid image hides it
         // when the phone hasn't sent weather.
-        const temp = createWidget(widget.TEXT_IMG, {
-          x: x + COMP_W - 60, y: COMP_Y + 10, w: 60, h: 34,
+        const temp = make(widget.TEXT_IMG, {
+          ...box({ x: x + COMP_W - 60, y: COMP_Y + 10, w: 60, h: 34 }),
           type: dataType.WEATHER_CURRENT,
           font_array: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num),
           unit_en: 'wnum/deg.png', unit_sc: 'wnum/deg.png', unit_tc: 'wnum/deg.png',
@@ -295,15 +347,15 @@ WatchFace({
           negative_image: 'wnum/minus.png', invalid_image: 'wnum/none.png',
           align_h: align.CENTER_H, h_space: 0, show_level: show_level.ONLY_NORMAL,
         })
-        const cond = arText({ x, y: COMP_Y, w: COMP_W - 62, h: COMP_H, text_size: 20, color: C_DIM })
+        const cond = arText({ ...box({ x, y: COMP_Y, w: COMP_W - 62, h: COMP_H }), text_size: 20, color: C_DIM })
         return { kind, widgets: [temp, cond], cond }
       }
       if (kind === 'none' || !kind) return { kind: 'none', widgets: [] }
-      const icon = createWidget(widget.IMG, {
-        x: x + COMP_W - ICON - 4, y: COMP_Y + (COMP_H - ICON) / 2, src: `icons/${kind}.png`,
+      const icon = make(widget.IMG, {
+        ...box({ x: x + COMP_W - ICON - 4, y: COMP_Y + (COMP_H - ICON) / 2, w: ICON, h: ICON }), src: `icons/${kind}.png`,
         show_level: show_level.ONLY_NORMAL,
       })
-      const value = text({ x, y: COMP_Y, w: COMP_W - ICON - 8, h: COMP_H, text_size: 24 })
+      const value = text({ ...box({ x, y: COMP_Y, w: COMP_W - ICON - 8, h: COMP_H }), text_size: 24 })
       return { kind, widgets: [icon, value], icon, value }
     })
     w.compWidgets = [].concat(...w.comps.map((c) => c.widgets))
@@ -315,7 +367,7 @@ WatchFace({
       if (c.kind === 'weather') {
         if (full) {
           const f = forecastToday(day)
-          setText(c.cond, f ? WEATHER_AR[f.index] || '' : '')
+          setText(c.cond, f ? T.weather[f.index] || '' : '')
         }
         continue
       }
@@ -331,25 +383,25 @@ WatchFace({
   // Pages 1 and 2, built on the first tap away from page 0 (most face loads never leave it).
   buildPages() {
     if (w.page1) return
-    // Page 1 — 3 rows x 3 columns (same grid as page 0), filled right-to-left
+    // Page 1 — 3 rows x 3 columns (same grid as page 0), in reading order
     w.extras = []
     for (let i = 0; i < 9; i++) {
       const x = gridX(i % 3)
       const y = 294 + Math.floor(i / 3) * 70
       w.extras.push({
-        name: arText({ x, y, w: CELL_W, h: 28, text_size: 19, color: C_DIM }),
-        time: text({ x, y: y + 26, w: CELL_W, h: 38, text_size: 30 }),
+        name: arText({ ...box({ x, y, w: CELL_W, h: 28 }), text_size: 19, color: C_DIM }),
+        time: text({ ...box({ x, y: y + 26, w: CELL_W, h: 38 }), text_size: 30 }),
       })
     }
     w.page1 = w.extras.flatMap((c) => [c.name, c.time])
 
-    // Page 2 — one row per prohibited window: label (right) and range (left)
-    w.makruh = MAKRUH_ROWS.map(([key, label], i) => {
+    // Page 2 — one row per prohibited window: label first in reading order, then the range
+    w.makruh = MAKRUH_KEYS.map((key, i) => {
       const y = 296 + i * 42
       return {
         key,
-        label: arText({ x: 236, y, w: 176, h: 40, text_size: 26, color: C_DIM, text: label }),
-        range: text({ x: 20, y, w: 216, h: 40, text_size: 28 }),
+        label: arText({ ...box({ x: 236, y, w: 176, h: 40 }), text_size: 26, color: C_DIM, text: T.makruh[key] }),
+        range: text({ ...box({ x: 20, y, w: 216, h: 40 }), text_size: 28 }),
       }
     })
     w.page2 = w.makruh.flatMap((r) => [r.label, r.range])
@@ -372,7 +424,7 @@ WatchFace({
     w.comps.forEach((c, slot) => {
       const appId = COMP_APPS[c.kind]
       if (typeof appId !== 'number') return
-      w.compTaps.push(tap({ x: COMP_X[slot], y: COMP_Y, w: COMP_W, h: COMP_H }, () => openApp(appId)))
+      w.compTaps.push(tap(box({ x: COMP_X[slot], y: COMP_Y, w: COMP_W, h: COMP_H }), () => openApp(appId)))
     })
   },
 
@@ -386,17 +438,21 @@ WatchFace({
   // Created on the first tap, not in build(): most face loads never open it.
   buildMenu() {
     const h = {
-      text, arText, tap, show, setText, setColor, digits, W, H,
+      create: make, text, arText, tap, show, setText, setColor, digits, box, rtl: T.rtl, W, H,
       colors: { title: C_GOLD, text: C_WHITE, dim: C_DIM, accent: C_TEAL },
     }
     menu = createMenu(h, () => this.onMenuClosed())
     const nowMin = () => time.getHours() * 60 + time.getMinutes()
     this.menuRoot = rootScreen({
       face,
+      T,
+      lang,
+      watchLang: () => resolveLang('auto', watchLanguage()),
       digits,
       accent: C_TEAL,
-      place: () => state.place || 'التطبيق',
+      place: () => state.place || T.fromApp,
       message: (s) => menu.message(s),
+      close: () => menu.close(),
       changed: () => { settingsChanged = true },
       // Live previews from the settings being edited (applied when the menu closes)
       autoMethod: () => autoMethod(state.cc),
@@ -406,7 +462,7 @@ WatchFace({
         return { fajr: fmtTime(e.fajr), asr: fmtTime(e.asr), isha: fmtTime(e.isha) }
       },
       setCity: (name, lat, lon, cc) => {
-        if (!saveCity(name, lat, lon, cc)) return menu.message('تعذر الحفظ')
+        if (!saveCity(name, lat, lon, cc)) return menu.message(T.menu.cantSave)
         state.cacheKey = '' // location changed: recompute
         menu.close()
       },
@@ -430,6 +486,7 @@ WatchFace({
       settingsChanged = false
       if (!writeJSON(SETTINGS_KEY, face)) console.log('settings not saved')
       state.cacheKey = '' // times, iqama and 12/24h all depend on the settings: recompute
+      if (this.pickLanguage()) return this.relayout()
     }
     this.refresh(true) // re-reads the location and re-resolves the settings
   },
@@ -473,19 +530,17 @@ WatchFace({
         yesterdayIsha: yesterday.isha - 1440,
         tomorrowFajr: eventsFor(ed + 1, tz).fajr + 1440,
         isFriday: time.getDay() === FRIDAY,
-        eid: (civilHijri.month === 10 && civilHijri.day === 1) ? 'الفطر'
-          : (civilHijri.month === 12 && civilHijri.day === 10) ? 'الأضحى' : null,
-        place: loc.source === 'fallback' ? 'القاهرة' : loc.source === 'city' ? loc.name : '',
+        eid: (civilHijri.month === 10 && civilHijri.day === 1) ? 'fitr'
+          : (civilHijri.month === 12 && civilHijri.day === 10) ? 'adha' : null,
+        place: loc.source === 'fallback' ? T.fallbackPlace
+          : loc.source === 'city' ? (!T.rtl && loc.latin) || loc.name : '',
         cc: loc.cc,
       }
-      const wd = time.getDay() // 1..7, Monday = 1
-      const place = state.place ? `  •  ${state.place}` : ''
-      const greg = rtl(`${WEEKDAYS_AR[wd % 7]}  ${digits(d)}/${digits(m)}/${digits(y)}${place}`)
+      const greg = gregLine(T, { weekday: time.getDay() % 7, d, m, y }, digits, state.place) // getDay(): Monday = 1
       setText(w.aodGreg, greg)
       if (w.time) {
-        const name = (k) => (k === 'dhuhr' && state.isFriday ? JUMUAH_AR : PRAYER_NAMES_AR[k])
         for (const k of PRAYER_ORDER) {
-          setText(w.cells[k].name, name(k))
+          setText(w.cells[k].name, prayerName(T, k, state.isFriday))
           setText(w.cells[k].time, fmtTime(today[k]))
         }
         setText(w.greg, greg)
@@ -498,11 +553,7 @@ WatchFace({
     // Next prayer, or the current one's iqama (sunrise is shown but not counted as a prayer)
     const cd = countdown(t, nowMin, { ...state, iqama: (k) => iqamaMinutes(k, state.isFriday) })
     const next = cd.next // stays on the current prayer until its iqama
-    const nameOf = (k) => (k === 'dhuhr' && state.isFriday ? JUMUAH_AR : PRAYER_NAMES_AR[k])
-    const fmtLeft = (left) => (left >= 60 ? `${Math.floor(left / 60)}:${pad(left % 60)}` : `${left} د`)
-    const left = digits(fmtLeft(cd.left))
-    let nextStr = rtl(cd.iqama ? `إقامة ${nameOf(next)} بعد ${left}` : `${nameOf(next)} بعد ${left}`)
-    if (cd.lastThird && !cd.urgent) nextStr = `الثلث الأخير  •  ${nextStr}` // overnight: time for qiyam
+    const nextStr = nextLine(T, cd, state.isFriday, digits)
     // gold while waiting for iqama, orange in the last minutes before an adhan, violet in the last third of the night
     const cdColor = cd.iqama ? C_GOLD : cd.urgent ? C_ORANGE : cd.lastThird ? C_NIGHT : C_TEAL
     const clock = digits(fmtClock(nowMin))
@@ -534,11 +585,11 @@ WatchFace({
         setColor(w.cells[k].time, on ? C_GOLD : C_WHITE)
       }
     } else if (page === PAGE_EXTRAS) {
-      setText(w.next, rtl('الليل والنوافل'))
+      setText(w.next, line(T, T.pageNight))
       setColor(w.next, C_DIM)
       this.renderExtras(nowMin)
     } else {
-      setText(w.next, rtl('أوقات النهي'))
+      setText(w.next, line(T, T.pageMakruh))
       setColor(w.next, C_RED)
       this.renderMakruh(nowMin)
     }
@@ -552,7 +603,7 @@ WatchFace({
     const fill = `${fw}|${color}`
     if (fw >= 2 && w.barShape !== fill) {
       w.barShape = fill
-      w.barFill.setProperty(prop.MORE, { x: BAR.x + BAR.w - fw, y: BAR.y, w: fw, h: BAR.h, radius: 2, color })
+      w.barFill.setProperty(prop.MORE, { ...box({ x: BAR.x + BAR.w - fw, y: BAR.y, w: fw, h: BAR.h }), radius: 2, color })
     }
   },
 
@@ -560,19 +611,7 @@ WatchFace({
     const t = state.today
     // Before today's Fajr we're still in last night (yesterday's Maghrib → today's Fajr).
     const night = nowMin < t.fajr ? nightPortions(state.yesterdayMaghrib, t.fajr) : nightPortions(t.maghrib, state.tomorrowFajr)
-    const items = []
-    if (night) {
-      items.push(['الثلث الأول', night.firstThird], ['منتصف الليل', night.midpoint],
-        ['الثلث الأخير', night.lastThird], ['السدس الأخير', night.lastSixth])
-    }
-    if (state.eid) {
-      items.push([`صلاة عيد ${state.eid}`, t.eidStart], ['نهاية وقت العيد', t.eidEnd])
-    } else {
-      items.push(['الضحى', t.duha])
-    }
-    // NaN when off or equal to the method's own angle (e.g. 12° under UIOF)
-    if (!isNaN(t.extraFajr)) items.push([`الفجر (${digits(S.extraFajrAngle)}°)`, t.extraFajr])
-    if (!isNaN(t.extraIsha)) items.push([`العشاء (${digits(S.extraIshaAngle)}°)`, t.extraIsha])
+    const items = extraItems(T, night, t, state.eid, { fajr: S.extraFajrAngle, isha: S.extraIshaAngle }, digits)
 
     // Gold = the soonest item still ahead (night portions are in minutes from today's midnight,
     // so tonight's are > 1440 and last night's are < 0 — plain comparison works).
@@ -594,7 +633,7 @@ WatchFace({
     for (const r of w.makruh) {
       const [a, b] = windows[r.key]
       const active = nowMin >= a && nowMin < b
-      setText(r.range, rtl(`${fmtTime(a)} - ${fmtTime(b)}`)) // RTL: start time on the right
+      setText(r.range, rangeLine(T, fmtTime(a), fmtTime(b)))
       setColor(r.label, active ? C_RED : C_DIM)
       setColor(r.range, active ? C_RED : C_WHITE)
     }
@@ -602,6 +641,7 @@ WatchFace({
 
   onDestroy() {
     last.clear()
+    made = []
     menu = null
     time = null
     w = {}

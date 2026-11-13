@@ -9,6 +9,10 @@ An offline Zepp OS watchface for the Bip Max (432×514, deviceSource `11206915`)
 
 Everything is computed on the watch. It needs no phone, app-side code or network, so it works with Gadgetbridge.
 
+It's in Arabic, English, French, Turkish, Indonesian, Malay and Russian, following the watch's language or one picked in its menu. Arabic is laid out right to left; the other languages get the mirror image:
+
+![The same pages in English, mirrored left to right](../docs/watchface/pages-en.png)
+
 ![Prayers page, night and voluntary prayers, prohibited times, and always-on display](../docs/watchface/pages.png)
 
 *Left to right: prayers (default page), night and voluntary prayers, prohibited times (the current window in red), always-on display.*
@@ -23,9 +27,9 @@ Screenshots are rendered from the face's own layout and prayer logic (`tools/gen
 
 1. **Prayers:** a 2×3 grid (Fajr, Sunrise, Dhuhr / Asr, Maghrib, Isha; Dhuhr becomes الجمعة on Fridays). The next prayer is gold, with a countdown above.
    - **Countdown line colours:** teal normally, orange in the last 10 minutes before an adhan, gold while waiting for an iqama, and violet in the last third of the night, when it reads "الثلث الأخير • الفجر بعد …".
-   - **Progress bar** under the countdown: fills right to left from the previous adhan to the next one (or from adhan to iqama), in the countdown's colour.
+   - **Progress bar** under the countdown: fills in reading direction from the previous adhan to the next one (or from adhan to iqama), in the countdown's colour.
    - **Extras row** underneath: three cells, each chosen in its own edit slot from weather, steps, heart rate, battery, calories or nothing. Defaults are weather, steps and battery.
-   - **Weather:** current temperature is drawn by the firmware (`TEXT_IMG` + `WEATHER_CURRENT`) with a transparent `invalid_image`. The condition is today's forecast code as a short Arabic word. With no weather from the phone (e.g. Gadgetbridge without Breezy Weather), the cell stays empty.
+   - **Weather:** current temperature is drawn by the firmware (`TEXT_IMG` + `WEATHER_CURRENT`) with a transparent `invalid_image`. The condition is today's forecast code as a short word. With no weather from the phone (e.g. Gadgetbridge without Breezy Weather), the cell stays empty.
    - **Heart rate:** shows the last measurement, and is hidden until there is one.
 2. **الليل والنوافل (night and voluntary prayers)**, in the same 3-column grid:
    - night portions between Maghrib and the next Fajr: first third, midpoint, last third, last sixth
@@ -77,7 +81,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 - **Full refresh:** re-reads location, timezone and the watch's 12/24h setting, re-resolves the settings, and only recomputes events when the date, location, timezone, method or clock format has changed. Waking normally costs no prayer maths.
 
 **Settings:** `S = config.js defaults ← face settings ← Edit-slot values` (`lib/settings.js`), plus lat/lon from the city picked on the face or the location app (whichever was set last). Each setting has one home:
-- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30) and 12/24h (follows the watch by default, `getTimeFormat()`). The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
+- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30), 12/24h (follows the watch by default, `getTimeFormat()`) and the language. The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
 - **Edit slots** (long-press → Edit): **how it looks.** Digits and the three extras cells. Changing a slot rebuilds the face.
 
 ![Settings menu: main list, method with today's Fajr and Isha, a value screen, and a location index](../docs/watchface/menu.png)
@@ -86,9 +90,16 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 - **Lists:** 4 rows of 68 px that touch, so every pixel of a row is tappable. ▲ / ▼ page through, with a counter (٢/٥) next to ▼. Back is the title row, marked ▶ (it closes the menu at the top level). Nothing tappable sits in the bottom ~60 px: taps there got mistaken for the watch's swipe-up gesture.
 - **Values** (iqama minutes, angles, adjustments, Hijri offset): the row opens a value screen with the number large in the middle and big − / + buttons on either side; angles add a 0.1° row underneath.
 - **Long location lists** (over 3 pages) open on an index of 4 ranges named by their first and last entry ("أذربيجان … بنغلاديش"); a range that's still long gets its own index, so Punjab's 117 cities take 2 index taps and at most 2 pages.
+- **Language:** automatic (the watch's language from `getLanguage()`; English when the face doesn't have it) or one of the seven, each listed in its own name. Picking one closes the menu and rebuilds the face's widgets in it.
 - **Feedback:** the pressed row or button flashes dark grey (one shared highlight `FILL_RECT`, moved under the tap area on touch down).
 
 **Pages:** pages 1 and 2 are created on the first tap away from page 0 (most face loads never leave it); after that, switching pages only toggles visibility. Widgets created later sit on top and take the taps, so the lower half's tap areas are recreated above the new pages, and opening the menu returns to page 0 first. An invisible tap area over the grid and extras row cycles the pages. On page 0, tapping weather opens the Weather app, steps or calories open Activity, and heart rate opens Heart Rate (`launchApp` with the API 3.0 system app IDs). The battery cell just cycles the pages. Tap areas are alpha-0 `FILL_RECT`s with `CLICK_DOWN`/`CLICK_UP` listeners, so no images are needed. Only a quick, still tap counts, so a long press still opens the face picker.
+
+**Languages:** `lib/i18n/<lang>.js` holds every string the face shows, with the same keys as `ar.js` (`test/verify.mjs` checks the keys and shapes). Templates are functions, so each language keeps its own word order (`nextIn('Dhuhr', '1:31')` → "Dhuhr in 1:31", "Öğle vaktine 1:31"). `lib/i18n/text.js` builds the face's lines from them, and the docs generators use it too. The layout is written for right to left, and `box()` in `watchface/index.js` mirrors every rectangle for the other languages. Arabic uses the bundled Naskh font; the others use the system font. The watch has no Urdu or Persian, so they aren't offered. The translations other than Arabic and English need a native speaker's review.
+- **Changing language** rebuilds every face widget (`relayout()`, deferred to after the tap that triggered it). The Edit slots, their previews and the digits default are set when the face loads, so they follow a new language after the face reloads (e.g. after editing it).
+- **Digits:** Arabic-Indic by default in Arabic, Latin in the other languages; the Digits Edit slot overrides either.
+
+![Settings menu in English](../docs/watchface/menu-en.png)
 
 **Always-on display:** a separate `ONLY_AOD` layer shows the Hijri date, the time, the Gregorian date line and the next-prayer line in dim grey with no fills (few lit pixels). It's updated by the same refresh as the normal layer.
 
@@ -96,11 +107,11 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 
 ## Font
 
-Arabic text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subset of SIL's [Scheherazade New](https://software.sil.org/scheherazade/) 4.500 Medium. The clock and times stay in the system font, and `arabicFont: null` in `config.js` switches everything back to it.
+In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subset of SIL's [Scheherazade New](https://software.sil.org/scheherazade/) 4.500 Medium. The clock and times stay in the system font, and `arabicFont: null` in `config.js` switches everything back to it.
 - **Digits:** the font's digits (Latin and Arabic-Indic) and the punctuation around them (`/ : . % ° ٪`) come from [Noto Sans / Noto Sans Arabic](https://fonts.google.com/noto) Medium (OFL 1.1). Every number on the face is then sans, matching the system-font clock and times, instead of mixing in Scheherazade's serif numerals.
 - **Presentation forms:** Zepp OS shapes Arabic by converting letters to Arabic Presentation Forms-B code points. Scheherazade has none of these, so `tools/gen-font.py` adds them, built with HarfBuzz from the font's own shaping. Lam-alef and similar forms are composite glyphs.
 - **License:** Scheherazade New is under the SIL Open Font License 1.1. A subset counts as a Modified Version and "Scheherazade" / "SIL" are Reserved Font Names, so the subset is renamed. SIL's copyright and license records stay inside the font, and the license text is in `fonts/OFL.txt` (Noto's copyright is in `fonts/NOTICE`). Noto Sans is from google/fonts `ofl/notosans` and `ofl/notosansarabic`.
-- **Adding new Arabic text:** the subset only contains characters found in `watchface/` and `lib/`, so a new string can show missing glyphs. Regenerate it after adding one:
+- **Adding new Arabic text:** the subset only contains the Arabic-script characters found in `watchface/`, `lib/`, `lib/i18n/ar.js` and the city files, so a new string can show missing glyphs. Regenerate it after adding one:
   `mise run :gen` (or `:build`).
 
 ## City list
@@ -108,6 +119,7 @@ Arabic text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subset of
 `assets/bip-max/cities/` holds **4,997 cities in 241 countries** (161 KB): `index.json` (world regions → countries) plus one `<CC>.json` per country, either `{cities: [[name, lat, lon], …]}` or `{regions: [[region, [[name, lat, lon], …]], …]}`, with lat/lon in whole hundredths of a degree (~1 km, under 3 s of prayer time). The face menu reads them with `@zos/fs` only when you open the location screens, so they cost nothing at startup.
 - **Source:** [GeoNames](https://www.geonames.org/) `cities15000` (CC-BY 4.0). Arab League countries keep every city ≥ 15k people, other Muslim-majority countries ≥ 50k, the rest of the world ≥ 250k, plus every capital.
 - **Arabic names:** GeoNames `alternateNamesV2`, then the Arabic label of the place's Wikidata item (CC0) where GeoNames has none. Diacritics are dropped, and Persian letter forms are mapped to Arabic ones (ی→ي, ک→ك, ڤ→ف). A name is kept only if the font shapes every letter; otherwise the plain-ASCII English name is used. About 54% of cities, all countries and most governorates have Arabic names. The Maghreb has the most gaps (Morocco ~25%). Fixes go in `OVERRIDES` in `tools/gen-cities.py`.
+- **Other languages:** cities and regions show their plain-ASCII GeoNames name (stored only where it differs from the Arabic one), sorted on the watch. Country names come from [CLDR](https://cldr.unicode.org/) via Babel, one per language in `index.json`.
 - **Navigation:** countries with more than 15 cities get a governorate/state step. Lists are alphabetical, ignoring a leading "ال". Admin prefixes like "محافظة" are dropped.
 - **Regenerate:** `mise run :gen-cities` downloads ~210 MB from GeoNames (it changes daily, so this isn't part of `:build`). It queries Wikidata once for missing names (cached in `.cache/geonames/`), rewrites the files and regenerates the font. The output is committed.
 - **Reading on the watch:** `lib/city-data.js` tries `readFileSync('assets://…')` (API 3.0) first, then `openAssetsSync` + `readSync` with a small UTF-8 decoder (`lib/utf8.js`).
@@ -125,7 +137,8 @@ lib/countdown.js           ← countdown line: next prayer, iqama, progress, las
 lib/hijri.js               ← Hijri conversion (Umm al-Qura table + tabular fallback)
 lib/hijri-table.js         ← GENERATED month-length table, 1440–1500 AH
 lib/settings.js            ← face settings: defaults, sanitizing, steppers, iqama presets, precedence with edit slots
-lib/methods.js             ← method names for the menu and the automatic method by country
+lib/methods.js             ← method order for the menu and the automatic method by country
+lib/i18n/                  ← strings per language (ar.js is the reference), language choice, face lines (text.js)
 lib/store.js               ← JSON values in the face's LocalStorage
 lib/location.js            ← newest of the picked city and ../prayer-location-app's fix
 lib/app-ids.js             ← generated: the companion's appId, from the root mise.toml [env]
@@ -188,10 +201,11 @@ The Hijri dates match ICU `islamic-umalqura` on every day from 2018 to 2077. The
 - **Fine-tuning:** if a printed local calendar differs by a minute or two (Egypt's published times often add precaution minutes), use the `adjust` minutes.
 - **Arabic:** the firmware shapes Arabic itself (see Font). Names and times are in separate TEXT widgets, and mixed strings that don't start with an Arabic letter get a leading U+200F to avoid BiDi reordering. Putting U+200F before an Arabic letter makes the firmware draw the next letter in its final form, so `rtl()` skips those strings.
 - **Edit slots:** long-press the face → Edit. Four slots: **Digits** (Arabic or Latin; the slot is just the clock digits' box) and **Extras 1–3** (on the extras row).
-  - They use `WATCHFACE_EDIT_GROUP` with custom edit types (≥ 100000), and each slot sits on the element it changes. Its previews are that element rendered with the option applied, so the edit screen looks like the face. Labels are Arabic.
+  - They use `WATCHFACE_EDIT_GROUP` with custom edit types (≥ 100000), and each slot sits on the element it changes. Its previews are that element rendered with the option applied, so the edit screen looks like the face. Labels are in the face's language.
+  - The extras previews are the same for all three cells, so there's one set per direction (right to left with Arabic samples, left to right with no words: shared by six languages).
   - `tools/gen-edit-assets.py` generates the previews and `lib/edit-options.js`.
   - Every preview and frame is stored uncompressed on the watch (~w×h bytes), which is why calculation settings moved to the menu: their 6 slots were ~0.7 MB of previews of a sample day. Only the focused slot gets an outline; unfocused slots share one tiny transparent image. There's no dimming mask: it greyed out the previews.
-- **Location:** tap the date line → الموقع: region of the world → country → governorate/state (for countries with more than 15 cities) → city, paged with ▲/▼. The choice is saved in the face's own `LocalStorage` and shown after the date. "الموقع من التطبيق" clears it. For GPS, install `../prayer-location-app`, open it and tap "تحديث الموقع"; it publishes lat/lon with `ShareTypedStorage('prayer-location')`, which the face reads with `TypedStorage(LOCATION_APP_ID, 'prayer-location')` (API 3.0) each time it wakes. Whichever of the two was set last wins. Until either exists the face uses Cairo and shows "• القاهرة" next to the date. Both app IDs live in the root `mise.toml` `[env]` (`PRAYER_TIMES_APP_ID`, `PRAYER_LOCATION_APP_ID`); `mise run :gen` writes them into each `app.json` and the companion's into `lib/app-ids.js` (`scripts/app-ids.py`), since zeus can't pass environment variables to the watch code. `test/verify.mjs` checks the two agree.
+- **Location:** tap the date line → الموقع (Location): region of the world → country → governorate/state (for countries with more than 15 cities) → city, paged with ▲/▼. The choice is saved in the face's own `LocalStorage` and shown after the date. "الموقع من التطبيق" clears it. For GPS, install `../prayer-location-app`, open it and tap "تحديث الموقع"; it publishes lat/lon with `ShareTypedStorage('prayer-location')`, which the face reads with `TypedStorage(LOCATION_APP_ID, 'prayer-location')` (API 3.0) each time it wakes. Whichever of the two was set last wins. Until either exists the face uses Cairo and shows "• القاهرة" next to the date. Both app IDs live in the root `mise.toml` `[env]` (`PRAYER_TIMES_APP_ID`, `PRAYER_LOCATION_APP_ID`); `mise run :gen` writes them into each `app.json` and the companion's into `lib/app-ids.js` (`scripts/app-ids.py`), since zeus can't pass environment variables to the watch code. `test/verify.mjs` checks the two agree.
 - **Device notes:**
   - Per Zepp's device list, the Bip Max has **no SecondaryWidget/shortcut-card support**.
   - `zeus create` only offers API levels up to 4.0.

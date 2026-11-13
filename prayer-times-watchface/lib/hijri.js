@@ -1,11 +1,5 @@
 import { UQ_START_YEAR, UQ_START_EPOCH_DAY, UQ_MONTH_MASKS } from './hijri-table.js'
 
-export const HIJRI_MONTHS_AR = [
-  'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
-  'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة',
-]
-export const WEEKDAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-
 // Days since 1970-01-01 for a proleptic Gregorian date (month 1-12).
 export function epochDay(y, m, d) {
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000)

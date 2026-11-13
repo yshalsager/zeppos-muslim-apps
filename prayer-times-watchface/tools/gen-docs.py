@@ -2,7 +2,8 @@
 
 Writes ../docs/watchface/pages.png (the three pages + always-on display), countdown.png
 (countdown line states) and menu.png (settings menu screens, from tools/docs-menu.mjs, which runs
-the real menu code on stub @zos modules). They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
+the real menu code on stub @zos modules); pages-en.png and menu-en.png show the mirrored
+left-to-right layout in English. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
 """
 import json
 import subprocess
@@ -15,9 +16,12 @@ from PIL import Image, ImageDraw  # noqa: E402
 from render import (AOD, CLOCK, DIM, GEAR, GOLD, GREG, HIJRI, NEXT, NIGHT, ORANGE, RADIUS, RED, ROOT, TEAL,  # noqa: E402
                     WHITE, H, W, Canvas, grid_x, rounded)
 
+LANGS = {"ar": "", "en": "-en"}  # lib/i18n language → file suffix
+
 OUT = ROOT.parent / "docs" / "watchface"  # repo-level docs/, so zeus does not pack them into the .zab
 COLORS = {"teal": TEAL, "gold": GOLD, "orange": ORANGE, "night": NIGHT}
-SAMPLE_EXTRAS = [("weather", ("٢٤°", "غائم")), ("steps", "٦٢١٠"), ("battery", "٨٨٪")]
+SAMPLE_EXTRAS = {True: [("weather", ("٢٤°", "غائم")), ("steps", "٦٢١٠"), ("battery", "٨٨٪")],
+                 False: [("weather", ("24°", "Cloudy")), ("steps", "6210"), ("battery", "88%")]}
 BEZEL = (58, 58, 64, 255)
 
 
@@ -25,44 +29,44 @@ def header(c, d, time, next_text, next_color, bar=None):
     c.text(HIJRI[0], d["hijri"], HIJRI[1], GOLD)
     c.text(CLOCK[0], time, CLOCK[1], WHITE, system=True)
     c.text(GREG[0], d["greg"], GREG[1], DIM)
-    c.paste_icon("gear", *GEAR)
+    c.paste_icon("gear", *c.mx(GEAR)[:2])
     c.text(NEXT[0], next_text, NEXT[1], next_color)
     if bar is not None:
         c.bar(bar, next_color)
 
 
 def prayers(d, s):
-    c = Canvas()
+    c = Canvas(rtl=d["rtl"])
     color = COLORS[s["color"]]
     header(c, d, s["time"], s["next"], color, s["progress"])
     c.grid(s["cells"])
-    for slot, (kind, value) in enumerate(SAMPLE_EXTRAS):
+    for slot, (kind, value) in enumerate(SAMPLE_EXTRAS[d["rtl"]]):
         c.complication(slot, kind, value)
     return c
 
 
 def extras(d, s):  # page 2: same 3-column grid as watchface/index.js buildPages()
-    c = Canvas()
-    header(c, d, s["time"], "‏الليل والنوافل", DIM)
+    c = Canvas(rtl=d["rtl"])
+    header(c, d, s["time"], s["title"], DIM)
     for i, it in enumerate(s["items"]):
         x, y = grid_x(i % 3), 294 + (i // 3) * 70
-        c.text((x, y, 132, 28), it["name"], 19, GOLD if it["on"] else DIM)
-        c.text((x, y + 26, 132, 38), it["time"], 30, GOLD if it["on"] else WHITE, system=True)
+        c.text(c.mx((x, y, 132, 28)), it["name"], 19, GOLD if it["on"] else DIM)
+        c.text(c.mx((x, y + 26, 132, 38)), it["time"], 30, GOLD if it["on"] else WHITE, system=True)
     return c
 
 
-def makruh(d, s):  # page 3: label on the right, range on the left
-    c = Canvas()
-    header(c, d, s["time"], "‏أوقات النهي", RED)
+def makruh(d, s):  # page 3: label first in reading order, then the range
+    c = Canvas(rtl=d["rtl"])
+    header(c, d, s["time"], s["title"], RED)
     for i, r in enumerate(s["rows"]):
         y = 296 + i * 42
-        c.text((236, y, 176, 40), r["label"], 26, RED if r["on"] else DIM)
-        c.text((20, y, 216, 40), r["range"], 28, RED if r["on"] else WHITE)
+        c.text(c.mx((236, y, 176, 40)), r["label"], 26, RED if r["on"] else DIM)
+        c.text(c.mx((20, y, 216, 40)), r["range"], 28, RED if r["on"] else WHITE)
     return c
 
 
 def aod(d, s):  # watchface/index.js buildAod(): dim text only
-    c = Canvas()
+    c = Canvas(rtl=d["rtl"])
     c.text((16, 84, W - 32, 44), d["hijri"], 30, AOD)
     c.text((0, 130, W, 120), s["time"], 112, AOD, system=True)
     c.text((16, 248, W - 32, 36), d["greg"], 26, AOD)
@@ -84,9 +88,9 @@ def face(c, crop=None):
     return out
 
 
-def menu(widgets):
+def menu(widgets, rtl):
     """A settings-menu screen from the widgets tools/docs-menu.mjs recorded."""
-    c = Canvas()
+    c = Canvas(rtl=rtl)
     for w in widgets:
         if w["type"] == "IMG":
             c.paste_image(ROOT / "assets" / "bip-max" / w["src"], w["x"], w["y"])
@@ -110,20 +114,25 @@ def row(images, gap=28):
 
 
 def main():
-    d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs")], cwd=ROOT))
-    s = d["scenes"]
     OUT.mkdir(parents=True, exist_ok=True)
-    pages = row([face(prayers(d, s["prayers"])), face(extras(d, s["extras"])),
-                 face(makruh(d, s["makruh"])), face(aod(d, s["aod"]))])
-    pages.save(OUT / "pages.png", optimize=True)
-    # countdown states: top part of the face (date, clock, countdown line, progress bar)
-    top = (0, 0, W + 12, 300)
-    states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
-    states.save(OUT / "countdown.png", optimize=True)
-    screens = json.loads(subprocess.check_output(
-        ["node", "--import", "./tools/zos-stub/register.mjs", str(ROOT / "tools" / "docs-menu.mjs")], cwd=ROOT))
-    row([face(menu(screens[k])) for k in ("root", "method", "value", "index")]).save(OUT / "menu.png", optimize=True)
-    for f in ("pages.png", "countdown.png", "menu.png"):
+    written = []
+    for lang, suffix in LANGS.items():
+        d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs"), lang], cwd=ROOT))
+        s = d["scenes"]
+        pages = row([face(prayers(d, s["prayers"])), face(extras(d, s["extras"])),
+                     face(makruh(d, s["makruh"])), face(aod(d, s["aod"]))])
+        pages.save(OUT / f"pages{suffix}.png", optimize=True)
+        screens = json.loads(subprocess.check_output(
+            ["node", "--import", "./tools/zos-stub/register.mjs", str(ROOT / "tools" / "docs-menu.mjs"), lang], cwd=ROOT))
+        row([face(menu(screens[k], d["rtl"])) for k in ("root", "method", "value", "index")]).save(OUT / f"menu{suffix}.png", optimize=True)
+        written += [f"pages{suffix}.png", f"menu{suffix}.png"]
+        if lang == "ar":
+            # countdown states: top part of the face (date, clock, countdown line, progress bar)
+            top = (0, 0, W + 12, 300)
+            states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
+            states.save(OUT / "countdown.png", optimize=True)
+            written.append("countdown.png")
+    for f in written:
         im = Image.open(OUT / f)
         print(f"wrote docs/watchface/{f} {im.size} {(OUT / f).stat().st_size // 1024} KB")
 

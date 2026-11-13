@@ -4,7 +4,9 @@ import { prayerMinutes, dayEvents, nightPortions, METHODS, PRAYER_ORDER } from '
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
 import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
-import { METHOD_LIST, autoMethod } from '../lib/methods.js'
+import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
+import { LANGS, LANG_CODES, resolveLang } from '../lib/i18n/index.js'
+import { EDIT_GROUPS } from '../lib/edit-options.js'
 import { CONFIG } from '../config.js'
 import { utf8 } from '../lib/utf8.js'
 import { readFileSync, existsSync } from 'node:fs'
@@ -168,7 +170,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   check(a === 14.6, 'angle fine steps', a)
   check(stepAngle(LIMITS.angle[0], -0.1) === 0 && stepAngle(19.5, 1) === LIMITS.angle[1], 'angle limits')
   check(stepInt(30, 1, LIMITS.adjust) === 30 && stepInt(0, -1, LIMITS.iqama) === 0, 'int limits')
-  check(iqamaPreset(IQAMA_PRESETS[2][1]) === 2 && iqamaPreset([1, 2, 3, 4, 5]) === -1, 'iqama presets')
+  check(iqamaPreset(IQAMA_PRESETS[2]) === 2 && iqamaPreset([1, 2, 3, 4, 5]) === -1, 'iqama presets')
   // method: automatic by country (unknown → MWL), or the chosen one; Edit slots only set looks
   const env = { cc: 'SA', system24h: true }
   const e = effectiveSettings(CONFIG, { ...s, method: 'auto', clock: 'system' }, { arabicDigits: false }, env)
@@ -178,10 +180,11 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   check(autoMethod('EG') === 'egypt' && autoMethod('PK') === 'karachi' && autoMethod('TR') === 'turkey' &&
     autoMethod('US') === 'isna' && autoMethod('DE') === 'mwl' && autoMethod(undefined) === 'mwl', 'auto method')
   // the menu's method list and the auto table only name methods lib/prayer.js knows
-  const keys = METHOD_LIST.map(([k]) => k)
+  const keys = METHOD_KEYS
   check(keys.length === Object.keys(METHODS).length && keys.every((k) => METHODS[k]), 'method list', keys)
   const ccs = JSON.parse(readFileSync(new URL('../assets/bip-max/cities/index.json', import.meta.url), 'utf8'))
     .groups.flatMap(([, cs]) => cs.map(([cc]) => cc))
+  check(sanitizeSettings({ language: 'fr' }, CONFIG).language === 'fr' && sanitizeSettings({ language: 'xx' }, CONFIG).language === CONFIG.language, 'settings language')
   check(ccs.every((cc) => METHODS[autoMethod(cc)]), 'auto method for every country')
   console.log('settings: sanitize, steppers, presets, automatic method and 12/24h')
 }
@@ -193,24 +196,29 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   const sample = 'مكة المكرمة · Zürich · 😀'
   check(utf8(new TextEncoder().encode(sample)) === sample, 'utf8 decode')
   const index = JSON.parse(readFileSync(new URL('index.json', dir), 'utf8'))
+  // Arabic names: letters the font shapes, or ASCII; Latin names: ASCII
   const NAME = /^([\u0621-\u063a\u0641-\u064a ()\-]+|[\x20-\x7e]+)$/
+  const LATIN = /^[\x20-\x7e]+$/
+  check(JSON.stringify(index.langs) === JSON.stringify(LANG_CODES), 'city index languages = lib/i18n', index.langs)
   let n = 0, files = 0
   const all = new Map()
   for (const [group, countries] of index.groups) {
-    check(NAME.test(group) && countries.length > 0, 'city group', group)
-    for (const [cc, name] of countries) {
+    check(LANGS.ar.menu.groups[group] && countries.length > 0, 'city group', group)
+    for (const [cc, name, ...names] of countries) {
       check(NAME.test(name), 'country name', cc, name)
+      check(names.length === LANG_CODES.length - 1 && names.every((x) => typeof x === 'string' && x), 'country names', cc, names)
       const f = new URL(`${cc}.json`, dir)
       if (!existsSync(f)) { check(false, 'country file missing', cc); continue }
       const data = JSON.parse(readFileSync(f, 'utf8'))
       files++
       check(Array.isArray(data.cities) !== Array.isArray(data.regions), 'cities xor regions', cc)
-      const lists = data.cities ? [data.cities] : data.regions.map(([r, cs]) => {
-        check(NAME.test(r) && cs.length > 0, 'region', cc, r)
+      const lists = data.cities ? [data.cities] : data.regions.map(([r, cs, latin]) => {
+        check(NAME.test(r) && cs.length > 0 && (latin === undefined || LATIN.test(latin)), 'region', cc, r, latin)
         return cs
       })
-      for (const [city, lat100, lon100] of lists.flat()) {
+      for (const [city, lat100, lon100, latin] of lists.flat()) {
         n++
+        check(latin === undefined || (LATIN.test(latin) && latin !== city), 'city latin name', cc, city, latin)
         const lat = lat100 / 100, lon = lon100 / 100
         all.set(`${cc}:${city}`, [lat, lon])
         check(NAME.test(city), 'city name', cc, city)
@@ -222,6 +230,32 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   const near = (key, lat, lon) => { const p = all.get(key); return p && Math.abs(p[0] - lat) < 0.2 && Math.abs(p[1] - lon) < 0.2 }
   check(near('EG:القاهرة', 30.04, 31.24) && near('SA:مكة المكرمة', 21.42, 39.83) && near('SA:المدينة المنورة', 24.47, 39.61), 'key cities', [...all.keys()].filter((k) => /^SA:م/.test(k)))
   console.log(`cities: ${n} in ${files} country files, names/coords/regions valid`)
+}
+
+// Languages: every one has ar.js's keys with the same shapes (array lengths, function or not),
+// every method / edit label / group is named, and 'auto' maps the watch's language.
+{
+  const shape = (v) => (Array.isArray(v) ? `array${v.length}` : typeof v === 'object' ? 'object' : typeof v)
+  const compare = (ref, other, path) => {
+    for (const k of Object.keys(ref)) {
+      check(k in other && shape(ref[k]) === shape(other[k]), 'i18n key', path + k, shape(other[k]))
+      if (k in other && shape(ref[k]) === 'object') compare(ref[k], other[k], path + k + '.')
+      if (k in other && Array.isArray(ref[k])) other[k].forEach((x, i) => check(typeof x === 'string', 'i18n entry', path + k, i))
+    }
+    for (const k of Object.keys(other)) check(k in ref, 'i18n extra key', path + k)
+  }
+  for (const code of LANG_CODES) {
+    const T = LANGS[code]
+    compare(LANGS.ar, T, code + ':')
+    check(METHOD_KEYS.every((k) => T.methods[k]), 'i18n methods', code)
+    check(EDIT_GROUPS.every((g) => g.options.every((o) => T.edit[o.label])), 'i18n edit labels', code)
+    check(T.menu.presets.length === IQAMA_PRESETS.length, 'i18n iqama presets', code)
+    check(typeof T.nextIn('a', 'b') === 'string' && T.minutes('5').includes('5'), 'i18n functions', code)
+    check(T.rtl === (code === 'ar'), 'i18n direction', code)
+  }
+  check(resolveLang('auto', 13) === 'ar' && resolveLang('auto', 17) === 'tr' && resolveLang('auto', 0) === 'en' &&
+    resolveLang('auto', undefined) === 'en' && resolveLang('fr', 13) === 'fr', 'language resolution')
+  console.log(`i18n: ${LANG_CODES.join(', ')} have every key of ar.js`)
 }
 
 // The face reads the companion's shared location by its appId; a mismatch fails silently on the watch.

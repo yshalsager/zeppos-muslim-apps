@@ -1,21 +1,26 @@
 // Prints face scenes as JSON for tools/gen-docs.py (README screenshots). Mirrors the text and
 // colour logic of watchface/index.js refresh() for a fixed day in Cairo, default settings plus
-// the "standard" iqama preset and an extra Fajr at 14.6°.
-import { dayEvents, nightPortions, PRAYER_ORDER, PRAYER_NAMES_AR } from '../lib/prayer.js'
-import { hijriFromEpochDay, epochDay, HIJRI_MONTHS_AR, WEEKDAYS_AR } from '../lib/hijri.js'
+// the "standard" iqama preset and an extra Fajr at 14.6°. Run: node tools/docs-data.mjs [lang]
+// (lib/i18n code, default ar; Latin digits for the other languages, as the face defaults to).
+import { dayEvents, nightPortions, PRAYER_ORDER } from '../lib/prayer.js'
+import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown } from '../lib/countdown.js'
 import { CONFIG } from '../config.js'
+import {
+  strings, hijriLine, gregLine, nextLine, extraItems, rangeLine, prayerName, line, MAKRUH_KEYS,
+} from '../lib/i18n/text.js'
 
+const lang = process.argv[2] || 'ar'
+const T = strings(lang)
 const [y, m, d, tz] = [2026, 11, 12, 2]
 const IQAMA = [20, 15, 15, 10, 15] // "standard" preset: fajr, dhuhr, asr, maghrib, isha
 const IQAMA_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 const EXTRA_FAJR = 14.6
 const AR = '٠١٢٣٤٥٦٧٨٩'
-const ar = (s) => String(s).replace(/\d/g, (c) => AR[c])
+const digits = T.rtl ? (s) => String(s).replace(/\d/g, (c) => AR[c]) : (s) => String(s)
 const pad = (n) => String(n).padStart(2, '0')
 const clock = (v) => { const x = ((v % 1440) + 1440) % 1440; return `${Math.floor(x / 60) % 12 || 12}:${pad(x % 60)}` }
-const RLM = '‏'
-const rtl = (s) => (/^[ء-يٱ-ۓ]/.test(s) ? s : RLM + s)
+const time = (v) => digits(clock(v))
 
 const opts = { lat: CONFIG.lat, lon: CONFIG.lon, tz, method: 'egypt', asrFactor: 1, adjust: CONFIG.adjust, sunriseWindowMin: CONFIG.sunriseWindowMin, extraFajrAngle: EXTRA_FAJR }
 const ed = epochDay(y, m, d)
@@ -23,47 +28,41 @@ const ev = (dd) => dayEvents(y, m, dd, opts)
 const t = ev(d), yd = ev(d - 1), tm = ev(d + 1)
 const ctx = { yesterdayIsha: yd.isha - 1440, yesterdayMaghrib: yd.maghrib - 1440, tomorrowFajr: tm.fajr + 1440 }
 const iqama = (k) => IQAMA[IQAMA_PRAYERS.indexOf(k)] || 0
+const isFriday = false
 
 const COLORS = { teal: 'teal', gold: 'gold', orange: 'orange', night: 'night' }
-const h = hijriFromEpochDay(ed, 0)
-const hijri = rtl(`${ar(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]} ${ar(h.year)} هـ`)
-const greg = rtl(`${WEEKDAYS_AR[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]}  ${ar(d)}/${ar(m)}/${ar(y)}`)
+const hijri = hijriLine(T, hijriFromEpochDay(ed, 0), digits)
+const greg = gregLine(T, { weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), d, m, y }, digits)
 
 function prayersPage(nowMin) {
   const cd = countdown(t, nowMin, { ...ctx, iqama })
-  const fmtLeft = (left) => (left >= 60 ? `${Math.floor(left / 60)}:${pad(left % 60)}` : `${left} د`)
-  const left = ar(fmtLeft(cd.left))
-  let next = rtl(cd.iqama ? `إقامة ${PRAYER_NAMES_AR[cd.next]} بعد ${left}` : `${PRAYER_NAMES_AR[cd.next]} بعد ${left}`)
-  if (cd.lastThird && !cd.urgent) next = `الثلث الأخير  •  ${next}`
   const color = cd.iqama ? COLORS.gold : cd.urgent ? COLORS.orange : cd.lastThird ? COLORS.night : COLORS.teal
-  const cells = PRAYER_ORDER.map((k) => ({ name: PRAYER_NAMES_AR[k], time: ar(clock(t[k])), on: k === cd.next }))
-  return { time: ar(clock(nowMin)), next, color, progress: cd.frac, cells }
+  const cells = PRAYER_ORDER.map((k) => ({ name: prayerName(T, k, isFriday), time: time(t[k]), on: k === cd.next }))
+  return { time: time(nowMin), next: nextLine(T, cd, isFriday, digits), color, progress: cd.frac, cells }
 }
 
 function extrasPage(nowMin) {
   const night = nowMin < t.fajr ? nightPortions(ctx.yesterdayMaghrib, t.fajr) : nightPortions(t.maghrib, ctx.tomorrowFajr)
-  const items = [['الثلث الأول', night.firstThird], ['منتصف الليل', night.midpoint], ['الثلث الأخير', night.lastThird],
-    ['السدس الأخير', night.lastSixth], ['الضحى', t.duha]]
-  if (!isNaN(t.extraFajr)) items.push([`الفجر (${ar(EXTRA_FAJR)}°)`, t.extraFajr])
+  const items = extraItems(T, night, t, null, { fajr: EXTRA_FAJR, isha: 0 }, digits)
   let upcoming = -1
   items.forEach(([, v], i) => { if (v > nowMin && (upcoming < 0 || v < items[upcoming][1])) upcoming = i })
-  return { time: ar(clock(nowMin)), items: items.map(([name, v], i) => ({ name, time: ar(clock(v)), on: i === upcoming })) }
+  return { time: time(nowMin), title: line(T, T.pageNight), items: items.map(([name, v], i) => ({ name, time: time(v), on: i === upcoming })) }
 }
 
 function makruhPage(nowMin) {
-  const rows = [['dawn', 'من الفجر'], ['sunrise', 'الشروق'], ['zawal', 'الاستواء'], ['afterAsr', 'بعد العصر'], ['sunset', 'الغروب']]
   return {
-    time: ar(clock(nowMin)),
-    rows: rows.map(([k, label]) => {
+    time: time(nowMin),
+    title: line(T, T.pageMakruh),
+    rows: MAKRUH_KEYS.map((k) => {
       const [a, b] = t.makruh[k]
-      return { label, range: rtl(`${ar(clock(a))} - ${ar(clock(b))}`), on: nowMin >= a && nowMin < b }
+      return { label: T.makruh[k], range: rangeLine(T, time(a), time(b)), on: nowMin >= a && nowMin < b }
     }),
   }
 }
 
 const at = (hh, mm) => hh * 60 + mm
 console.log(JSON.stringify({
-  hijri, greg,
+  rtl: T.rtl, hijri, greg,
   scenes: {
     prayers: prayersPage(at(10, 9)),
     urgent: prayersPage(t.dhuhr - 7),

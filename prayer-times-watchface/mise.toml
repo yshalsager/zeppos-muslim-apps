@@ -34,7 +34,7 @@ run = [
 description = "Rebuild the city list (assets/bip-max/cities) from GeoNames, then regenerate the font"
 run = [
   "tools/fetch-geonames.sh",
-  "python3 -I tools/gen-cities.py",
+  "uv run -q --no-project --no-build --with babel==2.17.0 python3 -I tools/gen-cities.py",
   "mise run :gen",
 ]
 

@@ -8,7 +8,7 @@ import { readJSON, writeJSON } from './store.js'
 import { LOCATION_APP_ID } from './app-ids.js' // generated from the root mise.toml's [env]
 
 export const LOCATION_SCOPE = 'prayer-location'
-const CITY_KEY = 'city' // { name, lat, lon, cc, updatedAt }
+const CITY_KEY = 'city' // { name, latin?, lat, lon, cc, updatedAt }
 
 const valid = (lat, lon) => typeof lat === 'number' && typeof lon === 'number' &&
   Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0)
@@ -40,17 +40,17 @@ function pickedCity() {
   return city
 }
 
-// Saves a city picked on the face (name null clears it); cc is its country code. Returns false if
-// storage failed.
-export function saveCity(name, lat, lon, cc) {
+// Saves a city picked on the face (name null clears it); cc is its country code, latin its name for
+// left-to-right languages when it differs (lib/city-data.js). Returns false if storage failed.
+export function saveCity(name, lat, lon, cc, latin) {
   if (name !== null && !valid(lat, lon)) return false
-  const c = name === null ? null : { name, lat, lon, cc, updatedAt: Date.now() }
+  const c = name === null ? null : { name, latin, lat, lon, cc, updatedAt: Date.now() }
   if (!writeJSON(CITY_KEY, c)) return false
   city = c && { ...c, source: 'city' }
   return true
 }
 
-// Returns { lat, lon, cc, updatedAt, source, name? } — updatedAt is 0 (source 'fallback') for the
+// Returns { lat, lon, cc, updatedAt, source, name?, latin? } — updatedAt is 0 (source 'fallback') for the
 // defaults. cc (for the automatic method) is the picked city's country; the companion's GPS fix has
 // none, so it keeps the last picked city's country, else the fallback's.
 export function readLocation(fallback) {

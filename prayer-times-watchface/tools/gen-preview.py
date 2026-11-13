@@ -19,7 +19,7 @@ def main():
     c.text(HIJRI[0], d["hijri"], HIJRI[1], GOLD)
     c.text(CLOCK[0], d["time"], CLOCK[1], WHITE, system=True)
     c.text(GREG[0], d["greg"], GREG[1], DIM)
-    c.paste_icon("gear", *GEAR)
+    c.paste_icon("gear", *GEAR[:2])
     c.text(NEXT[0], d["next"], NEXT[1], TEAL)
     c.bar(d["progress"], TEAL)
     c.grid(d["cells"])

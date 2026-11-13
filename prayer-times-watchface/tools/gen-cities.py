@@ -13,11 +13,14 @@ Diacritics are removed, and a name is only kept when every letter is one the fac
 (basic Arabic, U+0621–U+064A); otherwise the English GeoNames name. Countries with more than REGION_MIN cities get a region step
 (admin1, e.g. governorates). Lists are sorted alphabetically, ignoring a leading "ال".
 
-Files (compact, read by lib/city-data.js): index.json {groups: [[group, [[cc, country], ...]], ...]};
-<CC>.json is {cities: [[name, lat, lon], ...]} or, with regions, {regions: [[region, [[name, lat, lon], ...]], ...]}.
-lat/lon are whole hundredths of a degree (~1 km, under 3 s of prayer time).
+Other languages (lib/i18n) show the ASCII GeoNames name, stored as a 4th element of a city row (3rd of
+a region row) when it differs from the Arabic one; country names come from CLDR (Babel).
 
-Run: python3 -I tools/gen-cities.py (via mise).
+Files (compact, read by lib/city-data.js): index.json {langs: [...], groups: [[groupKey, [[cc, name per lang...], ...]], ...]};
+<CC>.json is {cities: [[name, lat, lon, latin?], ...]} or, with regions, {regions: [[region, [[name, lat, lon, latin?], ...], latin?], ...]}.
+lat/lon are whole hundredths of a degree (~1 km, under 3 s of prayer time). Group keys are lib/i18n menu.groups keys.
+
+Run: uv run --with babel python3 -I tools/gen-cities.py (via mise).
 """
 import io
 import json
@@ -30,6 +33,8 @@ import zipfile
 from collections import defaultdict
 from pathlib import Path
 
+from babel import Locale
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / ".cache" / "geonames"
 OUT = ROOT / "assets" / "bip-max" / "cities"
@@ -39,15 +44,11 @@ MUSLIM = set("AF AL AZ BA BD BF BN GM GN ID IR KG KZ ML MV MY NE NG PK SL SN TD 
 MIN_POP = (15_000, 50_000, 250_000)  # Arab, other Muslim-majority, rest
 SKIP_CODES = {"PPLX", "PPLH", "PPLQ", "PPLW", "PPLCH"}  # city sections, historical, abandoned
 REGION_MIN = 15
-GROUPS = [  # (name, test(cc, continent))
-    ("الدول العربية", lambda cc, ct: cc in ARAB),
-    ("آسيا", lambda cc, ct: ct == "AS"),
-    ("أفريقيا", lambda cc, ct: ct == "AF"),
-    ("أوروبا", lambda cc, ct: ct == "EU"),
-    ("أمريكا الشمالية", lambda cc, ct: ct == "NA"),
-    ("أمريكا الجنوبية", lambda cc, ct: ct == "SA"),
-    ("أوقيانوسيا", lambda cc, ct: ct == "OC"),
+GROUPS = [  # (lib/i18n menu.groups key, test(cc, continent))
+    ("arab", lambda cc, ct: cc in ARAB),
+    *((ct, (lambda c: lambda cc, ct: ct == c)(ct)) for ct in ("AS", "AF", "EU", "NA", "SA", "OC")),
 ]
+LANGS = ["ar", "en", "fr", "tr", "id", "ms", "ru"]  # lib/i18n/index.js LANG_CODES (test/verify.mjs checks)
 # Fixes for GeoNames Arabic names that are wrong or odd; key = geonameid.
 OVERRIDES = {
     "109223": "المدينة المنورة",  # GeoNames prefers the short "المدينة"
@@ -177,15 +178,19 @@ def main():
         del by_cc[cc]  # e.g. Antarctica: no menu group
     for cc, lst in by_cc.items():
         en, _, cgid = countries[cc]
-        country_names[cc] = ar(cgid, en)
-        row = lambda c: [c["name"], round(c["lat"] * 100), round(c["lon"] * 100)]  # noqa: E731
+        country_names[cc] = [ar(cgid, en)] + [Locale.parse(lang).territories.get(cc, en) for lang in LANGS[1:]]
+        with_latin = lambda r, en: r + [latin(en)] if latin(en) != r[0] else r  # noqa: E731
+        row = lambda c: with_latin([c["name"], round(c["lat"] * 100), round(c["lon"] * 100)], c["en"])  # noqa: E731
         by_name = lambda cs: [row(c) for c in sorted(cs, key=lambda c: sort_key(c["name"]))]  # noqa: E731
         if len(lst) > REGION_MIN and len({c["a1"] for c in lst}) > 1:
             # "محافظة الجيزة" → "الجيزة": GeoNames uses the admin prefix inconsistently, and it breaks the sort
-            names = {a: ADMIN_PREFIX.sub("", ar(admin1[a][1], admin1[a][0])) if a in admin1 else "أخرى"
+            names = {a: (ADMIN_PREFIX.sub("", ar(admin1[a][1], admin1[a][0])), admin1[a][0]) if a in admin1 else ("أخرى", "Other")
                      for a in {c["a1"] for c in lst}}
-            data = {"regions": [[r, by_name([c for c in lst if names[c["a1"]] == r])]
-                                for r in sorted(set(names.values()), key=sort_key)]}
+            regions = {}  # Arabic name → English name (the first one met, if two regions share it)
+            for a in sorted(names):
+                regions.setdefault(*names[a])
+            data = {"regions": [with_latin([r, by_name([c for c in lst if names[c["a1"]][0] == r])], regions[r])
+                                for r in sorted(regions, key=sort_key)]}
         else:
             data = {"cities": by_name(lst)}
         text = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
@@ -199,9 +204,10 @@ def main():
     for gname, test in GROUPS:
         ccs = [cc for cc in by_cc if test(cc, countries[cc][1]) and not any(t(cc, countries[cc][1]) for _, t in GROUPS[:GROUPS.index((gname, test))])]
         if ccs:
-            groups.append([gname, sorted(([cc, country_names[cc]] for cc in ccs), key=lambda x: sort_key(x[1]))])
-    index = {"source": "GeoNames (CC-BY 4.0) cities15000 + alternateNamesV2; Arabic gaps from Wikidata labels (CC0)",
-             "groups": groups}
+            groups.append([gname, sorted(([cc, *country_names[cc]] for cc in ccs), key=lambda x: sort_key(x[1]))])
+    index = {"source": "GeoNames (CC-BY 4.0) cities15000 + alternateNamesV2; Arabic gaps from Wikidata labels (CC0); "
+             "country names from CLDR (Unicode License)",
+             "langs": LANGS, "groups": groups}
     text = json.dumps(index, ensure_ascii=False, separators=(",", ":"))
     (OUT / "index.json").write_text(text, encoding="utf-8")
     stats["bytes"] += len(text.encode())

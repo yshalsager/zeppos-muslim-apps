@@ -38,13 +38,18 @@ from fontTools.varLib import instancer
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
 FAMILY = "Prayer Face Naskh"
-SOURCES = [*(ROOT / "watchface").glob("*.js"), *(ROOT / "lib").glob("*.js"), *(ROOT / "assets" / "bip-max" / "cities").glob("*.json")]
+# The font only draws Arabic text (watchface/index.js uses it when the language is Arabic), so other
+# languages' strings (lib/i18n/*.js, CLDR country names) are left out: only Arabic-script characters
+# and a little punctuation are taken from the sources.
+SOURCES = [*(ROOT / "watchface").glob("*.js"), *(ROOT / "lib").glob("*.js"), ROOT / "lib" / "i18n" / "ar.js",
+           *(ROOT / "assets" / "bip-max" / "cities").glob("*.json")]
+PUNCTUATION = set("°±–—•…−≤≥")
 
 
 def used_chars():
     chars = {chr(c) for c in range(0x20, 0x7F)}
     for f in SOURCES:
-        chars |= {ch for ch in f.read_text(encoding="utf-8") if ord(ch) > 0x7F}
+        chars |= {ch for ch in f.read_text(encoding="utf-8") if 0x600 <= ord(ch) <= 0x6FF or ch in PUNCTUATION}
     # Escapes like '‏' in the source are written as text; add the marks/digits we emit.
     chars |= set("٠١٢٣٤٥٦٧٨٩٪°،‏")
     return "".join(sorted(chars))

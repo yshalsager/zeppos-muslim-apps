@@ -3,13 +3,6 @@
 // watchface/index.js) because watchface JS can only read the daily forecast, not the live value.
 import { Battery, Step, HeartRate, Calorie } from '@zos/sensor'
 
-// Short Arabic labels for the weather condition index (Zepp weather docs, 0–28); '' = unknown.
-export const WEATHER_AR = [
-  'غائم', 'زخات', 'ثلج', 'مشمس', 'ملبد', 'رذاذ', 'ثلج', 'مطر', 'ثلج', 'ثلوج',
-  'أمطار', 'رمال', 'مطر وثلج', 'ضباب', 'شبورة', 'رعد', 'عاصفة', 'غبار', 'أمطار', 'برد',
-  'رعد وبرد', 'أمطار', 'غبار', 'رمال', 'عاصفة', '', 'غائم', 'زخات', 'صاف',
-]
-
 const FORECAST_TTL_MS = 30 * 60 * 1000
 let weather = null // sensor, created once
 let forecast = { at: 0, day: '', item: null }

@@ -6,7 +6,7 @@ Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridg
 
 | Project | |
 |---|---|
-| [Prayer-times watchface](prayer-times-watchface/README.md) | Hijri date, next prayer countdown, iqama, night and prohibited times |
+| [Prayer-times watchface](prayer-times-watchface/README.md) | Hijri date, next prayer countdown, iqama, night and prohibited times; Arabic, English, French, Turkish, Indonesian, Malay, Russian |
 | [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface |
 
 ## Build
@@ -23,4 +23,4 @@ Install a `.zab` by opening it with Gadgetbridge, or via the Zepp app's Develope
 
 ## License
 
-[GPL-3.0](LICENSE). Bundled: an Arabic font under SIL OFL 1.1 ([details](prayer-times-watchface/README.md#font)), [adhan-js](https://github.com/batoulapps/adhan-js) (MIT), and a city list from [GeoNames](https://www.geonames.org/) (CC-BY 4.0) with Arabic names from Wikidata (CC0).
+[GPL-3.0](LICENSE). Bundled: an Arabic font under SIL OFL 1.1 ([details](prayer-times-watchface/README.md#font)), [adhan-js](https://github.com/batoulapps/adhan-js) (MIT), and a city list from [GeoNames](https://www.geonames.org/) (CC-BY 4.0) with Arabic names from Wikidata (CC0) and country names from CLDR (Unicode License).

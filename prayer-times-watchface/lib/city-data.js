@@ -1,10 +1,12 @@
 // City list for the face menu, read on demand from asset files written by tools/gen-cities.py
 // (GeoNames, CC-BY 4.0). Nothing is loaded until the menu opens the location screens.
 //
-// assets/bip-max/cities/index.json: { groups: [[groupName, [[cc, countryName], ...]], ...] }
-// assets/bip-max/cities/<CC>.json:   { cities: [[name, lat, lon], ...] }
-//   or, for long lists, { regions: [[regionName, [[name, lat, lon], ...]], ...] }
-//   lat/lon are whole hundredths of a degree (smaller files).
+// assets/bip-max/cities/index.json: { langs: [lang, ...],
+//   groups: [[groupKey, [[cc, nameInLangs[0], nameInLangs[1], ...], ...]], ...] }
+//   groupKey names a lib/i18n menu.groups entry; country names come from CLDR (Arabic: GeoNames).
+// assets/bip-max/cities/<CC>.json:   { cities: [[name, lat, lon, latin?], ...] }
+//   or, for long lists, { regions: [[regionName, [[name, lat, lon, latin?], ...], latin?], ...] }
+//   name is Arabic, latin the ASCII name when it differs; lat/lon are whole hundredths of a degree.
 import { readFileSync, openAssetsSync, statAssetsSync, readSync, closeSync, O_RDONLY } from '@zos/fs'
 import { utf8 } from './utf8.js'
 
@@ -30,14 +32,18 @@ function readAsset(path) {
   return utf8(new Uint8Array(buf))
 }
 
-let index = null
+let index = { lang: null, groups: null } // groups with one language's country names
 let country = { cc: null, data: null } // last country read
 
-// → [[groupName, [[cc, countryName], ...]], ...] or null if the files can't be read.
-export function cityGroups() {
+// → [[groupKey, [[cc, countryName in lang], ...]], ...] (English names when the file lacks lang),
+// or null if the files can't be read. Only that language's names are kept in memory.
+export function cityGroups(lang) {
+  if (index.lang === lang) return index.groups
   try {
-    if (!index) index = JSON.parse(readAsset(DIR + 'index.json')).groups
-    return index
+    const { langs, groups } = JSON.parse(readAsset(DIR + 'index.json'))
+    const i = 1 + (langs.indexOf(lang) < 0 ? langs.indexOf('en') : langs.indexOf(lang))
+    index = { lang, groups: groups.map(([key, rows]) => [key, rows.map((row) => [row[0], row[i]])]) }
+    return index.groups
   } catch (e) {
     console.log('city index failed: ' + e)
     return null
@@ -55,3 +61,6 @@ export function countryCities(cc) {
     return null
   }
 }
+
+// A city (or region) row's name: Arabic for right-to-left, else the Latin name.
+export const cityName = (row, rtl) => (rtl ? row[0] : row[3] || row[0])

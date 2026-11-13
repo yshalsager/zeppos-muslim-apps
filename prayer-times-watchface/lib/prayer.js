@@ -30,10 +30,6 @@ export const METHODS = {
 }
 
 export const PRAYER_ORDER = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
-export const PRAYER_NAMES_AR = {
-  fajr: 'الفجر', sunrise: 'الشروق', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء',
-}
-export const JUMUAH_AR = 'الجمعة'
 
 // Prohibited-time presets (add-on: Prefs.apply_makruh_preset). Index = asrFactor.
 export const MAKRUH_PRESETS = {

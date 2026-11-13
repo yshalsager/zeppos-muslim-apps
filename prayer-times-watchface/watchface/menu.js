@@ -7,13 +7,15 @@
 // Value screen: a stepper item opens one big value with − / + (and optional fine steps).
 //
 // screen = { title: string | () => string, items: () => item[] }
-// item   = { label, value?: () => string, color?, tap?: () => screen | void,
+// item   = { label, value?: () => string, color?, plain?: true (label in the system font, e.g. a
+//            language's own name in another script), tap?: () => screen | void,
 //            dec?, inc?: () => void, fine?: { dec, inc, label }, title?: string | () => string }
 //   tap  → whole-row tap; returning a screen opens it (back returns here)
 //   dec/inc → the row opens a value screen (title: item.title or item.label)
+// Laid out for right-to-left; h.box() mirrors a rectangle for left-to-right languages.
 import ui from '@zos/ui'
 
-const { createWidget, widget, show_level, prop } = ui
+const { widget, show_level, prop } = ui
 const L = show_level.ONLY_NORMAL
 const ROWS = 4
 const TITLE = { y: 30, h: 50 }
@@ -23,7 +25,7 @@ const ROW_Y = 126
 const ROW_H = 68 // rows touch: every pixel between them is part of a row
 const DOWN_Y = ROW_Y + ROWS * ROW_H + 2
 const DOWN_H = 56 // ends at y 456: the bottom ~60 px are left to the system gesture
-// Rows with a value: label column on the right, value on the left.
+// Rows with a value: label column on the right, value on the left (mirrored for left-to-right).
 // Labels are centred in their box: the watch mirrors align.RIGHT for Arabic text.
 const VAL = { x: 16, w: 200 }
 const SIDE_X = VAL.x + VAL.w + 8
@@ -32,10 +34,10 @@ const BIG = { y: 150, h: 140, w: 124 }
 const FINE = { y: 304, h: 80, w: 192 }
 const PRESSED = 0x2a2a2a
 
-// h: { text, arText, tap(area, onTap, onPress), show, setText, setColor, digits, W, H,
-//      colors: { title, text, dim, accent } }
+// h: { create(type, opts), text, arText, tap(area, onTap, onPress), show, setText, setColor, digits,
+//      box(rect), rtl, W, H, colors: { title, text, dim, accent } }
 export function createMenu(h, onClose) {
-  const { text, arText, tap, show, setText, setColor, digits, W, H, colors } = h
+  const { create, text, arText, tap, show, setText, setColor, digits, box, rtl, W, H, colors } = h
   let stack = [] // [{ screen, offset }]
   let note = '' // one-off title message (e.g. "couldn't save")
 
@@ -44,15 +46,17 @@ export function createMenu(h, onClose) {
   const resolve = (t) => (typeof t === 'function' ? t() : t)
 
   const m = {
-    bg: createWidget(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: L }),
+    bg: create(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: L }),
     // one highlight, moved under whatever is being pressed
-    hl: createWidget(widget.FILL_RECT, { x: 0, y: 0, w: 8, h: 8, radius: 14, color: PRESSED, show_level: L }),
-    // title centred between equal margins; ▶ (back, in RTL) in the right one
+    hl: create(widget.FILL_RECT, { x: 0, y: 0, w: 8, h: 8, radius: 14, color: PRESSED, show_level: L }),
+    // title centred between equal margins; back arrow in the one where reading starts (▶ in RTL, ◀ in LTR)
     title: arText({ x: 48, y: TITLE.y, w: W - 96, h: TITLE.h, text_size: 28, color: colors.title }),
-    back: createWidget(widget.IMG, { x: W - 48, y: TITLE.y + 9, src: 'arrow-back.png', show_level: L }),
-    up: createWidget(widget.IMG, { x: (W - 32) / 2, y: UP_Y + 12, src: 'arrow-up.png', show_level: L }),
-    down: createWidget(widget.IMG, { x: (W - 32) / 2, y: DOWN_Y + 19, src: 'arrow-down.png', show_level: L }),
-    count: text({ x: W - 16 - 110, y: DOWN_Y, w: 110, h: DOWN_H, text_size: 22, color: colors.dim }),
+    back: create(widget.IMG, {
+      ...box({ x: W - 48, y: TITLE.y + 9, w: 18, h: 32 }), src: rtl ? 'arrow-back.png' : 'arrow-back-ltr.png', show_level: L,
+    }),
+    up: create(widget.IMG, { x: (W - 32) / 2, y: UP_Y + 12, src: 'arrow-up.png', show_level: L }),
+    down: create(widget.IMG, { x: (W - 32) / 2, y: DOWN_Y + 19, src: 'arrow-down.png', show_level: L }),
+    count: text({ ...box({ x: W - 16 - 110, y: DOWN_Y, w: 110, h: DOWN_H }), text_size: 22, color: colors.dim }),
     rows: [],
     // value screen
     caption: arText({ x: 16, y: UP_Y, w: W - 32, h: UP_H, text_size: 24, color: colors.dim }),
@@ -66,8 +70,9 @@ export function createMenu(h, onClose) {
     const y = ROW_Y + i * ROW_H
     m.rows.push({
       label: arText({ x: 16, y, w: W - 32, h: ROW_H, text_size: 30 }), // list rows: full width
-      side: arText({ x: SIDE_X, y, w: W - 16 - SIDE_X, h: ROW_H, text_size: 28 }), // rows with a value
-      value: arText({ x: VAL.x, y, w: VAL.w, h: ROW_H, text_size: 30 }),
+      plain: text({ x: 16, y, w: W - 32, h: ROW_H, text_size: 30 }), // the same, in the system font
+      side: arText({ ...box({ x: SIDE_X, y, w: W - 16 - SIDE_X, h: ROW_H }), text_size: 28 }), // rows with a value
+      value: arText({ ...box({ x: VAL.x, y, w: VAL.w, h: ROW_H }), text_size: 30 }),
     })
   }
 
@@ -88,7 +93,7 @@ export function createMenu(h, onClose) {
   m.fineMinusTap = button({ x: 16, y: FINE.y, w: FINE.w, h: FINE.h }, () => step((s) => s.fine.dec))
   m.finePlusTap = button({ x: W - 16 - FINE.w, y: FINE.y, w: FINE.w, h: FINE.h }, () => step((s) => s.fine.inc))
 
-  const rowWidgets = m.rows.flatMap((r) => [r.label, r.side, r.value, r.tap])
+  const rowWidgets = m.rows.flatMap((r) => [r.label, r.plain, r.side, r.value, r.tap])
   const listWidgets = [m.up, m.down, m.upTap, m.downTap, m.count, ...rowWidgets]
   const valueWidgets = [m.caption, m.value, m.minus, m.plus, m.minusTap, m.plusTap]
   const fineWidgets = [m.fineMinus, m.finePlus, m.fineMinusTap, m.finePlusTap]
@@ -117,11 +122,13 @@ export function createMenu(h, onClose) {
     m.rows.forEach((r, i) => {
       const it = list[offset + i]
       const hasValue = !!(it && it.value)
-      const label = hasValue ? r.side : r.label
+      const plain = !!(it && it.plain && !hasValue)
+      const label = hasValue ? r.side : plain ? r.plain : r.label
       setText(label, it ? it.label : '')
       setColor(label, (it && it.color) || colors.text)
       setText(r.value, hasValue ? it.value() : '')
-      show([r.label], !!it && !hasValue)
+      show([r.label], !!it && !hasValue && !plain)
+      show([r.plain], plain)
       show([r.side, r.value], hasValue)
       show([r.tap], !!(it && (it.tap || it.dec || it.inc)))
     })

@@ -1,6 +1,6 @@
 // Build-time defaults. On the watch:
 //  - tap the date line (face menu, lib/settings.js): location, method, Asr school, Hijri offset /
-//    day start, iqama, extra Fajr/Isha, sunrise window, adjustments, 12/24h. The values below are
+//    day start, iqama, extra Fajr/Isha, sunrise window, adjustments, 12/24h, language. The values below are
 //    only their defaults.
 //  - long-press the face → Edit: digits and the extras row (defaults in tools/gen-edit-assets.py)
 export const CONFIG = {
@@ -29,6 +29,9 @@ export const CONFIG = {
   adjust: { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 },
   // 'system' follows the watch's 12/24-hour setting; '12' or '24' overrides it
   clock: 'system',
+  // 'auto' follows the watch's language (English when the face doesn't have it), or one of
+  // lib/i18n/index.js LANGS: 'ar', 'en', 'fr', 'tr', 'id', 'ms', 'ru'
+  language: 'auto',
   // Font for Arabic text: the bundled Naskh subset of SIL's Scheherazade New (tools/gen-font.py),
   // or null for the watch's system font.
   arabicFont: 'fonts/naskh.ttf',

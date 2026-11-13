@@ -22,7 +22,7 @@ function createWidget(type, o = {}) {
 }
 const names = new Proxy({}, { get: (_, k) => k })
 export default {
-  createWidget, deleteWidget() {}, widget: names, prop: names, align: names, data_type: names, text_style: names,
+  createWidget, deleteWidget(w) { w.visible = false; w.deleted = true }, widget: names, prop: names, align: names, data_type: names, text_style: names,
   show_level: { ONLY_NORMAL: 1, ONLY_AOD: 2, ONLY_EDIT: 4 }, event: { CLICK_DOWN: 'down', CLICK_UP: 'up' },
 }
 
@@ -58,6 +58,7 @@ export class Calorie { getCurrent() { return 320 } }
 export const getScene = () => 1
 export const SCENE_AOD = 4
 export const getTimeFormat = () => 0
+export const getLanguage = () => 13 // ar-EG (lib/i18n/index.js)
 export const TIME_FORMAT_24 = 1
 export const launchApp = () => {}
 export const SYSTEM_APP_WEATHER = 1, SYSTEM_APP_STATUS = 2, SYSTEM_APP_HR = 3

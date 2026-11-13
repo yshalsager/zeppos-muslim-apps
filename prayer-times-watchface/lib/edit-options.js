@@ -10,19 +10,28 @@ export const EDIT_GROUPS = [
       96
     ],
     "tipsW": 220,
-    "defaultType": 110200,
+    "defaultType": {
+      "rtl": 110200,
+      "ltr": 110201
+    },
     "options": [
       {
         "type": 110200,
         "value": true,
-        "title": "أرقام عربية",
-        "preview": "edit/g1_opt0.png"
+        "label": "arabicDigits",
+        "preview": {
+          "rtl": "edit/g1_opt0.png",
+          "ltr": "edit/g1_opt0.png"
+        }
       },
       {
         "type": 110201,
         "value": false,
-        "title": "أرقام لاتينية",
-        "preview": "edit/g1_opt1.png"
+        "label": "latinDigits",
+        "preview": {
+          "rtl": "edit/g1_opt1.png",
+          "ltr": "edit/g1_opt1.png"
+        }
       }
     ],
     "select": "edit/frame_290x96_select.png",
@@ -38,43 +47,64 @@ export const EDIT_GROUPS = [
       52
     ],
     "tipsW": 220,
-    "defaultType": 111000,
+    "defaultType": {
+      "rtl": 111000,
+      "ltr": 111000
+    },
     "options": [
       {
         "type": 111000,
         "value": "weather",
-        "title": "الطقس",
-        "preview": "edit/g2_opt0.png"
+        "label": "weather",
+        "preview": {
+          "rtl": "edit/comp_weather_rtl.png",
+          "ltr": "edit/comp_weather_ltr.png"
+        }
       },
       {
         "type": 111001,
         "value": "steps",
-        "title": "الخطوات",
-        "preview": "edit/g2_opt1.png"
+        "label": "steps",
+        "preview": {
+          "rtl": "edit/comp_steps_rtl.png",
+          "ltr": "edit/comp_steps_ltr.png"
+        }
       },
       {
         "type": 111002,
         "value": "heart",
-        "title": "النبض",
-        "preview": "edit/g2_opt2.png"
+        "label": "heart",
+        "preview": {
+          "rtl": "edit/comp_heart_rtl.png",
+          "ltr": "edit/comp_heart_ltr.png"
+        }
       },
       {
         "type": 111003,
         "value": "battery",
-        "title": "البطارية",
-        "preview": "edit/g2_opt3.png"
+        "label": "battery",
+        "preview": {
+          "rtl": "edit/comp_battery_rtl.png",
+          "ltr": "edit/comp_battery_ltr.png"
+        }
       },
       {
         "type": 111004,
         "value": "flame",
-        "title": "السعرات",
-        "preview": "edit/g2_opt4.png"
+        "label": "flame",
+        "preview": {
+          "rtl": "edit/comp_flame_rtl.png",
+          "ltr": "edit/comp_flame_ltr.png"
+        }
       },
       {
         "type": 111005,
         "value": "none",
-        "title": "بدون",
-        "preview": "edit/g2_opt5.png"
+        "label": "none",
+        "preview": {
+          "rtl": "edit/comp_none_rtl.png",
+          "ltr": "edit/comp_none_ltr.png"
+        }
       }
     ],
     "select": "edit/frame_120x52_select.png",
@@ -90,43 +120,64 @@ export const EDIT_GROUPS = [
       52
     ],
     "tipsW": 220,
-    "defaultType": 111101,
+    "defaultType": {
+      "rtl": 111101,
+      "ltr": 111101
+    },
     "options": [
       {
         "type": 111100,
         "value": "weather",
-        "title": "الطقس",
-        "preview": "edit/g3_opt0.png"
+        "label": "weather",
+        "preview": {
+          "rtl": "edit/comp_weather_rtl.png",
+          "ltr": "edit/comp_weather_ltr.png"
+        }
       },
       {
         "type": 111101,
         "value": "steps",
-        "title": "الخطوات",
-        "preview": "edit/g3_opt1.png"
+        "label": "steps",
+        "preview": {
+          "rtl": "edit/comp_steps_rtl.png",
+          "ltr": "edit/comp_steps_ltr.png"
+        }
       },
       {
         "type": 111102,
         "value": "heart",
-        "title": "النبض",
-        "preview": "edit/g3_opt2.png"
+        "label": "heart",
+        "preview": {
+          "rtl": "edit/comp_heart_rtl.png",
+          "ltr": "edit/comp_heart_ltr.png"
+        }
       },
       {
         "type": 111103,
         "value": "battery",
-        "title": "البطارية",
-        "preview": "edit/g3_opt3.png"
+        "label": "battery",
+        "preview": {
+          "rtl": "edit/comp_battery_rtl.png",
+          "ltr": "edit/comp_battery_ltr.png"
+        }
       },
       {
         "type": 111104,
         "value": "flame",
-        "title": "السعرات",
-        "preview": "edit/g3_opt4.png"
+        "label": "flame",
+        "preview": {
+          "rtl": "edit/comp_flame_rtl.png",
+          "ltr": "edit/comp_flame_ltr.png"
+        }
       },
       {
         "type": 111105,
         "value": "none",
-        "title": "بدون",
-        "preview": "edit/g3_opt5.png"
+        "label": "none",
+        "preview": {
+          "rtl": "edit/comp_none_rtl.png",
+          "ltr": "edit/comp_none_ltr.png"
+        }
       }
     ],
     "select": "edit/frame_120x52_select.png",
@@ -142,43 +193,64 @@ export const EDIT_GROUPS = [
       52
     ],
     "tipsW": 220,
-    "defaultType": 111203,
+    "defaultType": {
+      "rtl": 111203,
+      "ltr": 111203
+    },
     "options": [
       {
         "type": 111200,
         "value": "weather",
-        "title": "الطقس",
-        "preview": "edit/g4_opt0.png"
+        "label": "weather",
+        "preview": {
+          "rtl": "edit/comp_weather_rtl.png",
+          "ltr": "edit/comp_weather_ltr.png"
+        }
       },
       {
         "type": 111201,
         "value": "steps",
-        "title": "الخطوات",
-        "preview": "edit/g4_opt1.png"
+        "label": "steps",
+        "preview": {
+          "rtl": "edit/comp_steps_rtl.png",
+          "ltr": "edit/comp_steps_ltr.png"
+        }
       },
       {
         "type": 111202,
         "value": "heart",
-        "title": "النبض",
-        "preview": "edit/g4_opt2.png"
+        "label": "heart",
+        "preview": {
+          "rtl": "edit/comp_heart_rtl.png",
+          "ltr": "edit/comp_heart_ltr.png"
+        }
       },
       {
         "type": 111203,
         "value": "battery",
-        "title": "البطارية",
-        "preview": "edit/g4_opt3.png"
+        "label": "battery",
+        "preview": {
+          "rtl": "edit/comp_battery_rtl.png",
+          "ltr": "edit/comp_battery_ltr.png"
+        }
       },
       {
         "type": 111204,
         "value": "flame",
-        "title": "السعرات",
-        "preview": "edit/g4_opt4.png"
+        "label": "flame",
+        "preview": {
+          "rtl": "edit/comp_flame_rtl.png",
+          "ltr": "edit/comp_flame_ltr.png"
+        }
       },
       {
         "type": 111205,
         "value": "none",
-        "title": "بدون",
-        "preview": "edit/g4_opt5.png"
+        "label": "none",
+        "preview": {
+          "rtl": "edit/comp_none_rtl.png",
+          "ltr": "edit/comp_none_ltr.png"
+        }
       }
     ],
     "select": "edit/frame_120x52_select.png",
