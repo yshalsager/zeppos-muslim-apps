@@ -5,8 +5,8 @@
 // Reader API for 2: TypedStorage(appId, scope) from @zos/share-storage (API_LEVEL 3.0, read-only, no has()).
 import { TypedStorage } from '@zos/share-storage'
 import { readJSON, writeJSON } from './store.js'
+import { LOCATION_APP_ID } from './app-ids.js' // generated from the root mise.toml's [env]
 
-export const LOCATION_APP_ID = 1136166 // appId of prayer-location-app — keep in sync
 export const LOCATION_SCOPE = 'prayer-location'
 const CITY_KEY = 'city' // { name, lat, lon, cc, updatedAt }
 

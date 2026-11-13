@@ -6,6 +6,12 @@ monorepo_root = true
 [monorepo]
 config_roots = ["prayer-times-watchface", "prayer-location-app"]
 
+# App IDs registered on the Zepp developer console. :gen writes them into each app.json, and the
+# companion's into the face's lib/app-ids.js (scripts/app-ids.py); zeus can't read env vars itself.
+[env]
+PRAYER_TIMES_APP_ID = "1136165"
+PRAYER_LOCATION_APP_ID = "1136166"
+
 [tools]
 node = "26"
 pnpm = "12"

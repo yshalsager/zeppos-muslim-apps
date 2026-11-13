@@ -17,9 +17,10 @@ description = "Install the JavaScript dependencies (adhan), used by the tests an
 run = "pnpm install --frozen-lockfile --silent"
 
 [tasks.gen]
-description = "Regenerate the Hijri table, font, edit previews, picker preview and README screenshots"
+description = "Write the app IDs, and regenerate the Hijri table, font, edit previews, picker preview and README screenshots"
 depends = [":deps"]
 run = [
+  "python3 -I ../scripts/app-ids.py prayer-times-watchface",
   "node tools/gen-hijri-table.mjs",
   "tools/fetch-fonts.sh",
   "{{vars.py_font}} tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
@@ -61,7 +62,7 @@ run = "zeus build"
 description = "Regenerate and check the committed assets, run the tests, and build a lean .zab (CI)"
 depends = [":gen", ":test"]
 run = [
-  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
+  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
   "zeus build",
   "zeus prune --ip",
 ]

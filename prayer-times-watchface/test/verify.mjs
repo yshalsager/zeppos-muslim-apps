@@ -225,12 +225,11 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
 }
 
 // The face reads the companion's shared location by its appId; a mismatch fails silently on the watch.
-// (lib/location.js imports watch-only modules, so its constant is read from the source.)
+// Both come from the root mise.toml's [env] via `mise run :gen` (scripts/app-ids.py).
 {
-  const src = readFileSync(new URL('../lib/location.js', import.meta.url), 'utf8')
-  const id = Number((src.match(/LOCATION_APP_ID = (\d+)/) || [])[1])
+  const { LOCATION_APP_ID: id } = await import('../lib/app-ids.js')
   const companion = JSON.parse(readFileSync(new URL('../../prayer-location-app/app.json', import.meta.url), 'utf8')).app.appId
-  check(id === companion, 'LOCATION_APP_ID matches prayer-location-app/app.json', id, companion)
+  check(id === companion, 'lib/app-ids.js LOCATION_APP_ID matches prayer-location-app/app.json (run mise run :gen)', id, companion)
   console.log(`location app id: ${id} matches the companion's app.json`)
 }
 
