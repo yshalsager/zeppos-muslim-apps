@@ -100,6 +100,7 @@ function eventsFor(ed, tz, opts) {
   return dayEvents(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate(), {
     lat: o.lat, lon: o.lon, tz, method: o.method, asrFactor: o.asrFactor, adjust: o.adjust,
     sunriseWindowMin: o.sunriseWindowMin, extraFajrAngle: o.extraFajrAngle, extraIshaAngle: o.extraIshaAngle,
+    highLatRule: o.highLatRule,
   })
 }
 
@@ -448,6 +449,7 @@ WatchFace({
         const e = eventsFor(state.ed, state.tz, { ...face, method: resolveMethod(face, state.cc) })
         return { fajr: fmtTime(e.fajr), asr: fmtTime(e.asr), isha: fmtTime(e.isha) }
       },
+      position: () => ({ lat: S.lat, lon: S.lon }),
       setCity: (name, lat, lon, cc, latin) => {
         if (!saveCity(name, lat, lon, cc, latin)) return menu.message(T.menu.cantSave)
         state.cacheKey = '' // location changed: recompute

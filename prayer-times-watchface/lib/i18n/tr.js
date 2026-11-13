@@ -55,6 +55,8 @@ export default {
     asr: 'İkindi',
     asrMajority: 'Cumhur',
     asrHanafi: 'Hanefi',
+    highLat: 'Yüksek enlemler',
+    highLatRules: { middle: 'Gece yarısı', seventh: 'Gecenin yedide biri', twilight: 'Alacakaranlık açısı' },
     extras: 'Ek vakitler',
     extraFajr: 'Ek imsak',
     extraIsha: 'Ek yatsı',

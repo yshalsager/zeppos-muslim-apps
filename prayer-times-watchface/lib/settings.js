@@ -3,12 +3,14 @@
 //
 // One home per setting:
 //  - face menu (tap the date line): everything the face calculates. Location, method, Asr school,
+//    high-latitude rule,
 //    Hijri offset / day start, iqama, extra Fajr/Isha, sunrise window, minute adjustments, 12/24h,
 //    and the language.
 //    Defaults come from config.js.
 //  - Edit slots (long-press → Edit): how it looks. Digits and the extras row.
 import { METHOD_KEYS, autoMethod } from './methods.js'
 import { LANG_CODES } from './i18n/index.js'
+import { HIGH_LAT_RULES } from './prayer.js'
 
 export const SETTINGS_KEY = 'settings'
 export const ADJUST_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
@@ -43,6 +45,7 @@ export function defaultSettings(config) {
   return {
     method: config.method,
     asrFactor: config.asrFactor,
+    highLatRule: config.highLatRule,
     hijriOffsetDays: config.hijriOffsetDays,
     hijriDayStartsAtMaghrib: config.hijriDayStartsAtMaghrib,
     iqama: [...config.iqama],
@@ -66,6 +69,7 @@ export function sanitizeSettings(stored, config) {
   return {
     method: oneOf(s.method, METHODS, oneOf(d.method, METHODS, 'auto')),
     asrFactor: oneOf(s.asrFactor, [1, 2], d.asrFactor === 2 ? 2 : 1),
+    highLatRule: oneOf(s.highLatRule, HIGH_LAT_RULES, oneOf(d.highLatRule, HIGH_LAT_RULES, 'auto')),
     hijriOffsetDays: clamp(int(s.hijriOffsetDays, d.hijriOffsetDays), LIMITS.hijriOffset),
     hijriDayStartsAtMaghrib: bool(s.hijriDayStartsAtMaghrib, d.hijriDayStartsAtMaghrib),
     iqama: d.iqama.map((def, i) => clamp(int(iq[i], def), LIMITS.iqama)),

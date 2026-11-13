@@ -57,6 +57,8 @@ export default {
     asr: 'العصر',
     asrMajority: 'الجمهور',
     asrHanafi: 'الحنفي',
+    highLat: 'خطوط العرض العليا',
+    highLatRules: { middle: 'منتصف الليل', seventh: 'سُبع الليل', twilight: 'زاوية الشفق' },
     extras: 'أوقات إضافية',
     extraFajr: 'فجر إضافي',
     extraIsha: 'عشاء إضافي',

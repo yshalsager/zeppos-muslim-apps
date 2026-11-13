@@ -31,6 +31,19 @@ export const METHODS = {
 
 export const PRAYER_ORDER = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
 
+// High-latitude rule: where the sun doesn't reach the Fajr/Isha angle (summer, far from the
+// equator), or reaches it unreasonably late, Fajr and Isha are capped at this portion of the night
+// from sunrise / sunset. 'auto' is adhan's recommendation, by distance from the equator: the
+// seventh above 48°, the middle below (where the seventh can already cap a normal Fajr, e.g. in
+// Cairo's short summer nights). Moonsighting Committee uses its own rule at 55° and above.
+export const HIGH_LAT_RULES = ['auto', 'middle', 'seventh', 'twilight']
+const HIGH_LAT = {
+  middle: HighLatitudeRule.MiddleOfTheNight,
+  seventh: HighLatitudeRule.SeventhOfTheNight,
+  twilight: HighLatitudeRule.TwilightAngle, // the angle / 60 of the night (18° → 0.3)
+}
+export const resolveHighLat = (rule, lat) => (HIGH_LAT[rule] ? rule : Math.abs(lat) > 48 ? 'seventh' : 'middle')
+
 // Prohibited-time presets (add-on: Prefs.apply_makruh_preset). Index = asrFactor.
 export const MAKRUH_PRESETS = {
   1: { angle: 5, zawalMinutes: 10 }, // Shafi'i
@@ -43,11 +56,12 @@ const NaNsafe = (v) => (typeof v === 'number' && isFinite(v) ? Math.round(v) : N
 /**
  * All times for one Gregorian date, as local minutes after midnight (NaN if the sun never
  * reaches the angle). opts: { lat, lon, tz (hours), method, asrFactor, adjust,
- *   sunriseWindowMin (10|15|20), extraFajrAngle?, extraIshaAngle? }
+ *   sunriseWindowMin (10|15|20), extraFajrAngle?, extraIshaAngle?, highLatRule? (HIGH_LAT_RULES, default 'auto') }
  */
 export function dayEvents(y, m, d, opts) {
   const params = (METHODS[opts.method] || METHODS.egypt)()
   params.madhab = opts.asrFactor === 2 ? Madhab.Hanafi : Madhab.Shafi
+  params.highLatitudeRule = HIGH_LAT[resolveHighLat(opts.highLatRule, opts.lat)]
   if (opts.adjust) params.adjustments = { ...params.adjustments, ...opts.adjust }
 
   const date = new Date(y, m - 1, d, 12) // noon: avoids DST-at-midnight edge cases

@@ -40,6 +40,10 @@ Screenshots are rendered from the face's own layout and prayer logic (`tools/gen
 
 The event definitions follow the Suntimes Prayer Times add-on (`AddonEvents.kt`, `DaysMonthBuilder.kt`).
 - **Asr school** (face menu → العصر): the majority (shadow ratio 1×, 10 minutes before noon) or Hanafi (2×, 5 minutes).
+- **High latitudes** (face menu → خطوط العرض العليا): far from the equator the sun can stay above 18° below the horizon all summer night, so the method's Fajr / Isha don't exist or come absurdly late. They're then capped at a portion of the night from sunrise / sunset:
+  - **automatic** (default): the seventh of the night above 48° (north or south), the middle below. A seventh at lower latitudes could cap a normal Fajr (Cairo's summer nights are short enough), so it isn't used there.
+  - **middle of the night**, **seventh of the night**, or **twilight angle** (the angle / 60 of the night, 0.3 for 18°).
+  - In London at midsummer these give Fajr over an hour apart. Moonsighting Committee applies its own rule at 55° and above.
 
 **Iqama:** between a prayer's adhan and its iqama, the countdown line turns gold and reads "إقامة العشاء بعد ٧ د" (iqama of Isha in 7 min). The prayer stays highlighted until the iqama.
 - **Minutes** are set per prayer in the face menu (الإقامة); 0 = no iqama countdown for that prayer. The "قالب" row fills them from a preset (Fajr, Dhuhr, Asr, Maghrib, Isha):
@@ -81,7 +85,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 - **Full refresh:** re-reads location, timezone and the watch's 12/24h setting, re-resolves the settings, and only recomputes events when the date, location, timezone, method or clock format has changed. Waking normally costs no prayer maths.
 
 **Settings:** `S = config.js defaults ← face settings ← Edit-slot values` (`lib/settings.js`), plus lat/lon from the city picked on the face or the location app (whichever was set last). Each setting has one home:
-- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30), 12/24h (follows the watch by default, `getTimeFormat()`) and the language. The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
+- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, high-latitude rule, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30), 12/24h (follows the watch by default, `getTimeFormat()`) and the language. The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
 - **Edit slots** (long-press → Edit): **how it looks.** Digits and the three extras cells. Changing a slot rebuilds the face.
 
 ![Settings menu: main list, method with today's Fajr and Isha, a value screen, and a location index](../docs/watchface/menu.png)
@@ -129,7 +133,7 @@ In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subse
 ```
 watchface/index.js         ← UI (normal + AOD + edit slots), lifecycle and refresh (see How it works)
 watchface/menu.js          ← face menu overlay (rows, steppers, paging, back)
-watchface/screens.js       ← face menu screens: location, adjustments, iqama, angles, 12/24h, sunrise window
+watchface/screens.js       ← face menu screens: location, high latitudes, adjustments, iqama, angles, 12/24h, sunrise window
 devices.json               ← the screens the face is built for (one app.json target each; see Devices)
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 

@@ -54,6 +54,8 @@ export default {
     asr: 'Asar',
     asrMajority: 'Jumhur',
     asrHanafi: 'Hanafi',
+    highLat: 'Latitud tinggi',
+    highLatRules: { middle: 'Tengah malam', seventh: 'Satu pertujuh malam', twilight: 'Sudut senja' },
     extras: 'Waktu tambahan',
     extraFajr: 'Subuh tambahan',
     extraIsha: 'Isyak tambahan',

@@ -54,6 +54,8 @@ export default {
     asr: 'Asr',
     asrMajority: 'Majorité',
     asrHanafi: 'Hanafite',
+    highLat: 'Hautes latitudes',
+    highLatRules: { middle: 'Milieu de la nuit', seventh: 'Septième de la nuit', twilight: 'Angle du crépuscule' },
     extras: 'Horaires en plus',
     extraFajr: 'Fajr en plus',
     extraIsha: 'Icha en plus',

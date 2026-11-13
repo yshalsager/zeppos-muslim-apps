@@ -1,5 +1,5 @@
 // Build-time defaults. On the watch:
-//  - tap the date line (face menu, lib/settings.js): location, method, Asr school, Hijri offset /
+//  - tap the date line (face menu, lib/settings.js): location, method, Asr school, high latitudes, Hijri offset /
 //    day start, iqama, extra Fajr/Isha, sunrise window, adjustments, 12/24h, language. The values below are
 //    only their defaults.
 //  - long-press the face → Edit: digits and the extras row (defaults in tools/gen-edit-assets.py)
@@ -10,6 +10,9 @@ export const CONFIG = {
   country: 'EG', // its country, for the automatic method
   // Calculation method: 'auto' (by the location's country, lib/methods.js) or a lib/prayer.js METHODS key
   method: 'auto',
+  // Far from the equator: how Fajr and Isha are capped when the sun stays near the horizon.
+  // 'auto' (seventh of the night above 48°, middle below), 'middle', 'seventh' or 'twilight' (lib/prayer.js)
+  highLatRule: 'auto',
   // Asr shadow: 1 = majority (Shafi'i, Maliki, Hanbali), 2 = Hanafi; also picks the prohibited-time preset
   asrFactor: 1,
   // Hijri date: days added to Umm al-Qura (-2…2), and whether the day starts at Maghrib

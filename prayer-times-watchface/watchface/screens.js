@@ -3,6 +3,7 @@
 // and applies the settings when the menu closes. Picking a city saves immediately.
 import { cityGroups, countryCities, cityName } from '../lib/city-data.js'
 import { METHOD_KEYS } from '../lib/methods.js'
+import { HIGH_LAT_RULES, resolveHighLat } from '../lib/prayer.js'
 import { LANGS, LANG_CODES } from '../lib/i18n/index.js'
 import {
   ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, iqamaPreset, stepAngle, stepInt,
@@ -12,8 +13,9 @@ const IQAMA_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 const next = (list, v) => list[(list.indexOf(v) + 1) % list.length]
 
 // ctx: { face, T (lib/i18n strings), lang, watchLang(), changed(), close(),
-//   setCity(name, lat, lon, cc, latin) / setCity(null), place(), message(s), digits(s), accent,
-//   autoMethod(), hijri(), times() } — the last three preview the settings being edited.
+//   setCity(name, lat, lon, cc, latin) / setCity(null), position() ({ lat, lon } in use), place(),
+//   message(s), digits(s), accent, autoMethod(), hijri(), times() } — the last three preview the
+//   settings being edited.
 export function rootScreen(ctx) {
   const { face, digits, T } = ctx
   const M = T.menu
@@ -70,17 +72,31 @@ export function rootScreen(ctx) {
     ])
   }
 
+  // Today's Fajr / Isha with the settings being edited: the title of the method and high-latitude lists
+  const prayerTimes = () => {
+    const t = ctx.times()
+    return `${T.prayers.fajr} ${t.fajr}  •  ${T.prayers.isha} ${t.isha}`
+  }
+
   // Method: picking one stays on the list, and the title shows today's Fajr / Isha with it.
   const methodName = () => T.methods[face.method === 'auto' ? ctx.autoMethod() : face.method]
   const method = {
-    title: () => {
-      const t = ctx.times()
-      return `${T.prayers.fajr} ${t.fajr}  •  ${T.prayers.isha} ${t.isha}`
-    },
+    title: () => prayerTimes(),
     items: () => [
       { label: M.auto, value: () => T.methods[ctx.autoMethod()], color: chosen(face.method === 'auto'), tap: set(() => { face.method = 'auto' }) },
       ...METHOD_KEYS.map((k) => ({ label: T.methods[k], color: chosen(face.method === k), tap: set(() => { face.method = k }) })),
     ],
+  }
+
+  // High latitudes: like the method, picking one stays on the list and the title shows today's
+  // Fajr / Isha with it. Names are too long for a row's value column, so "auto" names its rule in brackets.
+  const highLat = {
+    title: () => prayerTimes(),
+    items: () => HIGH_LAT_RULES.map((k) => ({
+      label: k === 'auto' ? `${M.auto} (${M.highLatRules[resolveHighLat('auto', ctx.position().lat)]})` : M.highLatRules[k],
+      color: chosen(face.highLatRule === k),
+      tap: set(() => { face.highLatRule = k }),
+    })),
   }
 
   // Language: picking one closes the menu, and the face is rebuilt in it (watchface/index.js).
@@ -193,6 +209,7 @@ export function rootScreen(ctx) {
         value: () => (face.asrFactor === 2 ? M.asrHanafi : M.asrMajority),
         tap: set(() => { face.asrFactor = face.asrFactor === 2 ? 1 : 2 }),
       },
+      { label: M.highLat, tap: () => highLat },
       { label: M.extras, tap: () => extras },
       { label: M.adjust, tap: () => adjust },
       { label: M.clock, value: () => CLOCK_NAMES[face.clock], tap: set(() => { face.clock = next(CLOCKS, face.clock) }) },

@@ -26,6 +26,7 @@ const screens = {}
 tap(...centre(M.dateTap)) // the date line opens the menu
 screens.root = shot()
 tap(...row(1)); screens.method = shot(); tap(...BACK)
-tap(...centre(M.menu.downTap)); tap(...row(1)); tap(...row(0)); screens.value = shot(); tap(...BACK); tap(...BACK); tap(...centre(M.menu.upTap))
+// page 2: Extra times → Extra Fajr (value screen), then back to the top for a city index
+tap(...centre(M.menu.downTap)); tap(...row(2)); tap(...row(0)); screens.value = shot(); tap(...BACK); tap(...BACK); tap(...centre(M.menu.upTap))
 tap(...row(0)); tap(...row(2)); screens.index = shot()
 console.log(JSON.stringify(screens))

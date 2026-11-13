@@ -54,6 +54,8 @@ export default {
     asr: 'Аср',
     asrMajority: 'Большинство',
     asrHanafi: 'Ханафи',
+    highLat: 'Высокие широты',
+    highLatRules: { middle: 'Середина ночи', seventh: 'Седьмая часть ночи', twilight: 'Угол сумерек' },
     extras: 'Доп. время',
     extraFajr: 'Доп. Фаджр',
     extraIsha: 'Доп. Иша',

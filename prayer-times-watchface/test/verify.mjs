@@ -1,6 +1,6 @@
 // Checks lib/ against independent references. Run: pnpm test  (try also TZ=Pacific/Auckland pnpm test)
-import { Coordinates, CalculationMethod, Madhab, PrayerTimes } from 'adhan'
-import { prayerMinutes, dayEvents, nightPortions, METHODS, PRAYER_ORDER } from '../lib/prayer.js'
+import { Coordinates, CalculationMethod, HighLatitudeRule, Madhab, PrayerTimes } from 'adhan'
+import { prayerMinutes, dayEvents, nightPortions, resolveHighLat, HIGH_LAT_RULES, METHODS, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
 import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
@@ -111,13 +111,44 @@ for (const [name, lat, lon] of cities) {
   const e = dayEvents(2026, 11, 12, { ...base, method: 'egypt', extraFajrAngle: 19.5 })
   check(isNaN(e.extraFajr), 'egypt 19.5° extra suppressed')
 }
+// High-latitude rule: London at midsummer, where the sun never reaches 18° below the horizon.
+// Each rule matches adhan given that rule directly; 'auto' is the seventh above 48° (either
+// hemisphere) and the middle below; in Cairo every rule but the seventh leaves the times alone.
+let highLatChecks = 0
+{
+  const tzMin = 60 // BST
+  const london = { lat: 51.5074, lon: -0.1278, tz: tzMin / 60, method: 'mwl', asrFactor: 1 }
+  const RULE = { middle: HighLatitudeRule.MiddleOfTheNight, seventh: HighLatitudeRule.SeventhOfTheNight, twilight: HighLatitudeRule.TwilightAngle }
+  const mins = (t) => Math.round((t.getTime() - Date.UTC(2026, 5, 21)) / 60000) + tzMin
+  const got = {}
+  for (const rule of HIGH_LAT_RULES) {
+    const e = dayEvents(2026, 6, 21, { ...london, highLatRule: rule })
+    const params = CalculationMethod.MuslimWorldLeague()
+    params.highLatitudeRule = RULE[resolveHighLat(rule, london.lat)]
+    const ref = new PrayerTimes(new Coordinates(london.lat, london.lon), new Date(2026, 5, 21, 12), params)
+    check(e.fajr === mins(ref.fajr) && e.isha === mins(ref.isha), 'high latitude vs adhan', rule, e.fajr, mins(ref.fajr), e.isha, mins(ref.isha))
+    got[rule] = e
+    highLatChecks++
+  }
+  check(got.auto.fajr === got.seventh.fajr && got.middle.fajr < got.seventh.fajr - 60, 'london rules differ', got.middle.fajr, got.seventh.fajr)
+  check(resolveHighLat('auto', -50) === 'seventh' && resolveHighLat('auto', 30) === 'middle' && resolveHighLat('twilight', 60) === 'twilight', 'auto rule by latitude')
+  const cairo = { lat: 30.0444, lon: 31.2357, tz: 2, method: 'egypt', asrFactor: 1 }
+  for (const d of [[2026, 6, 21], [2026, 12, 21]]) {
+    const a = dayEvents(...d, cairo)
+    for (const rule of ['auto', 'middle', 'twilight']) {
+      const b = dayEvents(...d, { ...cairo, highLatRule: rule })
+      check(a.fajr === b.fajr && a.isha === b.isha, 'cairo unaffected', rule, d)
+      highLatChecks++
+    }
+  }
+}
 const np = nightPortions(17 * 60 + 1, 24 * 60 + 4 * 60 + 49)
 check(np.firstThird === 20 * 60 + 57 && np.midpoint === 22 * 60 + 55 && np.lastThird === 24 * 60 + 53 && np.lastSixth === 26 * 60 + 51, 'night portions', np)
 for (const k of Object.keys(METHODS)) {
   const t = prayerMinutes(2026, 11, 12, { lat: 30.0444, lon: 31.2357, tz: 2, method: k, asrFactor: 1 })
   check(PRAYER_ORDER.every((p, i) => !isNaN(t[p]) && (i === 0 || t[p] > t[PRAYER_ORDER[i - 1]])), 'method order', k, t)
 }
-console.log(`events: ${angleChecks} sun-altitude checks within 0.3°, windows match add-on definitions, ${Object.keys(METHODS).length} methods ordered`)
+console.log(`events: ${angleChecks} sun-altitude checks within 0.3°, windows match add-on definitions, ${Object.keys(METHODS).length} methods ordered, ${highLatChecks} high-latitude checks`)
 
 const f = (v) => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`
 console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).join(', '))
@@ -189,6 +220,8 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
     .groups.flatMap(([, cs]) => cs.map(([cc]) => cc))
   check(sanitizeSettings({ language: 'fr' }, CONFIG).language === 'fr' && sanitizeSettings({ language: 'xx' }, CONFIG).language === CONFIG.language, 'settings language')
   check(ccs.every((cc) => METHODS[autoMethod(cc)]), 'auto method for every country')
+  check(sanitizeSettings({ highLatRule: 'seventh' }, CONFIG).highLatRule === 'seventh' &&
+    sanitizeSettings({ highLatRule: 'nope' }, CONFIG).highLatRule === CONFIG.highLatRule, 'settings high latitude')
   console.log('settings: sanitize, steppers, presets, automatic method and 12/24h')
 }
 
