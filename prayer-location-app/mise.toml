@@ -21,3 +21,9 @@ run = ["zeus build", "zeus prune --ip"]
 description = "Like :build, but keep zeus's source archive for a Zepp store submission"
 depends = [":gen"]
 run = "zeus build"
+
+# CI (.github/workflows): :build, and fail if the committed icon is out of date
+[tasks.ci]
+description = "Regenerate and check the icon, and build a lean .zab (CI)"
+depends = [":gen"]
+run = ["{{vars.py}} ../scripts/check-generated.py prayer-location-app/assets", "zeus build", "zeus prune --ip"]

@@ -1,0 +1,51 @@
+name: Release
+
+# Publish a GitHub release tagged <project>/vX.Y.Z (e.g. prayer-times-watchface/v1.0.0).
+# The tag's version must match version.name in that project's app.json. The lean .zab
+# (no source archive) is attached as <project>-vX.Y.Z.zab.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+
+jobs:
+  build:
+    name: Build and attach .zab
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload release assets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - id: tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          read -r project version <<< "$(python3 .github/scripts/projects.py tag "$TAG")"
+          app_version=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['app']['version']['name'])" "$project/app.json")
+          if [ "$app_version" != "$version" ]; then
+            echo "::error::tag version $version does not match $project/app.json version $app_version"
+            exit 1
+          fi
+          echo "project=$project" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - name: Generate, check, test and package
+        run: mise run "//${{ steps.tag.outputs.project }}:ci"
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+          PROJECT: ${{ steps.tag.outputs.project }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          zab=$(ls "$PROJECT"/dist/*.zab)
+          cp "$zab" "$PROJECT-v$VERSION.zab"
+          gh release upload "$TAG" "$PROJECT-v$VERSION.zab" --clobber --repo "$GITHUB_REPOSITORY"

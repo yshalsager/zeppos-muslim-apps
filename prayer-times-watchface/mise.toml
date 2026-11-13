@@ -54,3 +54,14 @@ run = ["zeus build", "zeus prune --ip"]
 description = "Like :build, but keep zeus's source archive in the .zab for a Zepp store submission"
 depends = [":gen", ":test"]
 run = "zeus build"
+
+# CI (.github/workflows): everything :build does, and fail if the committed generated files are out
+# of date (compared by pixels for PNGs, see scripts/check-generated.py).
+[tasks.ci]
+description = "Regenerate and check the committed assets, run the tests, and build a lean .zab (CI)"
+depends = [":gen", ":test"]
+run = [
+  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
+  "zeus build",
+  "zeus prune --ip",
+]

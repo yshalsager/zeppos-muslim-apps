@@ -154,9 +154,10 @@ mise run :build            # fonts + generated assets → tests → lean dist/*.
 mise run :build-store      # same, but keeps zeus's source archive (for a Zepp store submission)
 mise run :gen              # only regenerate (Hijri table, font, edit previews, picker icon)
 mise run :test             # only the math/countdown checks
+mise run :ci               # :build, plus a check that the committed generated files are current (CI)
 ```
 - The Python generators run under `uv` with pinned wheels, and need no system libraries or fonts. Arabic is shaped by HarfBuzz (`uharfbuzz`) and drawn by FreeType (`freetype-py`), with `tools/uax9.py` ordering the left-to-right and right-to-left runs (the Unicode bidi algorithm). Pillow's own Arabic support would need `libraqm`, which its macOS wheel lacks. Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in.
-- The images come out pixel-identical on macOS and Linux.
+- The images come out pixel-identical on macOS and Linux. `mise run :ci` (used by GitHub Actions) regenerates everything and fails if a committed output is out of date (`scripts/check-generated.py`), comparing PNGs by pixels since their compressed bytes differ between arm64 and x86_64.
 - The source fonts are downloaded to `.cache/fonts/` at pinned versions and verified by checksum.
 - **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source (~75% of its size) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
 
