@@ -6,16 +6,16 @@ import { METHOD_KEYS } from '../lib/methods.js'
 import { HIGH_LAT_RULES, resolveHighLat } from '../lib/prayer.js'
 import { LANGS, LANG_CODES } from '../lib/i18n/index.js'
 import {
-  ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, iqamaPreset, stepAngle, stepInt,
+  ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, iqamaPreset, stepAngle, stepCoord, stepInt,
 } from '../lib/settings.js'
 
 const IQAMA_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 const next = (list, v) => list[(list.indexOf(v) + 1) % list.length]
 
 // ctx: { face, T (lib/i18n strings), lang, watchLang(), changed(), close(),
-//   setCity(name, lat, lon, cc, latin) / setCity(null), position() ({ lat, lon } in use), place(),
-//   message(s), digits(s), accent, autoMethod(), hijri(), times() } — the last three preview the
-//   settings being edited.
+//   setCity(name, lat, lon, cc, latin) / setCity(null), setCoords(lat, lon), position() ({ lat, lon }
+//   in use), place(), message(s), digits(s), accent, autoMethod(), hijri(), times(opts?) } — the last
+//   three preview the settings being edited (times: with opts overriding them, e.g. { lat, lon }).
 export function rootScreen(ctx) {
   const { face, digits, T } = ctx
   const M = T.menu
@@ -60,6 +60,30 @@ export function rootScreen(ctx) {
       return { label: region, tap: () => list(region, sorted(r[1].map(pick))) }
     })))
   }
+  // Coordinates: start from the location in use, 1° on the big buttons and 0.1° underneath; the title
+  // shows today's Fajr / Isha there. Nothing is saved until "use these coordinates".
+  const prayerTimes = (opts) => {
+    const t = ctx.times(opts)
+    return `${T.prayers.fajr} ${t.fajr}  •  ${T.prayers.isha} ${t.isha}`
+  }
+  const deg = (v) => `${v < 0 ? '-' : ''}${digits(Math.abs(v).toFixed(1))}°`
+  const coords = () => {
+    const p = ctx.position()
+    const draft = { lat: Math.round(p.lat * 10) / 10, lon: Math.round(p.lon * 10) / 10 }
+    const preview = () => prayerTimes(draft)
+    const row = (label, key) => {
+      const by = (delta) => () => { draft[key] = stepCoord(draft[key], delta, key === 'lon') }
+      return { label, title: preview, value: () => deg(draft[key]), dec: by(-1), inc: by(1), fine: { label: digits('0.1'), dec: by(-0.1), inc: by(0.1) } }
+    }
+    return {
+      title: preview,
+      items: () => [
+        row(M.latitude, 'lat'),
+        row(M.longitude, 'lon'),
+        { label: M.useCoords, color: ctx.accent, tap: () => ctx.setCoords(draft.lat, draft.lon) },
+      ],
+    }
+  }
   const location = () => {
     const groups = cityGroups(ctx.lang)
     if (!groups) return unreadable()
@@ -69,13 +93,8 @@ export function rootScreen(ctx) {
         label: M.groups[key],
         tap: () => list(M.groups[key], sorted(countries.map(([cc, name]) => ({ label: name, tap: country(cc, name) })))),
       })),
+      { label: M.coords, tap: coords },
     ])
-  }
-
-  // Today's Fajr / Isha with the settings being edited: the title of the method and high-latitude lists
-  const prayerTimes = () => {
-    const t = ctx.times()
-    return `${T.prayers.fajr} ${t.fajr}  •  ${T.prayers.isha} ${t.isha}`
   }
 
   // Method: picking one stays on the list, and the title shows today's Fajr / Isha with it.

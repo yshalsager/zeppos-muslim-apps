@@ -1,5 +1,6 @@
 // Where the face's location comes from, newest first:
-//  1. a city picked on the face (settings menu → الموقع), kept in the face's own storage
+//  1. a city picked on the face (settings menu → الموقع), or coordinates typed in there, kept in the
+//     face's own storage
 //  2. the location published by the companion app (../prayer-location-app) via ShareTypedStorage
 //  3. the config.js fallback (Cairo)
 // Reader API for 2: TypedStorage(appId, scope) from @zos/share-storage (API_LEVEL 3.0, read-only, no has()).
@@ -8,7 +9,7 @@ import { readJSON, writeJSON } from './store.js'
 import { LOCATION_APP_ID } from './app-ids.js' // generated from the root mise.toml's [env]
 
 export const LOCATION_SCOPE = 'prayer-location'
-const CITY_KEY = 'city' // { name, latin?, lat, lon, cc, updatedAt }
+const CITY_KEY = 'city' // { name, latin?, lat, lon, cc, updatedAt } or { coords: true, lat, lon, cc, updatedAt }
 
 const valid = (lat, lon) => typeof lat === 'number' && typeof lon === 'number' &&
   Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0)
@@ -35,7 +36,7 @@ let city // undefined = not read yet, null = none
 function pickedCity() {
   if (city === undefined) {
     const c = readJSON(CITY_KEY, null)
-    city = c && valid(c.lat, c.lon) && c.updatedAt > 0 ? { ...c, source: 'city' } : null
+    city = c && valid(c.lat, c.lon) && c.updatedAt > 0 ? { ...c, source: c.coords ? 'coords' : 'city' } : null
   }
   return city
 }
@@ -50,7 +51,18 @@ export function saveCity(name, lat, lon, cc, latin) {
   return true
 }
 
-// Returns { lat, lon, cc, updatedAt, source, name?, latin? } — updatedAt is 0 (source 'fallback') for the
+// Saves coordinates typed in on the face, in place of a picked city. cc: the country to keep for the
+// automatic method (the location's before), since coordinates alone don't name one.
+export function saveCoords(lat, lon, cc) {
+  if (!valid(lat, lon)) return false
+  const c = { coords: true, lat, lon, cc, updatedAt: Date.now() }
+  if (!writeJSON(CITY_KEY, c)) return false
+  city = { ...c, source: 'coords' }
+  return true
+}
+
+// Returns { lat, lon, cc, updatedAt, source: 'city' | 'coords' | 'companion' | 'fallback', name?, latin? }
+// — updatedAt is 0 (source 'fallback') for the
 // defaults. cc (for the automatic method) is the picked city's country; the companion's GPS fix has
 // none, so it keeps the last picked city's country, else the fallback's.
 export function readLocation(fallback) {

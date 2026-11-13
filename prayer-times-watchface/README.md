@@ -84,15 +84,15 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 - **Wake:** a `WIDGET_DELEGATE` `resume_call` returns to page 1 and runs a full refresh. Timers don't fire while the screen is off, so this catches up the minutes and re-reads the location. The picked city is kept in memory.
 - **Full refresh:** re-reads location, timezone and the watch's 12/24h setting, re-resolves the settings, and only recomputes events when the date, location, timezone, method or clock format has changed. Waking normally costs no prayer maths.
 
-**Settings:** `S = config.js defaults ← face settings ← Edit-slot values` (`lib/settings.js`), plus lat/lon from the city picked on the face or the location app (whichever was set last). Each setting has one home:
-- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, high-latitude rule, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30), 12/24h (follows the watch by default, `getTimeFormat()`) and the language. The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
+**Settings:** `S = config.js defaults ← face settings ← Edit-slot values` (`lib/settings.js`), plus lat/lon from the city or coordinates picked on the face, or the location app (whichever was set last). Each setting has one home:
+- **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location (a city, or coordinates in 1° and 0.1° steps), method (automatic by country, or one of 13), Asr school, high-latitude rule, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30), 12/24h (follows the watch by default, `getTimeFormat()`) and the language. The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
 - **Edit slots** (long-press → Edit): **how it looks.** Digits and the three extras cells. Changing a slot rebuilds the face.
 
 ![Settings menu: main list, method with today's Fajr and Isha, a value screen, and a location index](../docs/watchface/menu.png)
 
 **Face menu:** `watchface/menu.js` is a generic overlay whose widgets are created on the first tap (not in `build()`) and reused for every screen; `watchface/screens.js` defines the screens. While it's open the page and date tap targets are hidden; waking the screen closes it.
 - **Lists:** 4 rows of 68 px that touch, so every pixel of a row is tappable. ▲ / ▼ page through, with a counter (٢/٥) next to ▼. Back is the title row, marked ▶ (it closes the menu at the top level). Nothing tappable sits in the bottom ~60 px: taps there got mistaken for the watch's swipe-up gesture.
-- **Values** (iqama minutes, angles, adjustments, Hijri offset): the row opens a value screen with the number large in the middle and big − / + buttons on either side; angles add a 0.1° row underneath.
+- **Values** (iqama minutes, angles, coordinates, adjustments, Hijri offset): the row opens a value screen with the number large in the middle and big − / + buttons on either side; angles and coordinates add a 0.1° row underneath.
 - **Long location lists** (over 3 pages) open on an index of 4 ranges named by their first and last entry ("أذربيجان … بنغلاديش"); a range that's still long gets its own index, so Punjab's 117 cities take 2 index taps and at most 2 pages.
 - **Language:** automatic (the watch's language from `getLanguage()`; English when the face doesn't have it) or one of the seven, each listed in its own name. Picking one closes the menu and rebuilds the face's widgets in it.
 - **Feedback:** the pressed row or button flashes dark grey (one shared highlight `FILL_RECT`, moved under the tap area on touch down).
@@ -133,7 +133,7 @@ In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subse
 ```
 watchface/index.js         ← UI (normal + AOD + edit slots), lifecycle and refresh (see How it works)
 watchface/menu.js          ← face menu overlay (rows, steppers, paging, back)
-watchface/screens.js       ← face menu screens: location, high latitudes, adjustments, iqama, angles, 12/24h, sunrise window
+watchface/screens.js       ← face menu screens: location (city or coordinates), high latitudes, adjustments, iqama, angles, 12/24h, sunrise window
 devices.json               ← the screens the face is built for (one app.json target each; see Devices)
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 
@@ -146,7 +146,7 @@ lib/settings.js            ← face settings: defaults, sanitizing, steppers, iq
 lib/methods.js             ← method order for the menu and the automatic method by country
 lib/i18n/                  ← strings per language (ar.js is the reference), language choice, face lines (text.js)
 lib/store.js               ← JSON values in the face's LocalStorage
-lib/location.js            ← newest of the picked city and ../prayer-location-app's fix
+lib/location.js            ← newest of the picked city / coordinates and ../prayer-location-app's fix
 lib/app-ids.js             ← generated: the companion's appId, from the root mise.toml [env]
 lib/city-data.js           ← reads the city files on demand (@zos/fs); lib/utf8.js decodes them
 assets/<target>/cities/    ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
@@ -223,7 +223,7 @@ The Hijri dates match ICU `islamic-umalqura` on every day from 2018 to 2077. The
   - The extras previews are the same for all three cells, so there's one set per direction (right to left with Arabic samples, left to right with no words: shared by six languages).
   - `tools/gen-edit-assets.py` generates the previews and `lib/edit-options.js`.
   - Every preview and frame is stored uncompressed on the watch (~w×h bytes), which is why calculation settings moved to the menu: their 6 slots were ~0.7 MB of previews of a sample day. Only the focused slot gets an outline; unfocused slots share one tiny transparent image. There's no dimming mask: it greyed out the previews.
-- **Location:** tap the date line → الموقع (Location): region of the world → country → governorate/state (for countries with more than 15 cities) → city, paged with ▲/▼. The choice is saved in the face's own `LocalStorage` and shown after the date. "الموقع من التطبيق" clears it. For GPS, install `../prayer-location-app`, open it and tap "تحديث الموقع"; it publishes lat/lon with `ShareTypedStorage('prayer-location')`, which the face reads with `TypedStorage(LOCATION_APP_ID, 'prayer-location')` (API 3.0) each time it wakes. Whichever of the two was set last wins. Until either exists the face uses Cairo and shows "• القاهرة" next to the date. Both app IDs live in the root `mise.toml` `[env]` (`PRAYER_TIMES_APP_ID`, `PRAYER_LOCATION_APP_ID`); `mise run :gen` writes them into each `app.json` and the companion's into `lib/app-ids.js` (`scripts/app-ids.py`), since zeus can't pass environment variables to the watch code. `test/verify.mjs` checks the two agree.
+- **Location:** tap the date line → الموقع (Location): region of the world → country → governorate/state (for countries with more than 15 cities) → city, paged with ▲/▼. The last entry, إحداثيات (Coordinates), sets latitude and longitude instead, starting from the location in use: 1° on the big buttons, 0.1° underneath (≈ 11 km, under half a minute of prayer time), longitude wrapping at ±180°, with today's Fajr and Isha there in the title; "استخدام هذه الإحداثيات" saves them. Coordinates keep the previous location's country for the automatic method. The choice is saved in the face's own `LocalStorage` and shown after the date (a city's name, or the coordinates). "الموقع من التطبيق" clears it. For GPS, install `../prayer-location-app`, open it and tap "تحديث الموقع"; it publishes lat/lon with `ShareTypedStorage('prayer-location')`, which the face reads with `TypedStorage(LOCATION_APP_ID, 'prayer-location')` (API 3.0) each time it wakes. Whichever of the two was set last wins. Until either exists the face uses Cairo and shows "• القاهرة" next to the date. Both app IDs live in the root `mise.toml` `[env]` (`PRAYER_TIMES_APP_ID`, `PRAYER_LOCATION_APP_ID`); `mise run :gen` writes them into each `app.json` and the companion's into `lib/app-ids.js` (`scripts/app-ids.py`), since zeus can't pass environment variables to the watch code. `test/verify.mjs` checks the two agree.
 - **Device notes:**
   - Per Zepp's device list, the Bip Max has **no SecondaryWidget/shortcut-card support**.
   - `zeus create` only offers API levels up to 4.0.

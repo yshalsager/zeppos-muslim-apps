@@ -92,6 +92,14 @@ export function stepAngle(v, delta) {
 
 export const stepInt = (v, delta, limits) => clamp(v + delta, limits)
 
+// One stepper tap on a coordinate, kept to 0.1° (≈ 11 km; under half a minute of prayer time).
+// Latitude stops at ±90; longitude wraps around at ±180 (180 → -179.9).
+export function stepCoord(v, delta, isLon) {
+  const next = Math.round((v + delta) * 10) / 10
+  if (!isLon) return clamp(next, [-90, 90])
+  return next > 180 ? Math.round((next - 360) * 10) / 10 : next <= -180 ? Math.round((next + 360) * 10) / 10 : next
+}
+
 // The method in use: the chosen one, or for 'auto' the one for the location's country.
 export const resolveMethod = (face, cc) => (face.method === 'auto' ? autoMethod(cc) : face.method)
 

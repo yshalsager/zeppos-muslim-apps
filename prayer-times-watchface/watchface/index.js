@@ -6,7 +6,7 @@ import { getTimeFormat, TIME_FORMAT_24, getLanguage } from '@zos/settings'
 import { launchApp, SYSTEM_APP_WEATHER, SYSTEM_APP_STATUS, SYSTEM_APP_HR } from '@zos/router'
 import { CONFIG } from '../config.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
-import { readLocation, saveCity } from '../lib/location.js'
+import { readLocation, saveCity, saveCoords } from '../lib/location.js'
 import { readJSON, writeJSON } from '../lib/store.js'
 import { SETTINGS_KEY, sanitizeSettings, effectiveSettings, resolveMethod } from '../lib/settings.js'
 import { autoMethod } from '../lib/methods.js'
@@ -83,6 +83,7 @@ function fmtClock(minOfDay) {
   return S.is24h ? pad(h) + ':' + mm : (h % 12 || 12) + ':' + mm
 }
 const fmtTime = (min) => (isNaN(min) ? '—' : digits(fmtClock(min)))
+const fmtCoord = (v) => (v < 0 ? '-' : '') + digits(Math.abs(v).toFixed(1))
 
 // Local timezone offset in hours, derived from the Time sensor so it follows the
 // phone's timezone and DST without relying on QuickJS's Date timezone support.
@@ -445,17 +446,21 @@ WatchFace({
       // Live previews from the settings being edited (applied when the menu closes)
       autoMethod: () => autoMethod(state.cc),
       hijri: () => hijriText(state.ed, nowMin(), state.today.maghrib, face),
-      times: () => {
-        const e = eventsFor(state.ed, state.tz, { ...face, method: resolveMethod(face, state.cc) })
+      times: (opts) => {
+        const e = eventsFor(state.ed, state.tz, { ...face, method: resolveMethod(face, state.cc), ...opts })
         return { fajr: fmtTime(e.fajr), asr: fmtTime(e.asr), isha: fmtTime(e.isha) }
       },
       position: () => ({ lat: S.lat, lon: S.lon }),
-      setCity: (name, lat, lon, cc, latin) => {
-        if (!saveCity(name, lat, lon, cc, latin)) return menu.message(T.menu.cantSave)
-        state.cacheKey = '' // location changed: recompute
-        menu.close()
-      },
+      setCity: (name, lat, lon, cc, latin) => this.locationSaved(saveCity(name, lat, lon, cc, latin)),
+      // the country stays the current location's, for the automatic method
+      setCoords: (lat, lon) => this.locationSaved(saveCoords(lat, lon, state.cc)),
     })
+  },
+
+  locationSaved(ok) {
+    if (!ok) return menu.message(T.menu.cantSave)
+    state.cacheKey = '' // location changed: recompute
+    menu.close()
   },
 
   openMenu() {
@@ -522,7 +527,8 @@ WatchFace({
         eid: (civilHijri.month === 10 && civilHijri.day === 1) ? 'fitr'
           : (civilHijri.month === 12 && civilHijri.day === 10) ? 'adha' : null,
         place: loc.source === 'fallback' ? T.fallbackPlace
-          : loc.source === 'city' ? (!T.rtl && loc.latin) || loc.name : '',
+          : loc.source === 'city' ? (!T.rtl && loc.latin) || loc.name
+          : loc.source === 'coords' ? T.coords(fmtCoord(loc.lat), fmtCoord(loc.lon)) : '',
         cc: loc.cc,
       }
       const greg = gregLine(T, { weekday: time.getDay() % 7, d, m, y }, digits, state.place) // getDay(): Monday = 1

@@ -1,5 +1,5 @@
 // Build-time defaults. On the watch:
-//  - tap the date line (face menu, lib/settings.js): location, method, Asr school, high latitudes, Hijri offset /
+//  - tap the date line (face menu, lib/settings.js): location (city or coordinates), method, Asr school, high latitudes, Hijri offset /
 //    day start, iqama, extra Fajr/Isha, sunrise window, adjustments, 12/24h, language. The values below are
 //    only their defaults.
 //  - long-press the face → Edit: digits and the extras row (defaults in tools/gen-edit-assets.py)

@@ -26,6 +26,7 @@ export default {
   makruh: { dawn: 'İmsaktan', sunrise: 'Güneş', zawal: 'İstiva', afterAsr: 'İkindiden', sunset: 'Gün batımı' },
   fallbackPlace: 'Kahire',
   fromApp: 'Uygulama',
+  coords: (lat, lon) => `${lat}°, ${lon}°`,
   methods: {
     egypt: 'Mısır', makkah: "Ümmü'l-Kura", mwl: 'Rabıta', karachi: 'Karaçi',
     isna: 'ISNA', dubai: 'Dubai', kuwait: 'Kuveyt', qatar: 'Katar', singapore: 'Singapur',
@@ -39,6 +40,10 @@ export default {
     settings: 'Ayarlar',
     location: 'Konum',
     locationFromApp: 'Uygulamadan',
+    coords: 'Koordinatlar',
+    latitude: 'Enlem',
+    longitude: 'Boylam',
+    useCoords: 'Bu koordinatları kullan',
     method: 'Hesaplama',
     auto: 'Otomatik',
     hijri: 'Hicri tarih',

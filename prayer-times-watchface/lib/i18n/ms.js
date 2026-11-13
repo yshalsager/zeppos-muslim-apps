@@ -25,6 +25,7 @@ export default {
   makruh: { dawn: 'Selepas Subuh', sunrise: 'Syuruk', zawal: 'Istiwa', afterAsr: 'Selepas Asar', sunset: 'Terbenam' },
   fallbackPlace: 'Kaherah',
   fromApp: 'Aplikasi',
+  coords: (lat, lon) => `${lat}°, ${lon}°`,
   methods: {
     egypt: 'Mesir', makkah: 'Umm al-Qura', mwl: 'Liga Muslim Sedunia', karachi: 'Karachi',
     isna: 'ISNA', dubai: 'Dubai', kuwait: 'Kuwait', qatar: 'Qatar', singapore: 'Singapura',
@@ -38,6 +39,10 @@ export default {
     settings: 'Tetapan',
     location: 'Lokasi',
     locationFromApp: 'Dari aplikasi',
+    coords: 'Koordinat',
+    latitude: 'Latitud',
+    longitude: 'Longitud',
+    useCoords: 'Guna koordinat ini',
     method: 'Kaedah',
     auto: 'Automatik',
     hijri: 'Tarikh Hijrah',

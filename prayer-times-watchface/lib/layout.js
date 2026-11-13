@@ -98,11 +98,12 @@ export function layout(width = DESIGN.width, height = DESIGN.height) {
           value: label(16, y, 200, ROW_H, 30),
         }
       }),
-      // value screen: − and + at the sides of the value, fine steps underneath
+      // value screen: − and + at the sides of the value, fine steps underneath. The value is wide
+      // enough for a longitude (-١٧٩.٩°, ~200 px at 52); the − and + glyphs are ~45 px.
       caption: label(16, 82, 400, 42, 24),
-      value: label(140, 150, 152, 140, 52),
-      minus: label(16, 150, 124, 140, 80),
-      plus: label(292, 150, 124, 140, 80),
+      value: label(96, 150, 240, 140, 52),
+      minus: label(16, 150, 80, 140, 80),
+      plus: label(336, 150, 80, 140, 80),
       fineMinus: label(16, 304, 192, 80, 34),
       finePlus: label(224, 304, 192, 80, 34),
       radius: Z(14), // pressed-row highlight

@@ -25,6 +25,7 @@ export default {
   makruh: { dawn: 'После Фаджра', sunrise: 'Восход', zawal: 'Зенит', afterAsr: 'После Асра', sunset: 'Закат' },
   fallbackPlace: 'Каир',
   fromApp: 'Приложение',
+  coords: (lat, lon) => `${lat}°, ${lon}°`,
   methods: {
     egypt: 'Египет', makkah: 'Умм аль-Кура', mwl: 'Всемирная исламская лига', karachi: 'Карачи',
     isna: 'ISNA', dubai: 'Дубай', kuwait: 'Кувейт', qatar: 'Катар', singapore: 'Сингапур',
@@ -38,6 +39,10 @@ export default {
     settings: 'Настройки',
     location: 'Место',
     locationFromApp: 'Из приложения',
+    coords: 'Координаты',
+    latitude: 'Широта',
+    longitude: 'Долгота',
+    useCoords: 'Использовать эти координаты',
     method: 'Метод',
     auto: 'Авто',
     hijri: 'Дата хиджры',

@@ -3,7 +3,7 @@ import { Coordinates, CalculationMethod, HighLatitudeRule, Madhab, PrayerTimes }
 import { prayerMinutes, dayEvents, nightPortions, resolveHighLat, HIGH_LAT_RULES, METHODS, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
-import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
+import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepCoord, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
 import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
 import { LANGS, LANG_CODES, resolveLang } from '../lib/i18n/index.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
@@ -222,7 +222,14 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   check(ccs.every((cc) => METHODS[autoMethod(cc)]), 'auto method for every country')
   check(sanitizeSettings({ highLatRule: 'seventh' }, CONFIG).highLatRule === 'seventh' &&
     sanitizeSettings({ highLatRule: 'nope' }, CONFIG).highLatRule === CONFIG.highLatRule, 'settings high latitude')
-  console.log('settings: sanitize, steppers, presets, automatic method and 12/24h')
+  // Coordinates: 0.1° steps without float drift, latitude stops at ±90, longitude wraps at ±180
+  let c = 30
+  for (let i = 0; i < 4; i++) c = stepCoord(c, 0.1, false)
+  check(c === 30.4, 'coord fine steps', c)
+  check(stepCoord(89.5, 1, false) === 90 && stepCoord(-89.9, -0.1, false) === -90, 'latitude limits')
+  check(stepCoord(179.9, 0.1, true) === 180 && stepCoord(180, 0.1, true) === -179.9 && stepCoord(-179.9, -0.1, true) === 180 &&
+    stepCoord(179.5, 1, true) === -179.5, 'longitude wraps', stepCoord(180, 0.1, true), stepCoord(179.5, 1, true))
+  console.log('settings: sanitize, steppers, coordinates, presets, automatic method and 12/24h')
 }
 
 // City files (tools/gen-cities.py): every listed country has a file, names use only letters the

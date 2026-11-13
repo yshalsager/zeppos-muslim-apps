@@ -25,6 +25,7 @@ export default {
   makruh: { dawn: 'Après Fajr', sunrise: 'Lever', zawal: 'Zénith', afterAsr: 'Après Asr', sunset: 'Coucher' },
   fallbackPlace: 'Le Caire',
   fromApp: 'Appli',
+  coords: (lat, lon) => `${lat}°, ${lon}°`,
   methods: {
     egypt: 'Égypte', makkah: 'Umm al-Qura', mwl: 'Ligue islamique mondiale', karachi: 'Karachi',
     isna: 'ISNA', dubai: 'Dubaï', kuwait: 'Koweït', qatar: 'Qatar', singapore: 'Singapour',
@@ -38,6 +39,10 @@ export default {
     settings: 'Réglages',
     location: 'Lieu',
     locationFromApp: "Depuis l'appli",
+    coords: 'Coordonnées',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    useCoords: 'Utiliser ces coordonnées',
     method: 'Méthode',
     auto: 'Auto',
     hijri: 'Date hégirienne',
