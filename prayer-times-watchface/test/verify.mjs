@@ -7,10 +7,13 @@ import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepIn
 import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
 import { LANGS, LANG_CODES, resolveLang } from '../lib/i18n/index.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
+import { layout, DESIGN } from '../lib/layout.js'
 import { CONFIG } from '../config.js'
 import { utf8 } from '../lib/utf8.js'
 import { readFileSync, existsSync } from 'node:fs'
 
+const DEVICES = JSON.parse(readFileSync(new URL('../devices.json', import.meta.url), 'utf8'))
+const TARGETS = Object.keys(DEVICES).filter((k) => !k.startsWith('/'))
 let fail = 0
 const check = (ok, ...msg) => { if (!ok && fail++ < 10) console.log('FAIL', ...msg) }
 
@@ -182,7 +185,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   // the menu's method list and the auto table only name methods lib/prayer.js knows
   const keys = METHOD_KEYS
   check(keys.length === Object.keys(METHODS).length && keys.every((k) => METHODS[k]), 'method list', keys)
-  const ccs = JSON.parse(readFileSync(new URL('../assets/bip-max/cities/index.json', import.meta.url), 'utf8'))
+  const ccs = JSON.parse(readFileSync(new URL(`../assets/${TARGETS[0]}/cities/index.json`, import.meta.url), 'utf8'))
     .groups.flatMap(([, cs]) => cs.map(([cc]) => cc))
   check(sanitizeSettings({ language: 'fr' }, CONFIG).language === 'fr' && sanitizeSettings({ language: 'xx' }, CONFIG).language === CONFIG.language, 'settings language')
   check(ccs.every((cc) => METHODS[autoMethod(cc)]), 'auto method for every country')
@@ -192,7 +195,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
 // City files (tools/gen-cities.py): every listed country has a file, names use only letters the
 // font shapes, coordinates are valid, regions are consistent; and the watch's UTF-8 decoder
 {
-  const dir = new URL('../assets/bip-max/cities/', import.meta.url)
+  const dir = new URL(`../assets/${TARGETS[0]}/cities/`, import.meta.url)
   const sample = 'مكة المكرمة · Zürich · 😀'
   check(utf8(new TextEncoder().encode(sample)) === sample, 'utf8 decode')
   const index = JSON.parse(readFileSync(new URL('index.json', dir), 'utf8'))
@@ -256,6 +259,33 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   check(resolveLang('auto', 13) === 'ar' && resolveLang('auto', 17) === 'tr' && resolveLang('auto', 0) === 'en' &&
     resolveLang('auto', undefined) === 'en' && resolveLang('fr', 13) === 'fr', 'language resolution')
   console.log(`i18n: ${LANG_CODES.join(', ')} have every key of ar.js`)
+}
+
+// Devices: devices.json and app.json name the same targets, each with its assets folder; every
+// layout box stays on its screen, and the design size is laid out as designed (scale 1).
+{
+  const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
+  check(JSON.stringify(Object.keys(app.targets)) === JSON.stringify(TARGETS), 'app.json targets = devices.json', Object.keys(app.targets), TARGETS)
+  for (const t of TARGETS) {
+    const d = DEVICES[t]
+    const p = app.targets[t] && app.targets[t].platforms
+    check(p && p.some((x) => x.deviceSource === d.deviceSource), 'app.json deviceSource', t)
+    check(existsSync(new URL(`../assets/${t}/icon.png`, import.meta.url)), 'target assets', t)
+    const L = layout(d.width, d.height)
+    const boxes = []
+    const walk = (v) => {
+      if (Array.isArray(v)) v.forEach(walk)
+      else if (v && typeof v === 'object') {
+        if ('x' in v && 'w' in v) boxes.push(v)
+        else Object.values(v).forEach(walk)
+      }
+    }
+    walk(L)
+    check(boxes.every((b) => b.x >= 0 && b.y >= 0 && b.x + b.w <= d.width && b.y + b.h <= d.height), 'layout boxes on screen', t)
+  }
+  const L = layout(DESIGN.width, DESIGN.height)
+  check(L.hijri.x === 16 && L.hijri.text_size === 32 && L.comps[0].icon.x === 368 && L.menu.row[3].tap.y === 330, 'design layout unscaled')
+  console.log(`devices: ${TARGETS.join(', ')} match app.json; layout boxes fit their screens`)
 }
 
 // The face reads the companion's shared location by its appId; a mismatch fails silently on the watch.

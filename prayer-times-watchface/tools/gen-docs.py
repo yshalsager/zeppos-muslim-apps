@@ -3,7 +3,7 @@
 Writes ../docs/watchface/pages.png (the three pages + always-on display), countdown.png
 (countdown line states) and menu.png (settings menu screens, from tools/docs-menu.mjs, which runs
 the real menu code on stub @zos modules); pages-en.png and menu-en.png show the mirrored
-left-to-right layout in English. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
+left-to-right layout in English. They show the first devices.json target. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
 """
 import json
 import subprocess
@@ -13,8 +13,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I drops the script dir
 from PIL import Image, ImageDraw  # noqa: E402
 
-from render import (AOD, CLOCK, DIM, GEAR, GOLD, GREG, HIJRI, NEXT, NIGHT, ORANGE, RADIUS, RED, ROOT, TEAL,  # noqa: E402
-                    WHITE, H, W, Canvas, grid_x, rounded)
+from render import AOD, DIM, GOLD, NIGHT, ORANGE, RED, ROOT, TEAL, WHITE, Canvas, device, rounded  # noqa: E402
+
+DEV = device()
+L = DEV.L
 
 LANGS = {"ar": "", "en": "-en"}  # lib/i18n language → file suffix
 
@@ -26,17 +28,17 @@ BEZEL = (58, 58, 64, 255)
 
 
 def header(c, d, time, next_text, next_color, bar=None):
-    c.text(HIJRI[0], d["hijri"], HIJRI[1], GOLD)
-    c.text(CLOCK[0], time, CLOCK[1], WHITE, system=True)
-    c.text(GREG[0], d["greg"], GREG[1], DIM)
-    c.icon("gear", *c.mx(GEAR)[:2])
-    c.text(NEXT[0], next_text, NEXT[1], next_color)
+    c.label(L["hijri"], d["hijri"], GOLD)
+    c.label(L["time"], time, WHITE, system=True)
+    c.label(L["greg"], d["greg"], DIM)
+    c.icon("gear", *c.mx(L["gear"])[:2])
+    c.label(L["next"], next_text, next_color)
     if bar is not None:
         c.bar(bar, next_color)
 
 
 def prayers(d, s):
-    c = Canvas(rtl=d["rtl"])
+    c = Canvas(DEV, rtl=d["rtl"])
     color = COLORS[s["color"]]
     header(c, d, s["time"], s["next"], color, s["progress"])
     c.grid(s["cells"])
@@ -46,42 +48,42 @@ def prayers(d, s):
 
 
 def extras(d, s):  # page 2: same 3-column grid as watchface/index.js buildPages()
-    c = Canvas(rtl=d["rtl"])
+    c = Canvas(DEV, rtl=d["rtl"])
     header(c, d, s["time"], s["title"], DIM)
-    for i, it in enumerate(s["items"]):
-        x, y = grid_x(i % 3), 294 + (i // 3) * 70
-        c.text(c.mx((x, y, 132, 28)), it["name"], 19, GOLD if it["on"] else DIM)
-        c.text(c.mx((x, y + 26, 132, 38)), it["time"], 30, GOLD if it["on"] else WHITE, system=True)
+    for it, b in zip(s["items"], L["extras"]):
+        c.label(b["name"], it["name"], GOLD if it["on"] else DIM)
+        c.label(b["time"], it["time"], GOLD if it["on"] else WHITE, system=True)
     return c
 
 
 def makruh(d, s):  # page 3: label first in reading order, then the range
-    c = Canvas(rtl=d["rtl"])
+    c = Canvas(DEV, rtl=d["rtl"])
     header(c, d, s["time"], s["title"], RED)
-    for i, r in enumerate(s["rows"]):
-        y = 296 + i * 42
-        c.text(c.mx((236, y, 176, 40)), r["label"], 26, RED if r["on"] else DIM)
-        c.text(c.mx((20, y, 216, 40)), r["range"], 28, RED if r["on"] else WHITE)
+    for r, b in zip(s["rows"], L["makruh"]):
+        c.label(b["label"], r["label"], RED if r["on"] else DIM)
+        c.label(b["range"], r["range"], RED if r["on"] else WHITE)
     return c
 
 
 def aod(d, s):  # watchface/index.js buildAod(): dim text only
-    c = Canvas(rtl=d["rtl"])
-    c.text((16, 84, W - 32, 44), d["hijri"], 30, AOD)
-    c.text((0, 130, W, 120), s["time"], 112, AOD, system=True)
-    c.text((16, 248, W - 32, 36), d["greg"], 26, AOD)
-    c.text((16, 292, W - 32, 44), s["next"], 30, AOD)
+    c = Canvas(DEV, rtl=d["rtl"])
+    a = L["aod"]
+    c.label(a["hijri"], d["hijri"], AOD)
+    c.label(a["time"], s["time"], AOD, system=True)
+    c.label(a["greg"], d["greg"], AOD)
+    c.label(a["next"], s["next"], AOD)
     return c
 
 
 def face(c, crop=None):
     """Black rounded screen with a thin bezel, on a transparent background."""
+    W, H, R = DEV.w, DEV.h, DEV.radius
     im = Image.new("RGBA", (W, H), (0, 0, 0, 255))
     im.alpha_composite(c.image())
-    im = rounded(im, RADIUS)
+    im = rounded(im, R)
     pad = 6
     out = Image.new("RGBA", (W + pad * 2, H + pad * 2), (0, 0, 0, 0))
-    ImageDraw.Draw(out).rounded_rectangle([0, 0, W + pad * 2 - 1, H + pad * 2 - 1], radius=RADIUS + pad, fill=BEZEL)
+    ImageDraw.Draw(out).rounded_rectangle([0, 0, W + pad * 2 - 1, H + pad * 2 - 1], radius=R + pad, fill=BEZEL)
     out.alpha_composite(im, (pad, pad))
     if crop:
         out = out.crop(crop)
@@ -90,10 +92,10 @@ def face(c, crop=None):
 
 def menu(widgets, rtl):
     """A settings-menu screen from the widgets tools/docs-menu.mjs recorded."""
-    c = Canvas(rtl=rtl)
+    c = Canvas(DEV, rtl=rtl)
     for w in widgets:
         if w["type"] == "IMG":
-            c.paste_image(ROOT / "assets" / "bip-max" / w["src"], w["x"], w["y"])
+            c.paste_image(DEV.assets / w["src"], w["x"], w["y"])
         elif w["type"] == "TEXT" and w.get("text"):
             s = w["text"]
             system = not w.get("font")
@@ -128,7 +130,7 @@ def main():
         written += [f"pages{suffix}.png", f"menu{suffix}.png"]
         if lang == "ar":
             # countdown states: top part of the face (date, clock, countdown line, progress bar)
-            top = (0, 0, W + 12, 300)
+            top = (0, 0, DEV.w + 12, L["bar"]["y"] + 13)  # down to just below the progress bar
             states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
             states.save(OUT / "countdown.png", optimize=True)
             written.append("countdown.png")

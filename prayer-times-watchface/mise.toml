@@ -31,7 +31,7 @@ run = [
 
 # Not part of :gen: downloads ~210 MB from GeoNames, which changes daily. Output is committed.
 [tasks.gen-cities]
-description = "Rebuild the city list (assets/bip-max/cities) from GeoNames, then regenerate the font"
+description = "Rebuild the city list (assets/<target>/cities) from GeoNames, then regenerate the font"
 run = [
   "tools/fetch-geonames.sh",
   "uv run -q --no-project --no-build --with babel==2.17.0 python3 -I tools/gen-cities.py",

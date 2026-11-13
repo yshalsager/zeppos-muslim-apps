@@ -1,5 +1,8 @@
 """Shared drawing helpers that mirror the widgets in watchface/index.js.
 
+Boxes come from lib/layout.js (via tools/layout-data.mjs) for each devices.json target, so every
+target's previews match its watch. device(target) holds a target's screen, layout and assets folder.
+
 Text is shaped by HarfBuzz (uharfbuzz) and drawn by FreeType (freetype-py), both bundled in their
 wheels, so the output is the same on macOS and Linux (CI) without Pillow's libraqm or system fonts.
 tools/uax9.py puts the left-to-right and right-to-left runs of a line in visual order.
@@ -17,7 +20,6 @@ from PIL import Image, ImageChops, ImageDraw
 import uax9  # tools/ is on sys.path (the generators add it)
 
 ROOT = Path(__file__).resolve().parent.parent
-W, H, RADIUS = 432, 514, 106  # Bip Max screen
 SCALE = 3  # supersample for smooth text
 
 WHITE, DIM, GOLD, TEAL = (255, 255, 255), (156, 163, 175), (250, 204, 21), (45, 212, 191)
@@ -26,7 +28,6 @@ RED, ORANGE, NIGHT, AOD = (248, 113, 113), (251, 146, 60), (167, 139, 250), (138
 # Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in
 # (downloaded by tools/fetch-fonts.sh, which `mise run :gen` runs first).
 _FONTS = ROOT / ".cache" / "fonts"
-ARABIC_FONT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
 SYSTEM_ARABIC = _FONTS / "NotoSansArabic.ttf"
 LATIN_FONT = _FONTS / "NotoSans.ttf"
 LUCIDE_FONT = _FONTS / "lucide.ttf"  # Lucide icons (ISC), glyphs on a 1000-unit em square
@@ -43,33 +44,40 @@ WEATHER_ICONS = [
 ]
 SAMPLE_WEATHER = "cloud-sun"  # previews and screenshots
 
-# Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js. Written for right-to-left;
-# mirror() flips a box for left-to-right languages, as index.js box() does.
-HIJRI = ((16, 34, W - 32, 44), 32)
-CLOCK = ((0, 80, W, 120), 112)
-GREG = ((48, 198, W - 96, 36), 26)
-GEAR = (20, 204, 24, 24)  # ⚙ at the end of the date line (opens the settings menu)
-NEXT = ((16, 240, W - 32, 44), 30)
-BAR = (116, 287, 200, 4)  # progress toward the next prayer (x, y, w, h), fills in reading direction
-TRACK = (38, 38, 38)
+TRACK = (38, 38, 38)  # progress bar track
 
-# Prayer grid: 2 rows x 3 columns, filled right-to-left (Fajr | Sunrise | Dhuhr) (Asr | Maghrib | Isha)
-GRID_Y, GRID_ROW_H, GRID_CELL_W = 296, 70, 132
+_DEVICES = {k: v for k, v in json.loads((ROOT / "devices.json").read_text()).items() if not k.startswith("/")}
+TARGETS = list(_DEVICES)  # the first is the one the docs show
 
 
-def grid_x(col):
-    return 16 + (2 - col) * 134  # col 0 is the rightmost
+class Device:
+    """One devices.json target: screen (w, h, radius), picker preview size, layout boxes (L, as in
+    lib/layout.js, right-to-left) and its assets folder."""
+
+    def __init__(self, target):
+        p = _DEVICES[target]
+        self.target, self.w, self.h, self.radius = target, p["width"], p["height"], p["radius"]
+        self.preview = tuple(p["preview"])
+        self.L = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "layout-data.mjs"), target], cwd=ROOT))
+        self.icon = self.L["icon"]
+        self.assets = ROOT / "assets" / target
+        self.arabic_font = self.assets / "fonts" / "naskh.ttf"  # tools/gen-font.py
 
 
-# Extras row below the grid: three cells, slot 0 is the rightmost (read first in RTL)
-COMP_Y, COMP_H, COMP_W = 442, 52, 120
-COMP_X = [276, 156, 36]
-ICON = 24  # icon size in px
+@functools.cache
+def device(target=None):
+    return Device(target or TARGETS[0])
 
 
-def mirror(box, rtl=True):
+def rect(b):
+    """A lib/layout.js box as (x, y, w, h)."""
+    return (b["x"], b["y"], b["w"], b["h"])
+
+
+def mirror(box, rtl, width):
+    """A right-to-left box for the reading direction (as watchface/index.js box())."""
     x, y, w, h = box
-    return box if rtl else (W - x - w, y, w, h)
+    return box if rtl else (width - x - w, y, w, h)
 
 
 def sample_data():
@@ -82,7 +90,7 @@ def sample_data():
 ICONS = {"steps": "footprints", "heart": "heart", "battery": "battery-full", "flame": "flame", "gear": "settings"}
 
 
-def icon_image(name, size=ICON, color=DIM):
+def icon_image(name, size, color=DIM):
     """One of the face's icons as a transparent PNG (for the watch's IMG widgets)."""
     return lucide_image(ICONS[name], size, color, scale=1)
 
@@ -92,7 +100,7 @@ def _lucide_codepoints():
     return json.loads((_FONTS / "lucide-codepoints.json").read_text())
 
 
-def lucide_image(name, size=ICON, color=DIM, scale=SCALE):
+def lucide_image(name, size, color=DIM, scale=SCALE):
     """A Lucide icon as a transparent size×size image (size × scale when scale > 1)."""
     px = size * SCALE
     f = font(LUCIDE_FONT, px)
@@ -178,10 +186,13 @@ def digit_image(ch, size, color=WHITE):
 
 
 class Canvas:
-    """A transparent region of the screen at (ox, oy, w, h), drawn in screen coordinates.
-    rtl=False: the face in a left-to-right language (mirrored layout, system font for words)."""
+    """A transparent region of a device's screen at (ox, oy, w, h) (default: all of it), drawn in
+    screen coordinates. rtl=False: the face in a left-to-right language (mirrored layout, system
+    font for words)."""
 
-    def __init__(self, ox=0, oy=0, w=W, h=H, rtl=True):
+    def __init__(self, dev, ox=0, oy=0, w=None, h=None, rtl=True):
+        w, h = w or dev.w, h or dev.h
+        self.dev, self.L = dev, dev.L
         self.ox, self.oy, self.w, self.h, self.rtl = ox, oy, w, h, rtl
         self.im = Image.new("RGBA", (w * SCALE, h * SCALE), (0, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.im)
@@ -192,7 +203,7 @@ class Canvas:
         digits (e.g. "+٠.١")."""
         x, y, w, h = box
         latin = all(ord(c) < 0x0600 for c in s)
-        path = LATIN_FONT if latin else (SYSTEM_ARABIC if system or not self.rtl else ARABIC_FONT)
+        path = LATIN_FONT if latin else (SYSTEM_ARABIC if system or not self.rtl else self.dev.arabic_font)
         rtl = self.rtl and not latin and not ltr
         f = font(path, size * SCALE)
         while fit and size > 14 and f.width(s, rtl) > (w - 8) * SCALE:
@@ -210,10 +221,15 @@ class Canvas:
         self.im.alpha_composite(ink)
 
     def mx(self, box):
-        return mirror(box, self.rtl)
+        """A layout box (dict or tuple) as (x, y, w, h) in reading direction."""
+        return mirror(rect(box) if isinstance(box, dict) else box, self.rtl, self.dev.w)
+
+    def label(self, b, s, color, system=False, **kw):
+        """Text in a layout text box (its own text_size), in reading direction."""
+        self.text(self.mx(b), s, b["text_size"], color, system=system, **kw)
 
     def bar(self, frac, color):
-        x, y, w, h = BAR
+        x, y, w, h = rect(self.L["bar"])
         box = lambda a, b: [(a - self.ox) * SCALE, (y - self.oy) * SCALE, (b - self.ox) * SCALE, (y + h - self.oy) * SCALE]  # noqa: E731
         self.draw.rounded_rectangle(box(x, x + w), radius=2 * SCALE, fill=TRACK)
         fw = round(w * frac)
@@ -221,19 +237,18 @@ class Canvas:
             fx = self.mx((x + w - fw, y, fw, h))[0]
             self.draw.rounded_rectangle(box(fx, fx + fw), radius=2 * SCALE, fill=color)
 
-    def icon(self, name, x, y, size=ICON, color=DIM):
+    def icon(self, name, x, y, color=DIM):
         """One of the face's icons (ICONS), as the watch draws its PNG."""
-        self.paste_lucide(ICONS[name], x, y, size, color)
+        self.paste_lucide(ICONS[name], x, y, color)
 
     def grid(self, cells):
-        for i, c in enumerate(cells):
-            row, col = divmod(i, 3)
-            x, y = grid_x(col), GRID_Y + row * GRID_ROW_H
-            self.text(self.mx((x, y, GRID_CELL_W, 30)), c["name"], 24, GOLD if c["on"] else DIM)
-            self.text(self.mx((x, y + 28, GRID_CELL_W, 38)), c["time"], 32, GOLD if c["on"] else WHITE, system=True)
+        for c, b in zip(cells, self.L["prayers"]):
+            self.label(b["name"], c["name"], GOLD if c["on"] else DIM)
+            self.label(b["time"], c["time"], GOLD if c["on"] else WHITE, system=True)
 
-    def paste_lucide(self, name, x, y, size=ICON, color=DIM):
-        self.im.alpha_composite(lucide_image(name, size, color), ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
+    def paste_lucide(self, name, x, y, color=DIM):
+        im = lucide_image(name, self.dev.icon, color)
+        self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
 
     def paste_image(self, path, x, y):
         """An asset PNG at its own size, as the watch's IMG widget draws it."""
@@ -244,16 +259,17 @@ class Canvas:
     def complication(self, slot, kind, value):
         """Extras cell: icon first in reading order, then the value (weather: the condition's icon and
         the temperature, both drawn by the firmware on the watch)."""
-        x, y = COMP_X[slot], COMP_Y
+        c = self.L["comps"][slot]
         if kind == "none":
             return
-        ix, iy, _, _ = self.mx((x + COMP_W - ICON - 4, y + (COMP_H - ICON) // 2, ICON, ICON))
+        ix, iy, _, _ = self.mx(c["icon"])
         if kind == "weather":
             self.paste_lucide(SAMPLE_WEATHER, ix, iy)
-            self.text(self.mx((x, y, COMP_W - ICON - 8, COMP_H)), value, 26, WHITE, system=True)
+            # the temperature's digit images, centred in the value box like the firmware's
+            self.text(self.mx(c["value"]), value, c["temp"]["text_size"], WHITE, system=True)
             return
         self.icon(kind, ix, iy)
-        self.text(self.mx((x, y, COMP_W - ICON - 8, COMP_H)), value, 24, WHITE, system=True)
+        self.label(c["value"], value, WHITE, system=True)
 
     def image(self, size=None):
         im = self.im.resize((self.w, self.h), Image.LANCZOS)

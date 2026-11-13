@@ -3,8 +3,9 @@
 // takes the taps, even without a listener). Fixed time: Zepp's preview time on the docs day.
 import { readFileSync as read } from 'node:fs'
 
-const ASSETS = new URL('../../assets/bip-max/', import.meta.url)
-export const stub = { widgets: [], storage: {}, now: new Date(2026, 10, 12, 10, 9) }
+// stub.target: the devices.json target whose screen and assets the face sees (the docs use the first)
+const DEVICES = JSON.parse(read(new URL('../../devices.json', import.meta.url), 'utf8'))
+export const stub = { widgets: [], storage: {}, now: new Date(2026, 10, 12, 10, 9), target: Object.keys(DEVICES).find((k) => k !== '//') }
 
 function createWidget(type, o = {}) {
   const w = {
@@ -59,6 +60,7 @@ export const getScene = () => 1
 export const SCENE_AOD = 4
 export const getTimeFormat = () => 0
 export const getLanguage = () => 13 // ar-EG (lib/i18n/index.js)
+export const getDeviceInfo = () => ({ width: DEVICES[stub.target].width, height: DEVICES[stub.target].height })
 export const TIME_FORMAT_24 = 1
 export const launchApp = () => {}
 export const SYSTEM_APP_WEATHER = 1, SYSTEM_APP_STATUS = 2, SYSTEM_APP_HR = 3
@@ -68,5 +70,5 @@ export class LocalStorage {
   removeItem(k) { delete stub.storage[k] }
 }
 export class TypedStorage { getInt64(k, d) { return d } getDouble(k, d) { return d } }
-export const readFileSync = ({ path }) => read(new URL(path.replace('assets://', ''), ASSETS), 'utf8')
+export const readFileSync = ({ path }) => read(new URL(`../../assets/${stub.target}/${path.replace('assets://', '')}`, import.meta.url), 'utf8')
 export const openAssetsSync = () => 0, statAssetsSync = () => undefined, readSync = () => 0, closeSync = () => {}, O_RDONLY = 0

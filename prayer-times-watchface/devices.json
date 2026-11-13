@@ -1,0 +1,4 @@
+{
+  "//": "Devices the face is built for (one app.json target each; test/verify.mjs checks they match). width/height: screen px; shape: 'square' (rectangle) or 'round'; radius: screen corner radius for screenshots; preview: watch face picker preview size (Zepp device list). lib/layout.js scales the Bip Max design to each screen; tools/ generate every target's assets/<target>/.",
+  "bip-max": { "deviceSource": 11206915, "width": 432, "height": 514, "shape": "square", "radius": 106, "preview": [294, 350] }
+}

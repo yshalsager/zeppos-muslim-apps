@@ -1,10 +1,10 @@
 // City list for the face menu, read on demand from asset files written by tools/gen-cities.py
 // (GeoNames, CC-BY 4.0). Nothing is loaded until the menu opens the location screens.
 //
-// assets/bip-max/cities/index.json: { langs: [lang, ...],
+// assets/<target>/cities/index.json: { langs: [lang, ...],
 //   groups: [[groupKey, [[cc, nameInLangs[0], nameInLangs[1], ...], ...]], ...] }
 //   groupKey names a lib/i18n menu.groups entry; country names come from CLDR (Arabic: GeoNames).
-// assets/bip-max/cities/<CC>.json:   { cities: [[name, lat, lon, latin?], ...] }
+// assets/<target>/cities/<CC>.json:   { cities: [[name, lat, lon, latin?], ...] }
 //   or, for long lists, { regions: [[regionName, [[name, lat, lon, latin?], ...], latin?], ...] }
 //   name is Arabic, latin the ASCII name when it differs; lat/lon are whole hundredths of a degree.
 import { readFileSync, openAssetsSync, statAssetsSync, readSync, closeSync, O_RDONLY } from '@zos/fs'

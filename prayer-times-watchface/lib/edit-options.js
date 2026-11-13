@@ -3,13 +3,7 @@ export const EDIT_GROUPS = [
   {
     "key": "arabicDigits",
     "editId": 102,
-    "rect": [
-      71,
-      94,
-      290,
-      96
-    ],
-    "tipsW": 220,
+    "area": "digits",
     "defaultType": {
       "rtl": 110200,
       "ltr": 110201
@@ -34,19 +28,14 @@ export const EDIT_GROUPS = [
         }
       }
     ],
-    "select": "edit/frame_290x96_select.png",
+    "select": "edit/frame_digits_select.png",
     "unselect": "edit/frame_none.png"
   },
   {
     "key": "comp0",
     "editId": 110,
-    "rect": [
-      276,
-      442,
-      120,
-      52
-    ],
-    "tipsW": 220,
+    "area": "comp",
+    "slot": 0,
     "defaultType": {
       "rtl": 111000,
       "ltr": 111000
@@ -107,19 +96,14 @@ export const EDIT_GROUPS = [
         }
       }
     ],
-    "select": "edit/frame_120x52_select.png",
+    "select": "edit/frame_comp_select.png",
     "unselect": "edit/frame_none.png"
   },
   {
     "key": "comp1",
     "editId": 111,
-    "rect": [
-      156,
-      442,
-      120,
-      52
-    ],
-    "tipsW": 220,
+    "area": "comp",
+    "slot": 1,
     "defaultType": {
       "rtl": 111101,
       "ltr": 111101
@@ -180,19 +164,14 @@ export const EDIT_GROUPS = [
         }
       }
     ],
-    "select": "edit/frame_120x52_select.png",
+    "select": "edit/frame_comp_select.png",
     "unselect": "edit/frame_none.png"
   },
   {
     "key": "comp2",
     "editId": 112,
-    "rect": [
-      36,
-      442,
-      120,
-      52
-    ],
-    "tipsW": 220,
+    "area": "comp",
+    "slot": 2,
     "defaultType": {
       "rtl": 111203,
       "ltr": 111203
@@ -253,7 +232,7 @@ export const EDIT_GROUPS = [
         }
       }
     ],
-    "select": "edit/frame_120x52_select.png",
+    "select": "edit/frame_comp_select.png",
     "unselect": "edit/frame_none.png"
   }
 ]

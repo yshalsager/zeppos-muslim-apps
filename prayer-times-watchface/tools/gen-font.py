@@ -20,7 +20,9 @@ Run (needs fontTools + uharfbuzz, not project dependencies):
   OFL, so the family is renamed. SIL's copyright and license name records are kept in the font.
 """
 import io
+import json
 import re
+import shutil
 import sys
 import unicodedata
 from pathlib import Path
@@ -36,13 +38,15 @@ from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphComponent
 from fontTools.varLib import instancer
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
+# One font for every devices.json target (the same file in each assets/<target>/fonts/)
+TARGETS = [k for k in json.loads((ROOT / "devices.json").read_text()) if not k.startswith("/")]
+OUT = ROOT / "assets" / TARGETS[0] / "fonts" / "naskh.ttf"
 FAMILY = "Prayer Face Naskh"
 # The font only draws Arabic text (watchface/index.js uses it when the language is Arabic), so other
 # languages' strings (lib/i18n/*.js, CLDR country names) are left out: only Arabic-script characters
 # and a little punctuation are taken from the sources.
 SOURCES = [*(ROOT / "watchface").glob("*.js"), *(ROOT / "lib").glob("*.js"), ROOT / "lib" / "i18n" / "ar.js",
-           *(ROOT / "assets" / "bip-max" / "cities").glob("*.json")]
+           *(OUT.parent.parent / "cities").glob("*.json")]
 PUNCTUATION = set("°±–—•…−≤≥")
 
 
@@ -193,6 +197,10 @@ def main(src, latin_sans, arabic_sans):
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     font.save(OUT)
+    for target in TARGETS[1:]:
+        copy = ROOT / "assets" / target / "fonts" / "naskh.ttf"
+        copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(OUT, copy)
     print(f"presentation forms: {added}; sans digits/punctuation: {swapped} glyphs")
     print(f"{len(text)} chars, {OUT.stat().st_size // 1024} KB → {OUT.relative_to(ROOT)} ({name.getDebugName(4)})")
 

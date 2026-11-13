@@ -1,6 +1,7 @@
 import ui from '@zos/ui'
 import { Time } from '@zos/sensor'
 import { getScene, SCENE_AOD } from '@zos/app'
+import { getDeviceInfo } from '@zos/device'
 import { getTimeFormat, TIME_FORMAT_24, getLanguage } from '@zos/settings'
 import { launchApp, SYSTEM_APP_WEATHER, SYSTEM_APP_STATUS, SYSTEM_APP_HR } from '@zos/router'
 import { CONFIG } from '../config.js'
@@ -16,6 +17,7 @@ import { countdown } from '../lib/countdown.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { makeSensors } from '../lib/extras.js'
 import { WEATHER_ICONS } from '../lib/weather-icons.js'
+import { layout, DESIGN } from '../lib/layout.js'
 import { resolveLang } from '../lib/i18n/index.js'
 import {
   strings, line, hijriLine, gregLine, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
@@ -24,9 +26,19 @@ import {
 const { createWidget, deleteWidget, widget, align, prop, show_level, event } = ui
 const dataType = ui.data_type || (typeof hmUI !== 'undefined' ? hmUI.data_type : {})
 
-// Bip Max: 432 x 514, designWidth 432 => px(n) === n
-const W = 432
-const H = 514
+// Every box comes from lib/layout.js for this screen (the Bip Max design, scaled to others).
+const screen = (() => {
+  try {
+    const info = getDeviceInfo()
+    if (info && info.width > 0 && info.height > 0) return info
+  } catch (e) {
+    console.log('getDeviceInfo failed: ' + e)
+  }
+  return DESIGN
+})()
+const LY = layout(screen.width, screen.height)
+const W = LY.width
+const H = LY.height
 const C_WHITE = 0xffffff
 const C_DIM = 0x9ca3af
 const C_GOLD = 0xfacc15
@@ -59,20 +71,7 @@ const PAGE_PRAYERS = 0
 const PAGE_EXTRAS = 1 // night portions, Duha / Eid, extra Fajr / Isha
 const PAGE_MAKRUH = 2 // prohibited windows
 const PAGE_COUNT = 3
-const GRID = { x: 16, y: 290, w: W - 32, h: 216 } // tap area: prayer grid + extras row
-const DATE_TAP = { x: 16, y: 194, w: W - 32, h: 44 } // tap area: Gregorian date line → settings menu
-// Prayer grid: 2 rows x 3 columns, right-to-left (mirrored by box()) — keep in sync with tools/render.py
-const gridX = (col) => 16 + (2 - col) * 134
-const CELL_W = 132
-// Extras row: slot 0 is the rightmost (leftmost when mirrored)
-const COMP_Y = 442
-const COMP_H = 52
-const COMP_W = 120
-const COMP_X = [276, 156, 36]
-const ICON = 24
-// Progress toward the next prayer: thin bar under the countdown line, filling in reading direction.
-const BAR = { x: 116, y: 287, w: 200, h: 4 } // keep in sync with tools/render.py
-const GEAR = { x: 20, y: 204, w: 24, h: 24 } // at the end of the date line
+const BAR = LY.bar // progress toward the next prayer, filling in reading direction
 
 let S = { ...CONFIG } // effective settings (lib/settings.js effectiveSettings) + location
 const digits = (s) => (S.arabicDigits ? String(s).replace(/\d/g, (d) => AR_DIGITS[d]) : String(s))
@@ -124,8 +123,7 @@ function buildEditGroups() {
   const chosen = {}
   const dir = T.rtl ? 'rtl' : 'ltr'
   for (const g of EDIT_GROUPS) {
-    const [rx, y, w, h] = g.rect
-    const { x } = box({ x: rx, w })
+    const { x, y, w, h } = box(g.area === 'digits' ? LY.editDigits : LY.comps[g.slot].cell)
     const defaultType = g.defaultType[dir]
     const group = createWidget(widget.WATCHFACE_EDIT_GROUP, {
       edit_id: g.editId,
@@ -140,9 +138,9 @@ function buildEditGroups() {
       count: g.options.length,
       tips_BG: 'edit/tips_bg.png',
       // centred just above the slot (below it for the top slot); only the focused slot shows it
-      tips_x: Math.round((w - g.tipsW) / 2),
-      tips_y: y >= 60 ? -42 : h + 2,
-      tips_width: g.tipsW,
+      tips_x: Math.round((w - LY.tips.w) / 2),
+      tips_y: y >= LY.tips.h + 20 ? -(LY.tips.h + 2) : h + 2,
+      tips_width: LY.tips.w,
       tips_margin: 8,
     })
     const type = group.getProperty(prop.CURRENT_TYPE)
@@ -305,12 +303,12 @@ WatchFace({
 
   buildNormal() {
     make(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: show_level.ONLY_NORMAL })
-    w.hijri = arText({ x: 16, y: 34, w: W - 32, h: 44, text_size: 32, color: C_GOLD })
-    w.time = text({ x: 0, y: 80, w: W, h: 120, text_size: 112 })
-    w.greg = arText({ x: 48, y: 198, w: W - 96, h: 36, text_size: 26, color: C_DIM })
+    w.hijri = arText({ ...LY.hijri, color: C_GOLD })
+    w.time = text({ ...LY.time })
+    w.greg = arText({ ...LY.greg, color: C_DIM })
     // ⚙ at the end of the date line: tapping the line opens the settings menu
-    make(widget.IMG, { ...box(GEAR), src: 'icons/gear.png', show_level: show_level.ONLY_NORMAL })
-    w.next = arText({ x: 16, y: 240, w: W - 32, h: 44, text_size: 30, color: C_TEAL })
+    make(widget.IMG, { ...box(LY.gear), src: 'icons/gear.png', show_level: show_level.ONLY_NORMAL })
+    w.next = arText({ ...LY.next, color: C_TEAL })
     const bar = { ...BAR, radius: 2, show_level: show_level.ONLY_NORMAL }
     w.barTrack = make(widget.FILL_RECT, { ...bar, color: C_TRACK })
     w.barFill = make(widget.FILL_RECT, { ...bar, color: C_TEAL })
@@ -318,11 +316,10 @@ WatchFace({
     // Page 0 — 2 rows x 3 columns in reading order: (Fajr | Sunrise | Dhuhr) (Asr | Maghrib | Isha)
     w.cells = {}
     PRAYER_ORDER.forEach((k, i) => {
-      const x = gridX(i % 3)
-      const y = 296 + Math.floor(i / 3) * 70
+      const c = LY.prayers[i]
       w.cells[k] = {
-        name: arText({ ...box({ x, y, w: CELL_W, h: 30 }), text_size: 24, color: C_DIM, text: T.prayers[k] }),
-        time: text({ ...box({ x, y: y + 28, w: CELL_W, h: 38 }), text_size: 32 }),
+        name: arText({ ...box(c.name), color: C_DIM, text: T.prayers[k] }),
+        time: text({ ...box(c.time) }),
       }
     })
     w.gridCells = PRAYER_ORDER.flatMap((k) => [w.cells[k].name, w.cells[k].time])
@@ -334,19 +331,20 @@ WatchFace({
     const kinds = [S.comp0, S.comp1, S.comp2]
     sensors = makeSensors(kinds)
     w.comps = kinds.map((kind, slot) => {
-      const x = COMP_X[slot]
+      const L = LY.comps[slot]
       if (kind === 'weather') {
         const num = (i) => `wnum/${S.arabicDigits ? 'ar' : 'la'}_${i}.png`
         // Current condition and temperature, both drawn by the firmware from the phone's weather.
         // Unknown weather (code 25) has a transparent icon, and the transparent invalid image
         // hides the temperature when the phone hasn't sent any.
         const icon = make(widget.IMG_LEVEL, {
-          ...box({ x: x + COMP_W - ICON - 4, y: COMP_Y + (COMP_H - ICON) / 2, w: ICON, h: ICON }),
+          ...box(L.icon),
           image_array: WEATHER_ICONS, image_length: WEATHER_ICONS.length,
           type: dataType.WEATHER, show_level: show_level.ONLY_NORMAL,
         })
+        const { text_size, ...tempBox } = L.temp // drawn with the wnum/ digit images instead
         const temp = make(widget.TEXT_IMG, {
-          ...box({ x, y: COMP_Y + 10, w: COMP_W - ICON - 8, h: 34 }),
+          ...box(tempBox),
           type: dataType.WEATHER_CURRENT,
           font_array: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num),
           unit_en: 'wnum/deg.png', unit_sc: 'wnum/deg.png', unit_tc: 'wnum/deg.png',
@@ -357,11 +355,8 @@ WatchFace({
         return { kind, widgets: [icon, temp] }
       }
       if (kind === 'none' || !kind) return { kind: 'none', widgets: [] }
-      const icon = make(widget.IMG, {
-        ...box({ x: x + COMP_W - ICON - 4, y: COMP_Y + (COMP_H - ICON) / 2, w: ICON, h: ICON }), src: `icons/${kind}.png`,
-        show_level: show_level.ONLY_NORMAL,
-      })
-      const value = text({ ...box({ x, y: COMP_Y, w: COMP_W - ICON - 8, h: COMP_H }), text_size: 24 })
+      const icon = make(widget.IMG, { ...box(L.icon), src: `icons/${kind}.png`, show_level: show_level.ONLY_NORMAL })
+      const value = text({ ...box(L.value) })
       return { kind, widgets: [icon, value], icon, value }
     })
     w.compWidgets = [].concat(...w.comps.map((c) => c.widgets))
@@ -384,25 +379,17 @@ WatchFace({
     if (w.page1) return
     // Page 1 — 3 rows x 3 columns (same grid as page 0), in reading order
     w.extras = []
-    for (let i = 0; i < 9; i++) {
-      const x = gridX(i % 3)
-      const y = 294 + Math.floor(i / 3) * 70
-      w.extras.push({
-        name: arText({ ...box({ x, y, w: CELL_W, h: 28 }), text_size: 19, color: C_DIM }),
-        time: text({ ...box({ x, y: y + 26, w: CELL_W, h: 38 }), text_size: 30 }),
-      })
+    for (const c of LY.extras) {
+      w.extras.push({ name: arText({ ...box(c.name), color: C_DIM }), time: text({ ...box(c.time) }) })
     }
     w.page1 = w.extras.flatMap((c) => [c.name, c.time])
 
     // Page 2 — one row per prohibited window: label first in reading order, then the range
-    w.makruh = MAKRUH_KEYS.map((key, i) => {
-      const y = 296 + i * 42
-      return {
-        key,
-        label: arText({ ...box({ x: 236, y, w: 176, h: 40 }), text_size: 26, color: C_DIM, text: T.makruh[key] }),
-        range: text({ ...box({ x: 20, y, w: 216, h: 40 }), text_size: 28 }),
-      }
-    })
+    w.makruh = MAKRUH_KEYS.map((key, i) => ({
+      key,
+      label: arText({ ...box(LY.makruh[i].label), color: C_DIM, text: T.makruh[key] }),
+      range: text({ ...box(LY.makruh[i].range) }),
+    }))
     w.page2 = w.makruh.flatMap((r) => [r.label, r.range])
     show(w.page1, false)
     show(w.page2, false)
@@ -414,7 +401,7 @@ WatchFace({
   // old ones are hidden, not deleted, since that runs inside the grid's own tap handler.
   lowerTaps() {
     if (w.gridTap) show([w.gridTap, ...w.compTaps], false)
-    w.gridTap = tap(GRID, () => {
+    w.gridTap = tap(LY.gridTap, () => {
       page = (page + 1) % PAGE_COUNT
       this.buildPages()
       this.refresh(false)
@@ -423,21 +410,22 @@ WatchFace({
     w.comps.forEach((c, slot) => {
       const appId = COMP_APPS[c.kind]
       if (typeof appId !== 'number') return
-      w.compTaps.push(tap(box({ x: COMP_X[slot], y: COMP_Y, w: COMP_W, h: COMP_H }), () => openApp(appId)))
+      const { x, y, w: cw, h } = box(LY.comps[slot].cell)
+      w.compTaps.push(tap({ x, y, w: cw, h }, () => openApp(appId)))
     })
   },
 
   // Tap areas last, so they sit on top.
   buildTaps() {
     this.lowerTaps()
-    w.dateTap = tap(DATE_TAP, () => this.openMenu())
+    w.dateTap = tap(LY.dateTap, () => this.openMenu())
   },
 
   // Settings menu over the face (tap the date line); see watchface/menu.js and screens.js.
   // Created on the first tap, not in build(): most face loads never open it.
   buildMenu() {
     const h = {
-      create: make, text, arText, tap, show, setText, setColor, digits, box, rtl: T.rtl, W, H,
+      create: make, text, arText, tap, show, setText, setColor, digits, box, rtl: T.rtl, L: LY.menu,
       colors: { title: C_GOLD, text: C_WHITE, dim: C_DIM, accent: C_TEAL },
     }
     menu = createMenu(h, () => this.onMenuClosed())
@@ -498,10 +486,10 @@ WatchFace({
   buildAod() {
     // AMOLED always-on: few lit pixels, no fills.
     const L = show_level.ONLY_AOD
-    w.aodHijri = arText({ x: 16, y: 84, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
-    w.aodTime = text({ x: 0, y: 130, w: W, h: 120, text_size: 112, color: C_AOD }, L)
-    w.aodGreg = arText({ x: 16, y: 248, w: W - 32, h: 36, text_size: 26, color: C_AOD }, L)
-    w.aodNext = arText({ x: 16, y: 292, w: W - 32, h: 44, text_size: 30, color: C_AOD }, L)
+    w.aodHijri = arText({ ...LY.aod.hijri, color: C_AOD }, L)
+    w.aodTime = text({ ...LY.aod.time, color: C_AOD }, L)
+    w.aodGreg = arText({ ...LY.aod.greg, color: C_AOD }, L)
+    w.aodNext = arText({ ...LY.aod.next, color: C_AOD }, L)
   },
 
   refresh(full) {

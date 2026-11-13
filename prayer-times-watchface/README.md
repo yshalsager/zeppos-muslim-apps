@@ -116,7 +116,7 @@ In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subse
 
 ## City list
 
-`assets/bip-max/cities/` holds **4,997 cities in 241 countries** (161 KB): `index.json` (world regions → countries) plus one `<CC>.json` per country, either `{cities: [[name, lat, lon], …]}` or `{regions: [[region, [[name, lat, lon], …]], …]}`, with lat/lon in whole hundredths of a degree (~1 km, under 3 s of prayer time). The face menu reads them with `@zos/fs` only when you open the location screens, so they cost nothing at startup.
+`assets/<target>/cities/` holds **4,997 cities in 241 countries** (161 KB): `index.json` (world regions → countries) plus one `<CC>.json` per country, either `{cities: [[name, lat, lon], …]}` or `{regions: [[region, [[name, lat, lon], …]], …]}`, with lat/lon in whole hundredths of a degree (~1 km, under 3 s of prayer time). The face menu reads them with `@zos/fs` only when you open the location screens, so they cost nothing at startup.
 - **Source:** [GeoNames](https://www.geonames.org/) `cities15000` (CC-BY 4.0). Arab League countries keep every city ≥ 15k people, other Muslim-majority countries ≥ 50k, the rest of the world ≥ 250k, plus every capital.
 - **Arabic names:** GeoNames `alternateNamesV2`, then the Arabic label of the place's Wikidata item (CC0) where GeoNames has none. Diacritics are dropped, and Persian letter forms are mapped to Arabic ones (ی→ي, ک→ك, ڤ→ف). A name is kept only if the font shapes every letter; otherwise the plain-ASCII English name is used. About 54% of cities, all countries and most governorates have Arabic names. The Maghreb has the most gaps (Morocco ~25%). Fixes go in `OVERRIDES` in `tools/gen-cities.py`.
 - **Other languages:** cities and regions show their plain-ASCII GeoNames name (stored only where it differs from the Arabic one), sorted on the watch. Country names come from [CLDR](https://cldr.unicode.org/) via Babel, one per language in `index.json`.
@@ -130,8 +130,10 @@ In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subse
 watchface/index.js         ← UI (normal + AOD + edit slots), lifecycle and refresh (see How it works)
 watchface/menu.js          ← face menu overlay (rows, steppers, paging, back)
 watchface/screens.js       ← face menu screens: location, adjustments, iqama, angles, 12/24h, sunrise window
+devices.json               ← the screens the face is built for (one app.json target each; see Devices)
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 
+lib/layout.js              ← every box the face draws, scaled from the Bip Max design to the screen
 lib/prayer.js              ← adhan-js wrapper (npm, MIT, bundled by zeus) → local minutes; night portions, makruh windows
 lib/countdown.js           ← countdown line: next prayer, iqama, progress, last 10 min, last third of the night
 lib/hijri.js               ← Hijri conversion (Umm al-Qura table + tabular fallback)
@@ -143,15 +145,16 @@ lib/store.js               ← JSON values in the face's LocalStorage
 lib/location.js            ← newest of the picked city and ../prayer-location-app's fix
 lib/app-ids.js             ← generated: the companion's appId, from the root mise.toml [env]
 lib/city-data.js           ← reads the city files on demand (@zos/fs); lib/utf8.js decodes them
-assets/bip-max/cities/     ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
+assets/<target>/cities/    ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
 lib/extras.js              ← extras-row sensors (steps, heart rate, battery, calories)
 lib/weather-icons.js       ← GENERATED weather icon per Zepp weather code (tools/gen-edit-assets.py)
 lib/edit-options.js        ← GENERATED on-watch edit slots (tools/gen-edit-assets.py)
 
 tools/gen-hijri-table.mjs  ← regenerates the Hijri table from Node's ICU calendar
-tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits, lib/edit-options.js
-tools/gen-preview.py       ← renders assets/bip-max/icon.png (picker preview, 294×350) from the real layout
-tools/render.py            ← shared drawing for the above (layout boxes mirror watchface/index.js)
+tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits and menu arrows per target, lib/edit-options.js
+tools/gen-preview.py       ← renders assets/<target>/icon.png (picker preview, size from devices.json) from the real layout
+tools/render.py            ← shared drawing for the above (boxes from lib/layout.js via tools/layout-data.mjs)
+tools/layout-data.mjs      ← prints lib/layout.js's boxes for one devices.json target, for the Python generators
 tools/uax9.py              ← Unicode bidi runs for render.py (what FriBiDi does inside libraqm)
 tools/preview-data.mjs     ← sample face data for the previews, computed by lib/
 tools/gen-docs.py          ← README screenshots in ../docs/watchface/ (scenes from tools/docs-data.mjs)
@@ -160,6 +163,16 @@ tools/gen-font.py          ← builds the Naskh subset (see Font); tools/fetch-f
 
 test/verify.mjs            ← Hijri vs ICU; prayer wrapper vs adhan in Africa/Cairo; event windows; countdown logic; face-menu settings
 ```
+
+## Devices
+
+The face is built for the Bip Max only, but it is laid out so more screens can be added:
+
+- `devices.json` lists the targets: screen size, shape, corner radius (for screenshots) and picker preview size. Each key is an `app.json` `targets` entry and its `assets/<target>/` folder (`test/verify.mjs` checks they match).
+- `lib/layout.js` holds every box the face, the AOD layer, the Edit slots and the menu draw, in the Bip Max's 432 × 514 design. Another screen gets it scaled: x by width, y by height, text and icons by the smaller of the two. At 432 × 514 nothing is scaled, so the Bip Max is drawn exactly as designed.
+- `watchface/index.js` reads the screen size from `getDeviceInfo()`, and the generators (`tools/render.py` through `tools/layout-data.mjs`) write every target's images from the same boxes, so previews and screenshots match each screen. The font and city list are the same for every target and are copied into each folder.
+
+To add a rectangular screen: add it to `devices.json`, add an `app.json` target with its `deviceSource` and the same key, then run `mise run :gen` and `mise run :test`. Scaling only works for screens close to the Bip Max's shape; a round screen needs its own layout in `lib/layout.js`.
 
 ## Build / install
 

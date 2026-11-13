@@ -1,4 +1,5 @@
-"""Builds the face's city list from GeoNames (CC-BY 4.0) into assets/bip-max/cities/.
+"""Builds the face's city list from GeoNames (CC-BY 4.0) into assets/<target>/cities/ (the same files
+for every devices.json target).
 
 Inputs in .cache/geonames (tools/fetch-geonames.sh): cities15000.zip, countryInfo.txt,
 admin1CodesASCII.txt, alternateNamesV2.zip. The output is committed; rerun with
@@ -25,6 +26,7 @@ Run: uv run --with babel python3 -I tools/gen-cities.py (via mise).
 import io
 import json
 import re
+import shutil
 import sys
 import unicodedata
 import urllib.parse
@@ -37,7 +39,8 @@ from babel import Locale
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / ".cache" / "geonames"
-OUT = ROOT / "assets" / "bip-max" / "cities"
+TARGETS = [k for k in json.loads((ROOT / "devices.json").read_text()) if not k.startswith("/")]
+OUT = ROOT / "assets" / TARGETS[0] / "cities"
 
 ARAB = set("DZ BH KM DJ EG IQ JO KW LB LY MR MA OM PS QA SA SO SD SY TN AE YE".split())
 MUSLIM = set("AF AL AZ BA BD BF BN GM GN ID IR KG KZ ML MV MY NE NG PK SL SN TD TJ TM TR UZ XK".split())
@@ -213,6 +216,11 @@ def main():
     stats["bytes"] += len(text.encode())
     print(f"{stats['cities']} cities in {stats['files']} countries, {stats['arabic']} with Arabic names, "
           f"{stats['bytes'] // 1024} KB → {OUT.relative_to(ROOT)}")
+    for target in TARGETS[1:]:
+        copy = ROOT / "assets" / target / "cities"
+        shutil.rmtree(copy, ignore_errors=True)
+        shutil.copytree(OUT, copy)
+        print(f"copied to {copy.relative_to(ROOT)}")
     big = sorted(by_cc.items(), key=lambda kv: -len(kv[1]))[:5]
     print("largest:", ", ".join(f"{cc} {len(v)}" for cc, v in big))
 
