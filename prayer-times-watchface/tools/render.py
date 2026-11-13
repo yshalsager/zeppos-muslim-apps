@@ -1,5 +1,6 @@
 """Shared drawing helpers that mirror the widgets in watchface/index.js."""
 import json
+import math
 import subprocess
 from pathlib import Path
 
@@ -21,7 +22,8 @@ LATIN_FONT = "/System/Library/Fonts/SFNS.ttf"
 # Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js
 HIJRI = ((16, 34, W - 32, 44), 32)
 CLOCK = ((0, 80, W, 120), 112)
-GREG = ((16, 198, W - 32, 36), 26)
+GREG = ((48, 198, W - 96, 36), 26)
+GEAR = (20, 204)  # ⚙ at the end of the date line (opens the settings menu)
 NEXT = ((16, 240, W - 32, 44), 30)
 BAR = (116, 287, 200, 4)  # progress toward the next prayer (x, y, w, h), fills right-to-left
 TRACK = (38, 38, 38)
@@ -66,6 +68,14 @@ def _draw_icon(d, name, x, y, s, color):
     elif name == "flame":
         d.ellipse(box(0.2, 0.42, 0.8, 0.96), fill=color)
         d.polygon([P(0.21, 0.66), P(0.52, 0.04), P(0.79, 0.66)], fill=color)
+    elif name == "gear":  # 8 teeth around a ring (the hole is punched out: use via icon_image only)
+        cx, cy = P(0.5, 0.5)
+        for i in range(8):
+            a = i * math.pi / 4
+            d.polygon([(cx + math.cos(a + da) * r * s, cy + math.sin(a + da) * r * s)
+                       for da, r in ((-0.22, 0.3), (0.22, 0.3), (0.14, 0.49), (-0.14, 0.49))], fill=color)
+        d.ellipse(box(0.17, 0.17, 0.83, 0.83), fill=color)
+        d.ellipse(box(0.36, 0.36, 0.64, 0.64), fill=(0, 0, 0, 0))
     else:
         raise ValueError(name)
 
@@ -97,15 +107,21 @@ class Canvas:
         self.im = Image.new("RGBA", (w * SCALE, h * SCALE), (0, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.im)
 
-    def text(self, box, s, size, color, system=False):
+    def text(self, box, s, size, color, system=False, fit=False, ltr=False):
+        """fit: shrink the size until the line fits the box width (else it's drawn as given).
+        ltr: lay out left to right, as the watch does for a string with no Arabic letter before its
+        digits (e.g. "+٠.١")."""
         x, y, w, h = box
         latin = all(ord(c) < 0x0600 for c in s)
         path = LATIN_FONT if latin else (SF_ARABIC if system else ARABIC_FONT)
         if path == SF_ARABIC:  # SF Arabic has no hyphen/dash/middle dot/plus/%
             bad = set("·–—-+%") & set(s)
             assert not bad, f"glyphs missing in SF Arabic {bad!r} in {s!r}"
+        kw = {} if latin else {"direction": "ltr" if ltr else "rtl", "language": "ar"}
         f = ImageFont.truetype(path, size * SCALE)
-        kw = {} if latin else {"direction": "rtl", "language": "ar"}
+        while fit and size > 14 and self.draw.textlength(s, font=f, **kw) > (w - 8) * SCALE:
+            size -= 1
+            f = ImageFont.truetype(path, size * SCALE)
         cx = (x - self.ox + w / 2) * SCALE
         cy = (y - self.oy + h / 2) * SCALE
         self.draw.text((cx, cy), s, font=f, fill=color, anchor="mm", **kw)
@@ -127,6 +143,17 @@ class Canvas:
             x, y = grid_x(col), GRID_Y + row * GRID_ROW_H
             self.text((x, y, GRID_CELL_W, 30), c["name"], 24, GOLD if c["on"] else DIM)
             self.text((x, y + 28, GRID_CELL_W, 38), c["time"], 32, GOLD if c["on"] else WHITE, system=True)
+
+    def paste_icon(self, name, x, y, size=ICON, color=DIM):
+        """An icon with see-through parts (e.g. the gear's hole), as the watch draws its PNG."""
+        im = icon_image(name, size, color).resize((size * SCALE, size * SCALE), Image.LANCZOS)
+        self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
+
+    def paste_image(self, path, x, y):
+        """An asset PNG at its own size, as the watch's IMG widget draws it."""
+        im = Image.open(path).convert("RGBA")
+        im = im.resize((im.width * SCALE, im.height * SCALE), Image.LANCZOS)
+        self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
 
     def complication(self, slot, kind, value):
         """Extras cell: icon on the right, value to its left (weather: temperature + condition)."""

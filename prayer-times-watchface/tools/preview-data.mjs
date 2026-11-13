@@ -1,6 +1,6 @@
 // Prints sample face data as JSON for tools/gen-preview.py and tools/gen-edit-assets.py.
 // Uses Zepp's standard preview time (10:09) on a fixed date in Cairo.
-import { prayerMinutes, dayEvents, PRAYER_ORDER, PRAYER_NAMES_AR, METHODS } from '../lib/prayer.js'
+import { prayerMinutes, PRAYER_ORDER, PRAYER_NAMES_AR } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay, HIJRI_MONTHS_AR, WEEKDAYS_AR } from '../lib/hijri.js'
 import { CONFIG } from '../config.js'
 import { countdown } from '../lib/countdown.js'
@@ -37,21 +37,8 @@ console.log(JSON.stringify({
   next: `${PRAYER_NAMES_AR[next]} بعد ${ar(`${Math.floor(left / 60)}:${pad(left % 60)}`)}`,
   cells: cells(t),
   progress,
-  config: { iqama: CONFIG.iqama, extraFajrAngle: CONFIG.extraFajrAngle, extraIshaAngle: CONFIG.extraIshaAngle },
-  // extra Fajr/Isha times per candidate angle (Egypt sample day); keys are angle strings like "14.6"
-  extras: (() => {
-    const out = { fajr: {}, isha: {} }
-    for (const a of [18, 17, 16, 15, 14.6, 14, 13, 12]) {
-      const e = dayEvents(y, m, d, { lat: CONFIG.lat, lon: CONFIG.lon, tz, method: 'mwl', adjust: CONFIG.adjust, extraFajrAngle: a, extraIshaAngle: a })
-      out.fajr[a] = ar(clock(e.extraFajr))
-      out.isha[a] = ar(clock(e.extraIsha))
-    }
-    return out
-  })(),
   // per-option previews for the edit screen
   edit: {
-    hijri: Object.fromEntries([-2, -1, 0, 1, 2].map((o) => [o, hijri(o)])),
     clock: { arabic: ar(clock(nowMin)), latin: clock(nowMin) },
-    grids: Object.fromEntries(Object.keys(METHODS).map((k) => [k, cells(times(k, 1))])),
   },
 }))

@@ -3,6 +3,11 @@ import { Coordinates, CalculationMethod, Madhab, PrayerTimes } from 'adhan'
 import { prayerMinutes, dayEvents, nightPortions, METHODS, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
+import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
+import { METHOD_LIST, autoMethod } from '../lib/methods.js'
+import { CONFIG } from '../config.js'
+import { utf8 } from '../lib/utf8.js'
+import { readFileSync, existsSync } from 'node:fs'
 
 let fail = 0
 const check = (ok, ...msg) => { if (!ok && fail++ < 10) console.log('FAIL', ...msg) }
@@ -137,6 +142,86 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   }
   check(countdown(t, t.dhuhr - 1, base).frac > 0.99 && countdown(t, t.fajr, base).frac === 0, 'countdown ends')
   console.log(`countdown: ${mins} minutes checked (next, left, progress, urgent, iqama, last third)`)
+}
+
+// Face settings: whatever is stored (missing, old, corrupt) becomes complete and in range
+{
+  const d = defaultSettings(CONFIG)
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+  check(same(sanitizeSettings(null, CONFIG), sanitizeSettings(d, CONFIG)), 'settings defaults')
+  check(same(sanitizeSettings('junk', CONFIG), sanitizeSettings(null, CONFIG)), 'settings junk')
+  // an old stored value (before the menu held the calculation settings) keeps what still applies
+  const old = sanitizeSettings({ iqamaCustom: [5, 5, 5, 5, 5], is24h: true, customFajrAngle: 14.6, sunriseWindowMin: 20 }, CONFIG)
+  check(same(old.iqama, CONFIG.iqama) && old.clock === CONFIG.clock && old.extraFajrAngle === CONFIG.extraFajrAngle && old.sunriseWindowMin === 20, 'settings old keys', old)
+  const s = sanitizeSettings({ adjust: { fajr: 99, isha: -3.4, asr: 'x' }, iqama: [5, -1, 200], iqamaJumuah: 30,
+    clock: '24', sunriseWindowMin: 12, extraFajrAngle: 14.6, extraIshaAngle: 5, method: 'nope', asrFactor: 3,
+    hijriOffsetDays: -7, hijriDayStartsAtMaghrib: 'yes' }, CONFIG)
+  check(s.adjust.fajr === 30 && s.adjust.isha === -3 && s.adjust.asr === CONFIG.adjust.asr && s.adjust.sunrise === 0, 'settings adjust', s.adjust)
+  check(same(s.iqama, [5, 0, 60, CONFIG.iqama[3], CONFIG.iqama[4]]) && s.iqamaJumuah === 30, 'settings iqama', s.iqama)
+  check(s.clock === '24' && s.sunriseWindowMin === CONFIG.sunriseWindowMin, 'settings toggles', s)
+  check(s.extraFajrAngle === 14.6 && s.extraIshaAngle === 0, 'settings angles', s)
+  check(s.method === 'auto' && s.asrFactor === 1 && s.hijriOffsetDays === -2 && s.hijriDayStartsAtMaghrib === false, 'settings calc', s)
+  // angle stepper: off ↔ minimum, 0.1° steps without float drift, clamped at the maximum
+  let a = 0
+  a = stepAngle(a, 0.1); check(a === LIMITS.angle[0], 'angle on', a)
+  for (let i = 0; i < 26; i++) a = stepAngle(a, 0.1)
+  check(a === 14.6, 'angle fine steps', a)
+  check(stepAngle(LIMITS.angle[0], -0.1) === 0 && stepAngle(19.5, 1) === LIMITS.angle[1], 'angle limits')
+  check(stepInt(30, 1, LIMITS.adjust) === 30 && stepInt(0, -1, LIMITS.iqama) === 0, 'int limits')
+  check(iqamaPreset(IQAMA_PRESETS[2][1]) === 2 && iqamaPreset([1, 2, 3, 4, 5]) === -1, 'iqama presets')
+  // method: automatic by country (unknown → MWL), or the chosen one; Edit slots only set looks
+  const env = { cc: 'SA', system24h: true }
+  const e = effectiveSettings(CONFIG, { ...s, method: 'auto', clock: 'system' }, { arabicDigits: false }, env)
+  check(e.method === 'makkah' && e.is24h === true && e.arabicDigits === false && e.iqama === s.iqama, 'effective auto', e.method, e.is24h)
+  check(effectiveSettings(CONFIG, { ...s, method: 'mwl', clock: '12' }, {}, env).method === 'mwl', 'effective chosen method')
+  check(effectiveSettings(CONFIG, { ...s, clock: '12' }, {}, env).is24h === false, 'effective 12h override')
+  check(autoMethod('EG') === 'egypt' && autoMethod('PK') === 'karachi' && autoMethod('TR') === 'turkey' &&
+    autoMethod('US') === 'isna' && autoMethod('DE') === 'mwl' && autoMethod(undefined) === 'mwl', 'auto method')
+  // the menu's method list and the auto table only name methods lib/prayer.js knows
+  const keys = METHOD_LIST.map(([k]) => k)
+  check(keys.length === Object.keys(METHODS).length && keys.every((k) => METHODS[k]), 'method list', keys)
+  const ccs = JSON.parse(readFileSync(new URL('../assets/bip-max/cities/index.json', import.meta.url), 'utf8'))
+    .groups.flatMap(([, cs]) => cs.map(([cc]) => cc))
+  check(ccs.every((cc) => METHODS[autoMethod(cc)]), 'auto method for every country')
+  console.log('settings: sanitize, steppers, presets, automatic method and 12/24h')
+}
+
+// City files (tools/gen-cities.py): every listed country has a file, names use only letters the
+// font shapes, coordinates are valid, regions are consistent; and the watch's UTF-8 decoder
+{
+  const dir = new URL('../assets/bip-max/cities/', import.meta.url)
+  const sample = 'مكة المكرمة · Zürich · 😀'
+  check(utf8(new TextEncoder().encode(sample)) === sample, 'utf8 decode')
+  const index = JSON.parse(readFileSync(new URL('index.json', dir), 'utf8'))
+  const NAME = /^([\u0621-\u063a\u0641-\u064a ()\-]+|[\x20-\x7e]+)$/
+  let n = 0, files = 0
+  const all = new Map()
+  for (const [group, countries] of index.groups) {
+    check(NAME.test(group) && countries.length > 0, 'city group', group)
+    for (const [cc, name] of countries) {
+      check(NAME.test(name), 'country name', cc, name)
+      const f = new URL(`${cc}.json`, dir)
+      if (!existsSync(f)) { check(false, 'country file missing', cc); continue }
+      const data = JSON.parse(readFileSync(f, 'utf8'))
+      files++
+      check(Array.isArray(data.cities) !== Array.isArray(data.regions), 'cities xor regions', cc)
+      const lists = data.cities ? [data.cities] : data.regions.map(([r, cs]) => {
+        check(NAME.test(r) && cs.length > 0, 'region', cc, r)
+        return cs
+      })
+      for (const [city, lat100, lon100] of lists.flat()) {
+        n++
+        const lat = lat100 / 100, lon = lon100 / 100
+        all.set(`${cc}:${city}`, [lat, lon])
+        check(NAME.test(city), 'city name', cc, city)
+        check(Number.isInteger(lat100) && Number.isInteger(lon100), 'city coords are hundredths', cc, city)
+        check(Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0), 'city coords', cc, city)
+      }
+    }
+  }
+  const near = (key, lat, lon) => { const p = all.get(key); return p && Math.abs(p[0] - lat) < 0.2 && Math.abs(p[1] - lon) < 0.2 }
+  check(near('EG:القاهرة', 30.04, 31.24) && near('SA:مكة المكرمة', 21.42, 39.83) && near('SA:المدينة المنورة', 24.47, 39.61), 'key cities', [...all.keys()].filter((k) => /^SA:م/.test(k)))
+  console.log(`cities: ${n} in ${files} country files, names/coords/regions valid`)
 }
 
 if (fail) { console.log('FAILURES:', fail); process.exit(1) } else console.log('ALL OK')

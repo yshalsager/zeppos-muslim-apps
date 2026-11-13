@@ -13,26 +13,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I drops the script dir
 from PIL import Image, ImageDraw  # noqa: E402
 
-from render import (CLOCK, COMP_H, COMP_W, COMP_X, COMP_Y, DIM, GREG, HIJRI, NEXT, ROOT, TEAL, GOLD, WHITE,  # noqa: E402
+from render import (CLOCK, COMP_H, COMP_W, COMP_X, COMP_Y, DIM, ROOT, TEAL, WHITE,  # noqa: E402
                     Canvas, digit_image, icon_image, sample_data)
 
 ASSETS = ROOT / "assets" / "bip-max" / "edit"
 TYPE_BASE = 100000  # custom edit types must be >= 0x186a0
 TIPS_W = 220  # tips label width; option titles must fit in it
-
-GRID_RECT = (16, 292, 400, 144)  # the 2x3 prayer grid
-GREG_RIGHT = (218, 196, 198, 40)  # Gregorian line split in two: right half = extra Fajr
-GREG_LEFT = (16, 196, 198, 40)  # left half = extra Isha
-FAJR_ANGLES = [18, 17, 16, 15, 14.6, 14, 13, 12]
-ISHA_ANGLES = [18, 17, 16, 15, 14, 13, 12]
-
-
-AR_DIGITS = "٠١٢٣٤٥٦٧٨٩"
-
-
-def ar(n):
-    return "".join(AR_DIGITS[int(ch)] if ch.isdigit() else ch for ch in str(n))
-
 
 COMP_KINDS = ["weather", "steps", "heart", "battery", "flame", "none"]
 COMP_TITLES = {"weather": "الطقس", "steps": "الخطوات", "heart": "النبض", "battery": "البطارية",
@@ -47,59 +33,13 @@ def draw_comp(c, slot, kind):
         c.complication(slot, kind, COMP_SAMPLES[kind])
 
 
-def grow(box, dy=2):
-    x, y, w, h = box
-    return (x, y - dy, w, h + 2 * dy)
-
-
 # title = the label the watch shows for the focused slot (system font, Arabic is fine)
 GROUPS = [
     {
-        # key "*": the option value is a dict merged into the settings
-        "key": "*", "editId": 101, "rect": grow(HIJRI[0]),
-        "default": {"hijriOffsetDays": 0, "hijriDayStartsAtMaghrib": False},
-        "options": [
-            ({"hijriOffsetDays": o, "hijriDayStartsAtMaghrib": mg}, label + (" (المغرب)" if mg else ""))
-            for mg in (False, True)
-            for o, label in [(-2, "ناقص يومين"), (-1, "ناقص يوم"), (0, "أم القرى"), (1, "زائد يوم"), (2, "زائد يومين")]
-        ],
-        "draw": lambda c, v, d: c.text(
-            HIJRI[0],
-            d["edit"]["hijri"][str(v["hijriOffsetDays"])] + (" (من المغرب)" if v["hijriDayStartsAtMaghrib"] else ""),
-            HIJRI[1] - (6 if v["hijriDayStartsAtMaghrib"] else 0), GOLD),
-    },
-    {
-        "key": "arabicDigits", "editId": 102, "rect": (16, 84, 400, 112), "default": True,
+        # just around the clock digits (the widest time, e.g. 12:58, fits): previews are ~w*h bytes each
+        "key": "arabicDigits", "editId": 102, "rect": (71, 94, 290, 96), "default": True,
         "options": [(True, "أرقام عربية"), (False, "أرقام لاتينية")],
         "draw": lambda c, v, d: c.text(CLOCK[0], d["edit"]["clock"]["arabic" if v else "latin"], CLOCK[1], WHITE, system=True),
-    },
-    {
-        # minutes after adhan for [fajr, dhuhr, asr, maghrib, isha]; "custom" = CONFIG.iqama
-        "key": "iqama", "editId": 106, "rect": grow(NEXT[0]), "default": None,
-        "options": [(None, "بدون إقامة"), ([10, 10, 10, 5, 10], "إقامة قصيرة"),
-                    ([20, 15, 15, 10, 15], "إقامة معتادة"), ([30, 20, 20, 10, 20], "إقامة طويلة"),
-                    ("custom", "إقامة مخصصة")],
-        "draw": lambda c, v, d: c.text(NEXT[0], iqama_label(v, d), NEXT[1] - 4, TEAL),
-    },
-    # Extra Fajr #1 / Isha #1 (page 2): user-chosen angles, independent of the method; the face hides
-    # one that equals the method's own angle. "custom" = config.js extraFajrAngle / extraIshaAngle.
-    {
-        "key": "extraFajrAngle", "editId": 108, "rect": GREG_RIGHT, "default": 0,
-        "options": [(0, "بدون فجر إضافي")] + [(a, f"فجر {ar(a)}°") for a in FAJR_ANGLES] + [("custom", "فجر مخصص")],
-        "draw": lambda c, v, d: c.text(GREG_RIGHT, extra_label("فجر", "fajr", v, d), 21, DIM),
-    },
-    {
-        "key": "extraIshaAngle", "editId": 109, "rect": GREG_LEFT, "default": 0,
-        "options": [(0, "بدون عشاء إضافي")] + [(a, f"عشاء {ar(a)}°") for a in ISHA_ANGLES] + [("custom", "عشاء مخصص")],
-        "draw": lambda c, v, d: c.text(GREG_LEFT, extra_label("عشاء", "isha", v, d), 21, DIM),
-    },
-    {
-        "key": "method", "editId": 104, "rect": GRID_RECT, "default": "egypt",
-        "options": [("egypt", "الهيئة المصرية"), ("mwl", "رابطة العالم"), ("karachi", "كراتشي"),
-                    ("isna", "أمريكا الشمالية"), ("makkah", "أم القرى"), ("uiof", "اتحاد فرنسا"),
-                    ("dubai", "دبي"), ("kuwait", "الكويت"), ("qatar", "قطر"), ("singapore", "سنغافورة"),
-                    ("turkey", "تركيا (ديانت)"), ("tehran", "طهران"), ("moonsighting", "لجنة الأهلة")],
-        "draw": lambda c, v, d: c.grid(d["edit"]["grids"][v]),
     },
 ] + [
     # Extras row: three cells, each picks a metric. Weather stays blank when there's no data.
@@ -113,28 +53,11 @@ GROUPS = [
 ]
 
 
-def extra_label(name, key, v, d):
-    if v == 0:
-        return f"بدون {name} إضافي"
-    if v == "custom":
-        a = d["config"]["extraFajrAngle" if key == "fajr" else "extraIshaAngle"]
-        return f"{name} مخصص {ar(a)}°" if a else f"{name} مخصص: لا يوجد"
-    return f"{name} {ar(v)}°  {d['extras'][key][str(v)]}"
-
-
-def iqama_label(v, d):
-    if v is None:
-        return "بدون إقامة"
-    mins = d["config"]["iqama"] if v == "custom" else v
-    nums = " ".join("".join(AR_DIGITS[int(ch)] for ch in str(n)) for n in mins)
-    return ("الإقامة (مخصصة): " if v == "custom" else "الإقامة بعد: ") + nums + " د"
-
-
 def gen_runtime_assets():
     """Icons for the extras row and digit images for the system-drawn current temperature."""
     icons = ROOT / "assets" / "bip-max" / "icons"
     icons.mkdir(parents=True, exist_ok=True)
-    for name in ["heart", "battery", "steps", "flame"]:
+    for name in ["heart", "battery", "steps", "flame", "gear"]:
         icon_image(name).save(icons / f"{name}.png")
     wnum = ROOT / "assets" / "bip-max" / "wnum"
     wnum.mkdir(parents=True, exist_ok=True)
@@ -162,8 +85,14 @@ def main():
     out_groups = []
     for gi, g in enumerate(GROUPS, start=1):
         x, y, w, h = g["rect"]
-        frame(w, h, TEAL + (255,), 3).save(ASSETS / f"g{gi}_select.png")
-        frame(w, h, (90, 90, 90, 255), 1).save(ASSETS / f"g{gi}_unselect.png")
+        # Focus frames depend only on the slot size, so slots of the same size share one (images are
+        # stored uncompressed on the watch: ~w*h bytes each). Unfocused slots get no outline: one
+        # tiny transparent image for all (8x32: zeus leaves very small images unconverted).
+        sel, unsel = f"frame_{w}x{h}_select.png", "frame_none.png"
+        if not (ASSETS / sel).exists():
+            frame(w, h, TEAL + (255,), 3).save(ASSETS / sel)
+        if not (ASSETS / unsel).exists():
+            Image.new("RGBA", (8, 32), (0, 0, 0, 0)).save(ASSETS / unsel)
         opts = []
         for oi, (value, title) in enumerate(g["options"]):
             canvas = Canvas(x, y, w, h)
@@ -176,17 +105,18 @@ def main():
         out_groups.append({
             "key": g["key"], "editId": g["editId"], "rect": list(g["rect"]), "tipsW": TIPS_W,
             "defaultType": default_type, "options": opts,
-            "select": f"edit/g{gi}_select.png", "unselect": f"edit/g{gi}_unselect.png",
+            "select": f"edit/{sel}", "unselect": f"edit/{unsel}",
         })
 
     gen_runtime_assets()
 
-    # Methods offered must exist in lib/prayer.js METHODS (preview-data computes a grid per method)
-    method_keys = [v for v, _ in next(g for g in GROUPS if g["key"] == "method")["options"]]
-    assert sorted(method_keys) == sorted(data["edit"]["grids"]), (method_keys, list(data["edit"]["grids"]))
-
-    # Transparent tap target for the page-cycling BUTTON over the prayer grid (watchface/index.js GRID)
-    Image.new("RGBA", (400, 216), (0, 0, 0, 0)).save(ROOT / "assets" / "bip-max" / "tap.png")
+    # Settings menu (watchface/menu.js) ▲ / ▼ arrows; tap areas are invisible FILL_RECTs, no images
+    # back points right: the way out in right-to-left reading
+    for name, size, pts in (("up", (32, 18), [(0, 18), (16, 0), (32, 18)]), ("down", (32, 18), [(0, 0), (16, 18), (32, 0)]),
+                            ("back", (18, 32), [(0, 0), (18, 16), (0, 32)])):
+        im = Image.new("RGBA", size, (0, 0, 0, 0))
+        ImageDraw.Draw(im).polygon(pts, fill=TEAL + (255,))
+        im.save(ROOT / "assets" / "bip-max" / f"arrow-{name}.png")
 
     tip = Image.new("RGBA", (TIPS_W, 40), (0, 0, 0, 0))
     ImageDraw.Draw(tip).rounded_rectangle([0, 0, TIPS_W - 1, 39], radius=20, fill=TEAL + (255,))

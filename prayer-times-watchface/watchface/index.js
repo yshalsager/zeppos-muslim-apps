@@ -1,14 +1,22 @@
 import ui from '@zos/ui'
 import { Time } from '@zos/sensor'
+import { getScene, SCENE_AOD } from '@zos/app'
+import { getTimeFormat, TIME_FORMAT_24 } from '@zos/settings'
+import { launchApp, SYSTEM_APP_WEATHER, SYSTEM_APP_STATUS, SYSTEM_APP_HR } from '@zos/router'
 import { CONFIG } from '../config.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
-import { readLocation } from '../lib/location.js'
+import { readLocation, saveCity } from '../lib/location.js'
+import { readJSON, writeJSON } from '../lib/store.js'
+import { SETTINGS_KEY, sanitizeSettings, effectiveSettings, resolveMethod } from '../lib/settings.js'
+import { autoMethod } from '../lib/methods.js'
+import { createMenu } from './menu.js'
+import { rootScreen } from './screens.js'
 import { dayEvents, nightPortions, PRAYER_ORDER, PRAYER_NAMES_AR, JUMUAH_AR } from '../lib/prayer.js'
 import { countdown } from '../lib/countdown.js'
 import { hijriFromEpochDay, epochDay, HIJRI_MONTHS_AR, WEEKDAYS_AR } from '../lib/hijri.js'
 import { makeSensors, forecastToday, WEATHER_AR } from '../lib/extras.js'
 
-const { createWidget, widget, align, prop, show_level } = ui
+const { createWidget, widget, align, prop, show_level, event } = ui
 const dataType = ui.data_type || (typeof hmUI !== 'undefined' ? hmUI.data_type : {})
 
 // Bip Max: 432 x 514, designWidth 432 => px(n) === n
@@ -40,6 +48,7 @@ const PAGE_EXTRAS = 1 // night portions, Duha / Eid, extra Fajr / Isha
 const PAGE_MAKRUH = 2 // prohibited windows
 const PAGE_COUNT = 3
 const GRID = { x: 16, y: 290, w: W - 32, h: 216 } // tap area: prayer grid + extras row
+const DATE_TAP = { x: 16, y: 194, w: W - 32, h: 44 } // tap area: Gregorian date line → settings menu
 // Prayer grid: 2 rows x 3 columns, right-to-left — keep in sync with tools/render.py
 const gridX = (col) => 16 + (2 - col) * 134
 const CELL_W = 132
@@ -56,7 +65,7 @@ const MAKRUH_ROWS = [
   ['dawn', 'من الفجر'], ['sunrise', 'الشروق'], ['zawal', 'الاستواء'], ['afterAsr', 'بعد العصر'], ['sunset', 'الغروب'],
 ]
 
-let S = { ...CONFIG } // effective settings: config.js defaults + watch edit choices + location
+let S = { ...CONFIG } // effective settings (lib/settings.js effectiveSettings) + location
 const digits = (s) => (S.arabicDigits ? String(s).replace(/\d/g, (d) => AR_DIGITS[d]) : String(s))
 
 function fmtClock(minOfDay) {
@@ -76,15 +85,32 @@ function tzOffsetHours(time) {
   return Math.round((localAsUtc - utc) / 900000) / 4 // nearest 15 min
 }
 
-function eventsFor(ed, tz) {
+// opts overrides S (the menu previews a method before it's applied)
+function eventsFor(ed, tz, opts) {
+  const o = { ...S, ...opts }
   const dt = new Date(ed * 86400000)
   return dayEvents(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate(), {
-    lat: S.lat, lon: S.lon, tz, method: S.method, asrFactor: 1 /* majority (Shafi'i): Asr shadow ×1, zawal 10 min */, adjust: S.adjust,
-    sunriseWindowMin: S.sunriseWindowMin, extraFajrAngle: S.extraFajrAngle, extraIshaAngle: S.extraIshaAngle,
+    lat: o.lat, lon: o.lon, tz, method: o.method, asrFactor: o.asrFactor, adjust: o.adjust,
+    sunriseWindowMin: o.sunriseWindowMin, extraFajrAngle: o.extraFajrAngle, extraIshaAngle: o.extraIshaAngle,
   })
 }
 
-// Long-press the face → Edit: one slot per setting. Returns { key: value } for the choices.
+const system24h = () => {
+  try {
+    return getTimeFormat() === TIME_FORMAT_24
+  } catch (e) {
+    return false
+  }
+}
+
+// Hijri date for a day (optionally advancing at Maghrib), with the given settings
+function hijriText(ed, nowMin, maghrib, set) {
+  const afterMaghrib = set.hijriDayStartsAtMaghrib && nowMin >= maghrib
+  const h = hijriFromEpochDay(ed + (afterMaghrib ? 1 : 0), set.hijriOffsetDays)
+  return rtl(`${digits(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]} ${digits(h.year)} هـ`)
+}
+
+// Long-press the face → Edit: one slot per look (digits, extras row). Returns { key: value }.
 function buildEditGroups() {
   const chosen = {}
   for (const g of EDIT_GROUPS) {
@@ -108,19 +134,16 @@ function buildEditGroups() {
     })
     const type = group.getProperty(prop.CURRENT_TYPE)
     const opt = g.options.find((o) => o.type === type) || g.options.find((o) => o.type === g.defaultType)
-    if (g.key === '*') Object.assign(chosen, opt.value)
-    else chosen[g.key] = opt.value
+    chosen[g.key] = opt.value
   }
   return chosen
 }
 
 const IQAMA_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
-// Minutes from adhan to iqama for a prayer (0 = none), from the Iqama edit slot / config.js.
+// Minutes from adhan to iqama for a prayer (0 = none), from the face menu.
 function iqamaMinutes(k, isFriday) {
-  if (!S.iqama) return 0
   if (k === 'dhuhr' && isFriday) return S.iqamaJumuah || 0
-  const mins = S.iqama === 'custom' ? S.iqama_custom : S.iqama
-  return (mins && mins[IQAMA_PRAYERS.indexOf(k)]) || 0
+  return S.iqama[IQAMA_PRAYERS.indexOf(k)] || 0
 }
 
 let time = null
@@ -128,6 +151,10 @@ let state = { key: '' }
 let page = PAGE_PRAYERS
 let sensors = null
 let w = {} // widgets
+let face = null // face-menu settings (lib/settings.js), saved in the face's storage
+let edit = null // Edit-slot choices
+let menu = null // settings menu (watchface/menu.js)
+let settingsChanged = false
 
 function text(opts, level = show_level.ONLY_NORMAL) {
   return createWidget(widget.TEXT, {
@@ -137,20 +164,77 @@ function text(opts, level = show_level.ONLY_NORMAL) {
 // Arabic text (names, dates, labels) in the bundled Naskh font when config.js sets arabicFont;
 // clock and times stay in the system font.
 const arText = (opts, level) => text(CONFIG.arabicFont ? { ...opts, font: CONFIG.arabicFont } : opts, level)
-const setText = (wd, s) => wd.setProperty(prop.TEXT, s)
-const setColor = (wd, c) => wd.setProperty(prop.MORE, { color: c })
-const show = (list, on) => list.forEach((wd) => wd.setProperty(prop.VISIBLE, on))
+// Write-only-on-change: refresh() runs every minute (also on the always-on screen) and on every
+// wake, and most values don't change. Every text/colour/visibility write must go through these
+// three, or the remembered value goes stale.
+const last = new Map() // widget → { t: text, c: colour, v: visible }
+const memo = (wd) => {
+  let m = last.get(wd)
+  if (!m) last.set(wd, (m = {}))
+  return m
+}
+const setText = (wd, s) => {
+  const m = memo(wd)
+  if (m.t !== s) { m.t = s; wd.setProperty(prop.TEXT, s) }
+}
+// Invisible tap area: an alpha-0 FILL_RECT with listeners, so no image is needed. Only a quick,
+// still tap counts: a long press (face picker) or a swipe that starts here stays the system's.
+// Widgets created later sit on top and take the taps, so tap areas are created last.
+// onPress(true/false) runs on touch down / up (the menu highlights the pressed row).
+const TAP_MAX_MS = 600
+const TAP_MAX_MOVE = 24 // px
+const tap = (area, onTap, onPress) => {
+  const wd = createWidget(widget.FILL_RECT, { ...area, color: 0x000000, alpha: 0, show_level: show_level.ONLY_NORMAL })
+  let down = null
+  wd.addEventListener(event.CLICK_DOWN, (e) => {
+    down = { t: Date.now(), x: e && e.x, y: e && e.y }
+    if (onPress) onPress(true)
+  })
+  wd.addEventListener(event.CLICK_UP, (e) => {
+    const d = down
+    down = null
+    if (onPress) onPress(false)
+    if (d && Date.now() - d.t > TAP_MAX_MS) return
+    if (d && e && typeof d.x === 'number' && typeof e.x === 'number' &&
+      Math.abs(e.x - d.x) + Math.abs(e.y - d.y) > TAP_MAX_MOVE) return
+    onTap()
+  })
+  return wd
+}
+// Extras cells that open a system app (API 3.0 constants; a cell without one cycles pages)
+const COMP_APPS = { weather: SYSTEM_APP_WEATHER, steps: SYSTEM_APP_STATUS, flame: SYSTEM_APP_STATUS, heart: SYSTEM_APP_HR }
+const openApp = (appId) => {
+  try {
+    launchApp({ appId, native: true })
+  } catch (e) {
+    console.log('launchApp failed: ' + e)
+  }
+}
+const setColor = (wd, c) => {
+  const m = memo(wd)
+  if (m.c !== c) { m.c = c; wd.setProperty(prop.MORE, { color: c }) }
+}
+const show = (list, on) => list.forEach((wd) => {
+  const m = memo(wd)
+  if (m.v !== on) { m.v = on; wd.setProperty(prop.VISIBLE, on) }
+})
+// The always-on screen runs its own instance of the face (Zepp's watchface samples branch on
+// getScene() in build()); that instance only needs the always-on texts.
+const scene = () => (typeof getScene === 'function' ? getScene() : -1)
+const isAodScene = () => scene() === SCENE_AOD
 
 WatchFace({
   build() {
     time = new Time()
-    S = { ...CONFIG, ...buildEditGroups(), iqama_custom: CONFIG.iqama }
-    // "custom" edit options take their values from config.js
-    if (S.extraFajrAngle === 'custom') S.extraFajrAngle = CONFIG.extraFajrAngle
-    if (S.extraIshaAngle === 'custom') S.extraIshaAngle = CONFIG.extraIshaAngle
+    face = sanitizeSettings(readJSON(SETTINGS_KEY, null), CONFIG)
+    edit = buildEditGroups() // also in the always-on instance: it reads the chosen settings
+    S = this.settingsFor({ lat: CONFIG.lat, lon: CONFIG.lon, cc: CONFIG.country }) // refresh() re-reads the location
 
-    this.buildNormal()
-    this.buildPages()
+    // The normal instance still builds the always-on texts, in case the firmware reuses it.
+    if (!isAodScene()) {
+      this.buildNormal()
+      this.buildTaps()
+    }
     this.buildAod()
     this.refresh(true)
 
@@ -159,6 +243,7 @@ WatchFace({
     // Timers don't fire while the screen is off; re-sync (and re-read location) on wake.
     createWidget(widget.WIDGET_DELEGATE, {
       resume_call: () => {
+        if (menu) menu.close()
         page = PAGE_PRAYERS
         this.refresh(true)
       },
@@ -169,7 +254,9 @@ WatchFace({
     createWidget(widget.FILL_RECT, { x: 0, y: 0, w: W, h: H, color: 0x000000, show_level: show_level.ONLY_NORMAL })
     w.hijri = arText({ x: 16, y: 34, w: W - 32, h: 44, text_size: 32, color: C_GOLD })
     w.time = text({ x: 0, y: 80, w: W, h: 120, text_size: 112 })
-    w.greg = arText({ x: 16, y: 198, w: W - 32, h: 36, text_size: 26, color: C_DIM })
+    w.greg = arText({ x: 48, y: 198, w: W - 96, h: 36, text_size: 26, color: C_DIM })
+    // ⚙ at the end of the date line: tapping the line opens the settings menu
+    createWidget(widget.IMG, { x: 20, y: 204, src: 'icons/gear.png', show_level: show_level.ONLY_NORMAL })
     w.next = arText({ x: 16, y: 240, w: W - 32, h: 44, text_size: 30, color: C_TEAL })
     const bar = { ...BAR, radius: 2, show_level: show_level.ONLY_NORMAL }
     w.barTrack = createWidget(widget.FILL_RECT, { ...bar, color: C_TRACK })
@@ -185,7 +272,7 @@ WatchFace({
         time: text({ x, y: y + 28, w: CELL_W, h: 38, text_size: 32 }),
       }
     })
-    w.page0 = PRAYER_ORDER.flatMap((k) => [w.cells[k].name, w.cells[k].time])
+    w.gridCells = PRAYER_ORDER.flatMap((k) => [w.cells[k].name, w.cells[k].time])
     this.buildExtrasRow()
   },
 
@@ -219,15 +306,15 @@ WatchFace({
       const value = text({ x, y: COMP_Y, w: COMP_W - ICON - 8, h: COMP_H, text_size: 24 })
       return { kind, widgets: [icon, value], icon, value }
     })
-    w.page0 = w.page0.concat(...w.comps.map((c) => c.widgets))
+    w.compWidgets = [].concat(...w.comps.map((c) => c.widgets))
   },
 
   // Called every minute and on wake; weather condition only on full refreshes.
-  renderExtrasRow(full) {
+  renderExtrasRow(full, day) {
     for (const c of w.comps) {
       if (c.kind === 'weather') {
         if (full) {
-          const f = forecastToday()
+          const f = forecastToday(day)
           setText(c.cond, f ? WEATHER_AR[f.index] || '' : '')
         }
         continue
@@ -235,13 +322,15 @@ WatchFace({
       if (c.kind === 'none') continue
       const v = sensors.read(c.kind)
       // Nothing to show (no heart-rate reading yet, sensor unavailable): hide icon and value.
-      c.icon.setProperty(prop.VISIBLE, v !== null && page === PAGE_PRAYERS)
+      show([c.icon], v !== null && page === PAGE_PRAYERS)
       // Arabic percent sign (٪) with Arabic digits, '%' with Latin digits
       setText(c.value, v === null ? '' : c.kind === 'battery' ? digits(v) + (S.arabicDigits ? '٪' : '%') : digits(v))
     }
   },
 
+  // Pages 1 and 2, built on the first tap away from page 0 (most face loads never leave it).
   buildPages() {
+    if (w.page1) return
     // Page 1 — 3 rows x 3 columns (same grid as page 0), filled right-to-left
     w.extras = []
     for (let i = 0; i < 9; i++) {
@@ -266,15 +355,88 @@ WatchFace({
     w.page2 = w.makruh.flatMap((r) => [r.label, r.range])
     show(w.page1, false)
     show(w.page2, false)
+    this.lowerTaps() // the pages now sit on top of the lower half's tap areas
+  },
 
-    // Transparent tap target over the grid, created last so it sits on top.
-    createWidget(widget.BUTTON, {
-      ...GRID, text: '', normal_src: 'tap.png', press_src: 'tap.png', show_level: show_level.ONLY_NORMAL,
-      click_func: () => {
-        page = (page + 1) % PAGE_COUNT
-        this.refresh(false)
+  // Tap areas over the lower half: the grid (cycles pages) and, on page 0, the extras cells that
+  // open an app (above the grid's). Called again after buildPages() to put fresh ones on top; the
+  // old ones are hidden, not deleted, since that runs inside the grid's own tap handler.
+  lowerTaps() {
+    if (w.gridTap) show([w.gridTap, ...w.compTaps], false)
+    w.gridTap = tap(GRID, () => {
+      page = (page + 1) % PAGE_COUNT
+      this.buildPages()
+      this.refresh(false)
+    })
+    w.compTaps = []
+    w.comps.forEach((c, slot) => {
+      const appId = COMP_APPS[c.kind]
+      if (typeof appId !== 'number') return
+      w.compTaps.push(tap({ x: COMP_X[slot], y: COMP_Y, w: COMP_W, h: COMP_H }, () => openApp(appId)))
+    })
+  },
+
+  // Tap areas last, so they sit on top.
+  buildTaps() {
+    this.lowerTaps()
+    w.dateTap = tap(DATE_TAP, () => this.openMenu())
+  },
+
+  // Settings menu over the face (tap the date line); see watchface/menu.js and screens.js.
+  // Created on the first tap, not in build(): most face loads never open it.
+  buildMenu() {
+    const h = {
+      text, arText, tap, show, setText, setColor, digits, W, H,
+      colors: { title: C_GOLD, text: C_WHITE, dim: C_DIM, accent: C_TEAL },
+    }
+    menu = createMenu(h, () => this.onMenuClosed())
+    const nowMin = () => time.getHours() * 60 + time.getMinutes()
+    this.menuRoot = rootScreen({
+      face,
+      digits,
+      accent: C_TEAL,
+      place: () => state.place || 'التطبيق',
+      message: (s) => menu.message(s),
+      changed: () => { settingsChanged = true },
+      // Live previews from the settings being edited (applied when the menu closes)
+      autoMethod: () => autoMethod(state.cc),
+      hijri: () => hijriText(state.ed, nowMin(), state.today.maghrib, face),
+      times: () => {
+        const e = eventsFor(state.ed, state.tz, { ...face, method: resolveMethod(face, state.cc) })
+        return { fajr: fmtTime(e.fajr), asr: fmtTime(e.asr), isha: fmtTime(e.isha) }
+      },
+      setCity: (name, lat, lon, cc) => {
+        if (!saveCity(name, lat, lon, cc)) return menu.message('تعذر الحفظ')
+        state.cacheKey = '' // location changed: recompute
+        menu.close()
       },
     })
+  },
+
+  openMenu() {
+    if (!menu) this.buildMenu()
+    // Back to page 0 first: pages built after the menu would draw over its background.
+    if (page !== PAGE_PRAYERS) {
+      page = PAGE_PRAYERS
+      this.refresh(false)
+    }
+    show([w.gridTap, w.dateTap, ...w.compTaps], false)
+    menu.open(this.menuRoot)
+  },
+
+  onMenuClosed() {
+    show([w.gridTap, w.dateTap], true)
+    if (settingsChanged) {
+      settingsChanged = false
+      if (!writeJSON(SETTINGS_KEY, face)) console.log('settings not saved')
+      state.cacheKey = '' // times, iqama and 12/24h all depend on the settings: recompute
+    }
+    this.refresh(true) // re-reads the location and re-resolves the settings
+  },
+
+  // loc: { lat, lon, cc } → effective settings for it
+  settingsFor(loc) {
+    return { ...effectiveSettings(CONFIG, face, edit, { cc: loc.cc, system24h: system24h() }), lat: loc.lat, lon: loc.lon }
   },
 
   buildAod() {
@@ -293,14 +455,14 @@ WatchFace({
     const nowMin = time.getHours() * 60 + time.getMinutes()
     const key = `${y}-${m}-${d}`
 
-    // Events for yesterday/today/tomorrow are recomputed only when the date, location or
-    // timezone changes, not on every wake (settings changes rebuild the whole face).
-    const loc = full || key !== state.key ? readLocation(CONFIG.lat, CONFIG.lon) : null
+    // Events for yesterday/today/tomorrow are recomputed only when the date, location, timezone,
+    // method (automatic follows the country) or the watch's 12/24h setting changes, not on every
+    // wake. Edit-slot changes rebuild the whole face; face-menu changes clear state.cacheKey.
+    const loc = full || key !== state.key ? readLocation(CONFIG) : null
+    if (loc) S = this.settingsFor(loc)
     const tz = loc ? tzOffsetHours(time) : state.tz
-    const cacheKey = loc ? `${key}|${loc.lat}|${loc.lon}|${!!loc.updatedAt}|${tz}` : state.cacheKey
+    const cacheKey = loc ? `${key}|${loc.lat}|${loc.lon}|${loc.source}|${loc.name}|${tz}|${S.method}|${S.is24h}` : state.cacheKey
     if (cacheKey !== state.cacheKey) {
-      S.lat = loc.lat
-      S.lon = loc.lon
       const ed = epochDay(y, m, d)
       const today = eventsFor(ed, tz)
       const yesterday = eventsFor(ed - 1, tz)
@@ -313,25 +475,25 @@ WatchFace({
         isFriday: time.getDay() === FRIDAY,
         eid: (civilHijri.month === 10 && civilHijri.day === 1) ? 'الفطر'
           : (civilHijri.month === 12 && civilHijri.day === 10) ? 'الأضحى' : null,
-        fallbackLocation: !loc.updatedAt,
-      }
-      const name = (k) => (k === 'dhuhr' && state.isFriday ? JUMUAH_AR : PRAYER_NAMES_AR[k])
-      for (const k of PRAYER_ORDER) {
-        setText(w.cells[k].name, name(k))
-        setText(w.cells[k].time, fmtTime(today[k]))
+        place: loc.source === 'fallback' ? 'القاهرة' : loc.source === 'city' ? loc.name : '',
+        cc: loc.cc,
       }
       const wd = time.getDay() // 1..7, Monday = 1
-      const fallback = state.fallbackLocation ? '  •  القاهرة' : ''
-      const greg = rtl(`${WEEKDAYS_AR[wd % 7]}  ${digits(d)}/${digits(m)}/${digits(y)}${fallback}`)
-      setText(w.greg, greg)
+      const place = state.place ? `  •  ${state.place}` : ''
+      const greg = rtl(`${WEEKDAYS_AR[wd % 7]}  ${digits(d)}/${digits(m)}/${digits(y)}${place}`)
       setText(w.aodGreg, greg)
+      if (w.time) {
+        const name = (k) => (k === 'dhuhr' && state.isFriday ? JUMUAH_AR : PRAYER_NAMES_AR[k])
+        for (const k of PRAYER_ORDER) {
+          setText(w.cells[k].name, name(k))
+          setText(w.cells[k].time, fmtTime(today[k]))
+        }
+        setText(w.greg, greg)
+      }
     }
     const t = state.today
 
-    // Hijri date (optionally advancing at Maghrib)
-    const afterMaghrib = S.hijriDayStartsAtMaghrib && nowMin >= t.maghrib
-    const h = hijriFromEpochDay(state.ed + (afterMaghrib ? 1 : 0), S.hijriOffsetDays)
-    const hijri = rtl(`${digits(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]} ${digits(h.year)} هـ`)
+    const hijri = hijriText(state.ed, nowMin, t.maghrib, S)
 
     // Next prayer, or the current one's iqama (sunrise is shown but not counted as a prayer)
     const cd = countdown(t, nowMin, { ...state, iqama: (k) => iqamaMinutes(k, state.isFriday) })
@@ -345,17 +507,23 @@ WatchFace({
     const cdColor = cd.iqama ? C_GOLD : cd.urgent ? C_ORANGE : cd.lastThird ? C_NIGHT : C_TEAL
     const clock = digits(fmtClock(nowMin))
 
-    setText(w.hijri, hijri)
-    setText(w.time, clock)
     setText(w.aodHijri, hijri)
     setText(w.aodTime, clock)
     setText(w.aodNext, nextStr)
+    if (!w.time) return // always-on instance: nothing else exists
 
-    show(w.page0, page === PAGE_PRAYERS)
+    setText(w.hijri, hijri)
+    setText(w.time, clock)
+
+    show(w.gridCells, page === PAGE_PRAYERS)
+    show(w.compWidgets, page === PAGE_PRAYERS)
+    show(w.compTaps, page === PAGE_PRAYERS)
     this.renderBar(page === PAGE_PRAYERS ? cd.frac : -1, cdColor)
-    this.renderExtrasRow(full)
-    show(w.page1, page === PAGE_EXTRAS)
-    show(w.page2, page === PAGE_MAKRUH)
+    this.renderExtrasRow(full, key)
+    if (w.page1) {
+      show(w.page1, page === PAGE_EXTRAS)
+      show(w.page2, page === PAGE_MAKRUH)
+    }
 
     if (page === PAGE_PRAYERS) {
       setText(w.next, nextStr)
@@ -378,10 +546,12 @@ WatchFace({
 
   // frac < 0 hides the bar (other pages).
   renderBar(frac, color) {
-    w.barTrack.setProperty(prop.VISIBLE, frac >= 0)
-    const fw = Math.round(BAR.w * frac)
-    w.barFill.setProperty(prop.VISIBLE, fw >= 2)
-    if (fw >= 2) {
+    const fw = frac >= 0 ? Math.round(BAR.w * frac) : 0
+    show([w.barTrack], frac >= 0)
+    show([w.barFill], fw >= 2)
+    const fill = `${fw}|${color}`
+    if (fw >= 2 && w.barShape !== fill) {
+      w.barShape = fill
       w.barFill.setProperty(prop.MORE, { x: BAR.x + BAR.w - fw, y: BAR.y, w: fw, h: BAR.h, radius: 2, color })
     }
   },
@@ -431,6 +601,8 @@ WatchFace({
   },
 
   onDestroy() {
+    last.clear()
+    menu = null
     time = null
     w = {}
   },
