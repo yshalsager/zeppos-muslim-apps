@@ -6,7 +6,7 @@
 import { TypedStorage } from '@zos/share-storage'
 import { readJSON, writeJSON } from './store.js'
 
-export const LOCATION_APP_ID = 24847 // appId of prayer-location-app — keep in sync
+export const LOCATION_APP_ID = 1136166 // appId of prayer-location-app — keep in sync
 export const LOCATION_SCOPE = 'prayer-location'
 const CITY_KEY = 'city' // { name, lat, lon, cc, updatedAt }
 
