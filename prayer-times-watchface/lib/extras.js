@@ -10,20 +10,31 @@ export const WEATHER_AR = [
   'رعد وبرد', 'أمطار', 'غبار', 'رمال', 'عاصفة', '', 'غائم', 'زخات', 'صاف',
 ]
 
+const FORECAST_TTL_MS = 30 * 60 * 1000
+let weather = null // sensor, created once
+let forecast = { at: 0, day: '', item: null }
+
 // Today's forecast item { high, low, index } from the watchface weather sensor, or null when the
-// phone hasn't sent weather (e.g. Gadgetbridge without a weather provider).
-export function forecastToday() {
+// phone hasn't sent weather (e.g. Gadgetbridge without a weather provider). Runs on every wake,
+// so the result is reused for FORECAST_TTL_MS unless the day changed.
+export function forecastToday(day) {
+  const now = Date.now()
+  if (forecast.day === day && now - forecast.at < FORECAST_TTL_MS) return forecast.item
+  let item = null
   try {
     // The legacy global is the watchface weather API; the @zos/sensor Weather class is deprecated
     // for apps and returns undefined there.
-    if (typeof hmSensor === 'undefined') return null
-    const wx = hmSensor.createSensor(hmSensor.id.WEATHER).getForecastWeather()
-    const fd = wx && wx.forecastData
-    return fd && fd.count > 0 && fd.data[0] ? fd.data[0] : null
+    if (typeof hmSensor !== 'undefined') {
+      weather = weather || hmSensor.createSensor(hmSensor.id.WEATHER)
+      const wx = weather.getForecastWeather()
+      const fd = wx && wx.forecastData
+      item = fd && fd.count > 0 && fd.data[0] ? fd.data[0] : null
+    }
   } catch (e) {
     console.log('forecastToday failed: ' + e)
-    return null
   }
+  forecast = { at: now, day, item }
+  return item
 }
 
 const makers = { steps: () => new Step(), heart: () => new HeartRate(), battery: () => new Battery(), flame: () => new Calorie() }
