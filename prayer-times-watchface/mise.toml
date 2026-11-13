@@ -62,7 +62,7 @@ run = "zeus build"
 description = "Regenerate and check the committed assets, run the tests, and build a lean .zab (CI)"
 depends = [":gen", ":test"]
 run = [
-  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
+  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/weather-icons.js prayer-times-watchface/lib/hijri-table.js docs/watchface",
   "zeus build",
   "zeus prune --ip",
 ]

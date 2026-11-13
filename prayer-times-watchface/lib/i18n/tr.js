@@ -24,11 +24,6 @@ export default {
   eid: { fitr: 'Bayram namazı', adha: 'Bayram namazı' },
   eidEnd: 'Bayram sonu',
   makruh: { dawn: 'İmsaktan', sunrise: 'Güneş', zawal: 'İstiva', afterAsr: 'İkindiden', sunset: 'Gün batımı' },
-  weather: [
-    'Bulutlu', 'Sağanak', 'Kar', 'Güneşli', 'Kapalı', 'Çisenti', 'Kar', 'Yağmur', 'Kar', 'Kar',
-    'Yağmur', 'Kum', 'Sulu kar', 'Sis', 'Pus', 'Fırtına', 'Tipi', 'Toz', 'Yağmur', 'Dolu',
-    'Dolu', 'Yağmur', 'Toz', 'Kum', 'Fırtına', '', 'Bulutlu', 'Sağanak', 'Açık',
-  ],
   fallbackPlace: 'Kahire',
   fromApp: 'Uygulama',
   methods: {

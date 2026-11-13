@@ -20,8 +20,8 @@ LANGS = {"ar": "", "en": "-en"}  # lib/i18n language → file suffix
 
 OUT = ROOT.parent / "docs" / "watchface"  # repo-level docs/, so zeus does not pack them into the .zab
 COLORS = {"teal": TEAL, "gold": GOLD, "orange": ORANGE, "night": NIGHT}
-SAMPLE_EXTRAS = {True: [("weather", ("٢٤°", "غائم")), ("steps", "٦٢١٠"), ("battery", "٨٨٪")],
-                 False: [("weather", ("24°", "Cloudy")), ("steps", "6210"), ("battery", "88%")]}
+SAMPLE_EXTRAS = {True: [("weather", "٢٤°"), ("steps", "٦٢١٠"), ("battery", "٨٨٪")],
+                 False: [("weather", "24°"), ("steps", "6210"), ("battery", "88%")]}
 BEZEL = (58, 58, 64, 255)
 
 
@@ -29,7 +29,7 @@ def header(c, d, time, next_text, next_color, bar=None):
     c.text(HIJRI[0], d["hijri"], HIJRI[1], GOLD)
     c.text(CLOCK[0], time, CLOCK[1], WHITE, system=True)
     c.text(GREG[0], d["greg"], GREG[1], DIM)
-    c.paste_icon("gear", *c.mx(GEAR)[:2])
+    c.icon("gear", *c.mx(GEAR)[:2])
     c.text(NEXT[0], next_text, NEXT[1], next_color)
     if bar is not None:
         c.bar(bar, next_color)

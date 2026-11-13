@@ -14,7 +14,8 @@ import { rootScreen } from './screens.js'
 import { dayEvents, nightPortions, PRAYER_ORDER } from '../lib/prayer.js'
 import { countdown } from '../lib/countdown.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
-import { makeSensors, forecastToday } from '../lib/extras.js'
+import { makeSensors } from '../lib/extras.js'
+import { WEATHER_ICONS } from '../lib/weather-icons.js'
 import { resolveLang } from '../lib/i18n/index.js'
 import {
   strings, line, hijriLine, gregLine, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
@@ -336,10 +337,16 @@ WatchFace({
       const x = COMP_X[slot]
       if (kind === 'weather') {
         const num = (i) => `wnum/${S.arabicDigits ? 'ar' : 'la'}_${i}.png`
-        // Current temperature, drawn by the firmware; the transparent invalid image hides it
-        // when the phone hasn't sent weather.
+        // Current condition and temperature, both drawn by the firmware from the phone's weather.
+        // Unknown weather (code 25) has a transparent icon, and the transparent invalid image
+        // hides the temperature when the phone hasn't sent any.
+        const icon = make(widget.IMG_LEVEL, {
+          ...box({ x: x + COMP_W - ICON - 4, y: COMP_Y + (COMP_H - ICON) / 2, w: ICON, h: ICON }),
+          image_array: WEATHER_ICONS, image_length: WEATHER_ICONS.length,
+          type: dataType.WEATHER, show_level: show_level.ONLY_NORMAL,
+        })
         const temp = make(widget.TEXT_IMG, {
-          ...box({ x: x + COMP_W - 60, y: COMP_Y + 10, w: 60, h: 34 }),
+          ...box({ x, y: COMP_Y + 10, w: COMP_W - ICON - 8, h: 34 }),
           type: dataType.WEATHER_CURRENT,
           font_array: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num),
           unit_en: 'wnum/deg.png', unit_sc: 'wnum/deg.png', unit_tc: 'wnum/deg.png',
@@ -347,8 +354,7 @@ WatchFace({
           negative_image: 'wnum/minus.png', invalid_image: 'wnum/none.png',
           align_h: align.CENTER_H, h_space: 0, show_level: show_level.ONLY_NORMAL,
         })
-        const cond = arText({ ...box({ x, y: COMP_Y, w: COMP_W - 62, h: COMP_H }), text_size: 20, color: C_DIM })
-        return { kind, widgets: [temp, cond], cond }
+        return { kind, widgets: [icon, temp] }
       }
       if (kind === 'none' || !kind) return { kind: 'none', widgets: [] }
       const icon = make(widget.IMG, {
@@ -361,17 +367,10 @@ WatchFace({
     w.compWidgets = [].concat(...w.comps.map((c) => c.widgets))
   },
 
-  // Called every minute and on wake; weather condition only on full refreshes.
-  renderExtrasRow(full, day) {
+  // Called every minute and on wake. Weather is drawn by the firmware.
+  renderExtrasRow() {
     for (const c of w.comps) {
-      if (c.kind === 'weather') {
-        if (full) {
-          const f = forecastToday(day)
-          setText(c.cond, f ? T.weather[f.index] || '' : '')
-        }
-        continue
-      }
-      if (c.kind === 'none') continue
+      if (c.kind === 'weather' || c.kind === 'none') continue
       const v = sensors.read(c.kind)
       // Nothing to show (no heart-rate reading yet, sensor unavailable): hide icon and value.
       show([c.icon], v !== null && page === PAGE_PRAYERS)
@@ -570,7 +569,7 @@ WatchFace({
     show(w.compWidgets, page === PAGE_PRAYERS)
     show(w.compTaps, page === PAGE_PRAYERS)
     this.renderBar(page === PAGE_PRAYERS ? cd.frac : -1, cdColor)
-    this.renderExtrasRow(full, key)
+    this.renderExtrasRow()
     if (w.page1) {
       show(w.page1, page === PAGE_EXTRAS)
       show(w.page2, page === PAGE_MAKRUH)

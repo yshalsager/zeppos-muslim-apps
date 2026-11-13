@@ -23,11 +23,6 @@ export default {
   eid: { fitr: 'Aïd al-Fitr', adha: 'Aïd al-Adha' },
   eidEnd: "Fin de l'Aïd",
   makruh: { dawn: 'Après Fajr', sunrise: 'Lever', zawal: 'Zénith', afterAsr: 'Après Asr', sunset: 'Coucher' },
-  weather: [
-    'Nuageux', 'Averses', 'Neige', 'Soleil', 'Couvert', 'Bruine', 'Neige', 'Pluie', 'Neige', 'Neige',
-    'Pluie', 'Sable', 'Grésil', 'Brouillard', 'Brume', 'Orage', 'Tempête', 'Poussière', 'Pluie', 'Grêle',
-    'Grêle', 'Pluie', 'Poussière', 'Sable', 'Tempête', '', 'Nuageux', 'Averses', 'Dégagé',
-  ],
   fallbackPlace: 'Le Caire',
   fromApp: 'Appli',
   methods: {

@@ -29,7 +29,7 @@ Screenshots are rendered from the face's own layout and prayer logic (`tools/gen
    - **Countdown line colours:** teal normally, orange in the last 10 minutes before an adhan, gold while waiting for an iqama, and violet in the last third of the night, when it reads "الثلث الأخير • الفجر بعد …".
    - **Progress bar** under the countdown: fills in reading direction from the previous adhan to the next one (or from adhan to iqama), in the countdown's colour.
    - **Extras row** underneath: three cells, each chosen in its own edit slot from weather, steps, heart rate, battery, calories or nothing. Defaults are weather, steps and battery.
-   - **Weather:** current temperature is drawn by the firmware (`TEXT_IMG` + `WEATHER_CURRENT`) with a transparent `invalid_image`. The condition is today's forecast code as a short word. With no weather from the phone (e.g. Gadgetbridge without Breezy Weather), the cell stays empty.
+   - **Weather:** the current condition as an icon and the temperature, both drawn by the firmware from the phone's weather (`IMG_LEVEL` + `WEATHER` with one icon per Zepp weather code, and `TEXT_IMG` + `WEATHER_CURRENT`). The face's icons (weather, steps, heart rate, battery, calories, the settings gear) are from [Lucide](https://lucide.dev) (ISC, `fonts/LICENSE-lucide.txt`), mapped in `tools/render.py` (`WEATHER_ICONS`, `ICONS`). With no weather from the phone (e.g. Gadgetbridge without Breezy Weather), the cell stays empty.
    - **Heart rate:** shows the last measurement, and is hidden until there is one.
 2. **الليل والنوافل (night and voluntary prayers)**, in the same 3-column grid:
    - night portions between Maghrib and the next Fajr: first third, midpoint, last third, last sixth
@@ -77,7 +77,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
   - runs a full refresh
 - **Every minute:** `Time.onPerMinute` updates the clock, Hijri date, countdown, progress bar and colours, the extras row, and whichever page is visible. Prayer events come from the cache. Every text, colour and visibility write goes through `setText` / `setColor` / `show`, which skip values that haven't changed, so a typical minute costs ~4 widget writes (2 on the always-on screen) instead of ~70.
 - **New day:** `Time.onPerDay` forces a full refresh.
-- **Wake:** a `WIDGET_DELEGATE` `resume_call` returns to page 1 and runs a full refresh. Timers don't fire while the screen is off, so this catches up the minutes and re-reads the location. The picked city is kept in memory, and the weather forecast is re-read at most every 30 minutes.
+- **Wake:** a `WIDGET_DELEGATE` `resume_call` returns to page 1 and runs a full refresh. Timers don't fire while the screen is off, so this catches up the minutes and re-reads the location. The picked city is kept in memory.
 - **Full refresh:** re-reads location, timezone and the watch's 12/24h setting, re-resolves the settings, and only recomputes events when the date, location, timezone, method or clock format has changed. Waking normally costs no prayer maths.
 
 **Settings:** `S = config.js defaults ← face settings ← Edit-slot values` (`lib/settings.js`), plus lat/lon from the city picked on the face or the location app (whichever was set last). Each setting has one home:
@@ -103,7 +103,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 
 **Always-on display:** a separate `ONLY_AOD` layer shows the Hijri date, the time, the Gregorian date line and the next-prayer line in dim grey with no fills (few lit pixels). It's updated by the same refresh as the normal layer.
 
-**Weather:** the current temperature is drawn by the firmware (`TEXT_IMG` + `WEATHER_CURRENT`). Watchface JS can only read the daily forecast, which supplies the condition word.
+**Weather:** the condition icon and the temperature are drawn by the firmware, so the face's code reads no weather. An earlier version read today's forecast (the legacy `hmSensor` weather sensor) for a condition word, which didn't show on the Bip Max.
 
 ## Font
 
@@ -144,7 +144,8 @@ lib/location.js            ← newest of the picked city and ../prayer-location-
 lib/app-ids.js             ← generated: the companion's appId, from the root mise.toml [env]
 lib/city-data.js           ← reads the city files on demand (@zos/fs); lib/utf8.js decodes them
 assets/bip-max/cities/     ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
-lib/extras.js              ← extras-row sensors (steps, heart rate, battery, calories) + weather condition
+lib/extras.js              ← extras-row sensors (steps, heart rate, battery, calories)
+lib/weather-icons.js       ← GENERATED weather icon per Zepp weather code (tools/gen-edit-assets.py)
 lib/edit-options.js        ← GENERATED on-watch edit slots (tools/gen-edit-assets.py)
 
 tools/gen-hijri-table.mjs  ← regenerates the Hijri table from Node's ICU calendar

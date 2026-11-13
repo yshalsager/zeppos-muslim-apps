@@ -23,11 +23,6 @@ export default {
   eid: { fitr: 'Idulfitri', adha: 'Iduladha' },
   eidEnd: 'Batas salat Id',
   makruh: { dawn: 'Setelah Subuh', sunrise: 'Terbit', zawal: 'Istiwa', afterAsr: 'Setelah Asar', sunset: 'Terbenam' },
-  weather: [
-    'Berawan', 'Hujan', 'Salju', 'Cerah', 'Mendung', 'Gerimis', 'Salju', 'Hujan', 'Salju', 'Salju',
-    'Hujan', 'Pasir', 'Salju', 'Kabut', 'Asap', 'Badai', 'Badai', 'Debu', 'Hujan', 'Es',
-    'Es', 'Hujan', 'Debu', 'Pasir', 'Badai', '', 'Berawan', 'Hujan', 'Cerah',
-  ],
   fallbackPlace: 'Kairo',
   fromApp: 'Aplikasi',
   methods: {

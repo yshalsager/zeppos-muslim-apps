@@ -29,6 +29,19 @@ _FONTS = ROOT / ".cache" / "fonts"
 ARABIC_FONT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
 SYSTEM_ARABIC = _FONTS / "NotoSansArabic.ttf"
 LATIN_FONT = _FONTS / "NotoSans.ttf"
+LUCIDE_FONT = _FONTS / "lucide.ttf"  # Lucide icons (ISC), glyphs on a 1000-unit em square
+
+# Weather icon per Zepp weather code 0–28 (IMG_LEVEL + data_type.WEATHER picks one; Zepp watchface
+# spec "Type data"). None = unknown weather (25): a transparent image.
+WEATHER_ICONS = [
+    "cloud-sun", "cloud-sun-rain", "cloud-snow", "sun", "cloudy",  # 0 cloudy, shower, snow shower, sunny, overcast
+    "cloud-drizzle", "cloud-snow", "cloud-rain", "cloud-snow", "snowflake",  # 5 light rain, light/moderate snow, moderate rain, heavy snow
+    "cloud-rain-wind", "wind", "cloud-hail", "cloud-fog", "haze",  # 10 heavy rain, sandstorm, sleet, fog, haze
+    "cloud-lightning", "snowflake", "wind", "cloud-rain-wind", "cloud-hail",  # 15 thundershower, snowstorm, dust, extreme rainstorm, rain with hail
+    "cloud-lightning", "cloud-rain-wind", "wind", "tornado", "cloud-rain-wind",  # 20 thunder with hail, heavy rainstorm, blowing sand, strong sandstorm, rainstorm
+    None, "cloud-moon", "cloud-moon-rain", "moon",  # 25 unknown, cloudy / shower / clear at night
+]
+SAMPLE_WEATHER = "cloud-sun"  # previews and screenshots
 
 # Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js. Written for right-to-left;
 # mirror() flips a box for left-to-right languages, as index.js box() does.
@@ -65,43 +78,30 @@ def sample_data():
     return json.loads(out)
 
 
-def _draw_icon(d, name, x, y, s, color):
-    """Simple vector icons in a s×s box at (x, y)."""
-    P = lambda fx, fy: (x + fx * s, y + fy * s)  # noqa: E731
-    box = lambda a, b, c, e: [P(a, b), P(c, e)]  # noqa: E731
-    if name == "heart":
-        d.ellipse(box(0.06, 0.12, 0.52, 0.56), fill=color)
-        d.ellipse(box(0.48, 0.12, 0.94, 0.56), fill=color)
-        d.polygon([P(0.08, 0.42), P(0.92, 0.42), P(0.5, 0.9)], fill=color)
-    elif name == "battery":
-        d.rounded_rectangle(box(0.04, 0.26, 0.84, 0.74), radius=s * 0.1, outline=color, width=max(1, int(s * 0.08)))
-        d.rectangle(box(0.86, 0.4, 0.96, 0.6), fill=color)
-        d.rectangle(box(0.15, 0.37, 0.6, 0.63), fill=color)
-    elif name == "steps":
-        d.ellipse(box(0.1, 0.34, 0.42, 0.84), fill=color)
-        d.ellipse(box(0.58, 0.12, 0.9, 0.62), fill=color)
-        d.ellipse(box(0.16, 0.86, 0.36, 0.98), fill=color)
-        d.ellipse(box(0.64, 0.64, 0.84, 0.76), fill=color)
-    elif name == "flame":
-        d.ellipse(box(0.2, 0.42, 0.8, 0.96), fill=color)
-        d.polygon([P(0.21, 0.66), P(0.52, 0.04), P(0.79, 0.66)], fill=color)
-    elif name == "gear":  # 8 teeth around a ring (the hole is punched out: use via icon_image only)
-        cx, cy = P(0.5, 0.5)
-        for i in range(8):
-            a = i * math.pi / 4
-            d.polygon([(cx + math.cos(a + da) * r * s, cy + math.sin(a + da) * r * s)
-                       for da, r in ((-0.22, 0.3), (0.22, 0.3), (0.14, 0.49), (-0.14, 0.49))], fill=color)
-        d.ellipse(box(0.17, 0.17, 0.83, 0.83), fill=color)
-        d.ellipse(box(0.36, 0.36, 0.64, 0.64), fill=(0, 0, 0, 0))
-    else:
-        raise ValueError(name)
+# The face's own icons (assets icons/<name>.png) → Lucide icon
+ICONS = {"steps": "footprints", "heart": "heart", "battery": "battery-full", "flame": "flame", "gear": "settings"}
 
 
 def icon_image(name, size=ICON, color=DIM):
-    """An icon as a transparent PNG (for the watch's IMG widgets)."""
-    im = Image.new("RGBA", (size * SCALE, size * SCALE), (0, 0, 0, 0))
-    _draw_icon(ImageDraw.Draw(im), name, 0, 0, size * SCALE, color + (255,))
-    return im.resize((size, size), Image.LANCZOS)
+    """One of the face's icons as a transparent PNG (for the watch's IMG widgets)."""
+    return lucide_image(ICONS[name], size, color, scale=1)
+
+
+@functools.cache
+def _lucide_codepoints():
+    return json.loads((_FONTS / "lucide-codepoints.json").read_text())
+
+
+def lucide_image(name, size=ICON, color=DIM, scale=SCALE):
+    """A Lucide icon as a transparent size×size image (size × scale when scale > 1)."""
+    px = size * SCALE
+    f = font(LUCIDE_FONT, px)
+    m, _ = f.mask(chr(_lucide_codepoints()[name]), rtl=False)
+    top = round(f.pad + f.asc - px)  # the em square: px wide from the pen, px tall down from the ascender
+    m = m.crop((f.pad, top, f.pad + px, top + px))
+    im = Image.new("RGBA", m.size, color + (255,))
+    im.putalpha(m)
+    return im if scale == SCALE else im.resize((size * scale, size * scale), Image.LANCZOS)
 
 
 class Font:
@@ -222,7 +222,8 @@ class Canvas:
             self.draw.rounded_rectangle(box(fx, fx + fw), radius=2 * SCALE, fill=color)
 
     def icon(self, name, x, y, size=ICON, color=DIM):
-        _draw_icon(self.draw, name, (x - self.ox) * SCALE, (y - self.oy) * SCALE, size * SCALE, color)
+        """One of the face's icons (ICONS), as the watch draws its PNG."""
+        self.paste_lucide(ICONS[name], x, y, size, color)
 
     def grid(self, cells):
         for i, c in enumerate(cells):
@@ -231,10 +232,8 @@ class Canvas:
             self.text(self.mx((x, y, GRID_CELL_W, 30)), c["name"], 24, GOLD if c["on"] else DIM)
             self.text(self.mx((x, y + 28, GRID_CELL_W, 38)), c["time"], 32, GOLD if c["on"] else WHITE, system=True)
 
-    def paste_icon(self, name, x, y, size=ICON, color=DIM):
-        """An icon with see-through parts (e.g. the gear's hole), as the watch draws its PNG."""
-        im = icon_image(name, size, color).resize((size * SCALE, size * SCALE), Image.LANCZOS)
-        self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
+    def paste_lucide(self, name, x, y, size=ICON, color=DIM):
+        self.im.alpha_composite(lucide_image(name, size, color), ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
 
     def paste_image(self, path, x, y):
         """An asset PNG at its own size, as the watch's IMG widget draws it."""
@@ -243,17 +242,16 @@ class Canvas:
         self.im.alpha_composite(im, ((x - self.ox) * SCALE, (y - self.oy) * SCALE))
 
     def complication(self, slot, kind, value):
-        """Extras cell: icon first in reading order, then the value (weather: temperature + condition)."""
+        """Extras cell: icon first in reading order, then the value (weather: the condition's icon and
+        the temperature, both drawn by the firmware on the watch)."""
         x, y = COMP_X[slot], COMP_Y
         if kind == "none":
             return
-        if kind == "weather":
-            temp, cond = value
-            self.text(self.mx((x + COMP_W - 56, y, 56, COMP_H)), temp, 26, WHITE, system=True)
-            if cond:
-                self.text(self.mx((x, y, COMP_W - 58, COMP_H)), cond, 20, DIM)
-            return
         ix, iy, _, _ = self.mx((x + COMP_W - ICON - 4, y + (COMP_H - ICON) // 2, ICON, ICON))
+        if kind == "weather":
+            self.paste_lucide(SAMPLE_WEATHER, ix, iy)
+            self.text(self.mx((x, y, COMP_W - ICON - 8, COMP_H)), value, 26, WHITE, system=True)
+            return
         self.icon(kind, ix, iy)
         self.text(self.mx((x, y, COMP_W - ICON - 8, COMP_H)), value, 24, WHITE, system=True)
 

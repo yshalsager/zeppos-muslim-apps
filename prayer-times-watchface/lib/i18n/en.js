@@ -23,11 +23,6 @@ export default {
   eid: { fitr: 'Eid al-Fitr', adha: 'Eid al-Adha' },
   eidEnd: 'Eid ends',
   makruh: { dawn: 'After Fajr', sunrise: 'Sunrise', zawal: 'Zenith', afterAsr: 'After Asr', sunset: 'Sunset' },
-  weather: [
-    'Cloudy', 'Showers', 'Snow', 'Sunny', 'Overcast', 'Drizzle', 'Snow', 'Rain', 'Snow', 'Snow',
-    'Rain', 'Sand', 'Sleet', 'Fog', 'Haze', 'Storm', 'Storm', 'Dust', 'Rain', 'Hail',
-    'Hail', 'Rain', 'Dust', 'Sand', 'Storm', '', 'Cloudy', 'Showers', 'Clear',
-  ],
   fallbackPlace: 'Cairo',
   fromApp: 'App',
   methods: {

@@ -25,12 +25,6 @@ export default {
   eid: { fitr: 'صلاة عيد الفطر', adha: 'صلاة عيد الأضحى' },
   eidEnd: 'نهاية وقت العيد',
   makruh: { dawn: 'من الفجر', sunrise: 'الشروق', zawal: 'الاستواء', afterAsr: 'بعد العصر', sunset: 'الغروب' },
-  // weather condition by Zepp's index (0–28); '' = unknown. Short: the cell has ~58 px.
-  weather: [
-    'غائم', 'زخات', 'ثلج', 'مشمس', 'ملبد', 'رذاذ', 'ثلج', 'مطر', 'ثلج', 'ثلوج',
-    'أمطار', 'رمال', 'مطر وثلج', 'ضباب', 'شبورة', 'رعد', 'عاصفة', 'غبار', 'أمطار', 'برد',
-    'رعد وبرد', 'أمطار', 'غبار', 'رمال', 'عاصفة', '', 'غائم', 'زخات', 'صاف',
-  ],
   fallbackPlace: 'القاهرة', // config.js's fallback location
   fromApp: 'التطبيق', // place shown when the companion app's location is used
   methods: {
