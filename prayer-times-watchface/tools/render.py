@@ -1,10 +1,20 @@
-"""Shared drawing helpers that mirror the widgets in watchface/index.js."""
+"""Shared drawing helpers that mirror the widgets in watchface/index.js.
+
+Text is shaped by HarfBuzz (uharfbuzz) and drawn by FreeType (freetype-py), both bundled in their
+wheels, so the output is the same on macOS and Linux (CI) without Pillow's libraqm or system fonts.
+tools/uax9.py puts the left-to-right and right-to-left runs of a line in visual order.
+"""
+import functools
 import json
 import math
 import subprocess
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+import freetype
+import uharfbuzz as hb
+from PIL import Image, ImageChops, ImageDraw
+
+import uax9  # tools/ is on sys.path (the generators add it)
 
 ROOT = Path(__file__).resolve().parent.parent
 W, H, RADIUS = 432, 514, 106  # Bip Max screen
@@ -12,12 +22,13 @@ SCALE = 3  # supersample for smooth text
 
 WHITE, DIM, GOLD, TEAL = (255, 255, 255), (156, 163, 175), (250, 204, 21), (45, 212, 191)
 RED, ORANGE, NIGHT, AOD = (248, 113, 113), (251, 146, 60), (167, 139, 250), (138, 138, 138)  # watchface/index.js
-# Arabic text uses the same bundled font as the face (tools/gen-font.py) when present, so the edit
-# previews and icon match the watch; SF Arabic otherwise (and for the weather digit images).
-_NASKH = Path(__file__).resolve().parent.parent / "assets" / "bip-max" / "fonts" / "naskh.ttf"
-ARABIC_FONT = str(_NASKH) if _NASKH.exists() else "/System/Library/Fonts/SFArabic.ttf"
-SF_ARABIC = "/System/Library/Fonts/SFArabic.ttf"
-LATIN_FONT = "/System/Library/Fonts/SFNS.ttf"
+# Fonts. Arabic text uses the face's bundled font (tools/gen-font.py), so previews match the watch.
+# Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in
+# (downloaded by tools/fetch-fonts.sh, which `mise run :gen` runs first).
+_FONTS = ROOT / ".cache" / "fonts"
+ARABIC_FONT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
+SYSTEM_ARABIC = _FONTS / "NotoSansArabic.ttf"
+LATIN_FONT = _FONTS / "NotoSans.ttf"
 
 # Boxes (x, y, w, h) and text sizes — keep in sync with watchface/index.js
 HIJRI = ((16, 34, W - 32, 44), 32)
@@ -87,16 +98,77 @@ def icon_image(name, size=ICON, color=DIM):
     return im.resize((size, size), Image.LANCZOS)
 
 
+class Font:
+    """One font file at one pixel size."""
+
+    def __init__(self, path, px):
+        self.ft = freetype.Face(str(path))
+        self.ft.set_pixel_sizes(0, px)
+        self.hb = hb.Font(hb.Face(hb.Blob.from_file_path(str(path))))
+        self.hb.scale = (px * 64, px * 64)  # 26.6 fixed point, as FreeType
+        self.asc, self.desc = self.ft.size.ascender / 64, self.ft.size.descender / 64  # desc < 0
+        self.pad = px  # room for marks above the ascender / below the descender
+
+    def glyphs(self, s, rtl):
+        """[(glyph id, x, y)] relative to the pen start on the baseline, and the advance width."""
+        out, x = [], 0.0
+        for text, run_rtl in uax9.runs(s, rtl):
+            buf = hb.Buffer()
+            buf.add_str(text)
+            buf.guess_segment_properties()
+            buf.direction = "rtl" if run_rtl else "ltr"
+            hb.shape(self.hb, buf, {})
+            for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+                out.append((info.codepoint, x + pos.x_offset / 64, -pos.y_offset / 64))
+                x += pos.x_advance / 64
+        return out, x
+
+    def width(self, s, rtl):
+        return self.glyphs(s, rtl)[1]
+
+    def mask(self, s, rtl):
+        """Coverage of the line as an "L" image with the baseline at y = pad + asc and the pen
+        starting at x = pad, plus its advance width."""
+        glyphs, adv = self.glyphs(s, rtl)
+        p = self.pad
+        im = Image.new("L", (math.ceil(adv) + 2 * p, math.ceil(self.asc - self.desc) + 2 * p), 0)
+        base = p + self.asc
+        for gid, gx, gy in glyphs:
+            self.ft.load_glyph(gid, freetype.FT_LOAD_DEFAULT | freetype.FT_LOAD_NO_HINTING)
+            g = self.ft.glyph
+            g.render(freetype.FT_RENDER_MODE_NORMAL)
+            bm = g.bitmap
+            if not (bm.width and bm.rows):
+                continue
+            glyph = Image.frombytes("L", (bm.width, bm.rows), bytes(bm.buffer))
+            x, y = round(p + gx) + g.bitmap_left, round(base + gy) - g.bitmap_top
+            box = (x, y, x + bm.width, y + bm.rows)
+            im.paste(ImageChops.lighter(im.crop(box), glyph), box)
+        return im, adv
+
+
+@functools.cache
+def font(path, px):
+    return Font(path, px)
+
+
+# Digit images share one box: DIGIT_LINE × size tall with the baseline DIGIT_BASE × size from the top
+# (32 px tall at 26 px, fits the 34 px TEXT_IMG). The fonts' own line heights differ a lot (Noto Sans
+# Arabic's is 2.1 em), and the digits of one font array have to line up.
+DIGIT_LINE, DIGIT_BASE = 1.23, 0.96
+
+
 def digit_image(ch, size, color=WHITE):
-    """One glyph (digit, degree, minus) as a PNG for TEXT_IMG font arrays."""
-    arabic = ord(ch) >= 0x0600
-    f = ImageFont.truetype(SF_ARABIC if arabic else LATIN_FONT, size * SCALE)
-    l, t, r, b = f.getbbox(ch)
-    asc, desc = f.getmetrics()
-    w = max(1, r - l) + SCALE * 2
-    im = Image.new("RGBA", (w, asc + desc), (0, 0, 0, 0))
-    ImageDraw.Draw(im).text((SCALE - l, 0), ch, font=f, fill=color + (255,))
-    return im.resize((max(1, w // SCALE), max(1, (asc + desc) // SCALE)), Image.LANCZOS)
+    """One glyph (digit, degree, minus) as a PNG for TEXT_IMG font arrays: its ink plus a pixel
+    each side, in the shared digit box."""
+    f = font(SYSTEM_ARABIC if ord(ch) >= 0x0600 else LATIN_FONT, size * SCALE)
+    m, _ = f.mask(ch, rtl=False)
+    l, _, r, _ = m.getbbox() or (f.pad, 0, f.pad + 1, 0)
+    top = round(f.pad + f.asc - DIGIT_BASE * size * SCALE)
+    m = m.crop((l - SCALE, top, r + SCALE, top + round(DIGIT_LINE * size * SCALE)))
+    im = Image.new("RGBA", m.size, color + (255,))
+    im.putalpha(m)
+    return im.resize((max(1, m.width // SCALE), max(1, m.height // SCALE)), Image.LANCZOS)
 
 
 class Canvas:
@@ -113,18 +185,22 @@ class Canvas:
         digits (e.g. "+٠.١")."""
         x, y, w, h = box
         latin = all(ord(c) < 0x0600 for c in s)
-        path = LATIN_FONT if latin else (SF_ARABIC if system else ARABIC_FONT)
-        if path == SF_ARABIC:  # SF Arabic has no hyphen/dash/middle dot/plus/%
-            bad = set("·–—-+%") & set(s)
-            assert not bad, f"glyphs missing in SF Arabic {bad!r} in {s!r}"
-        kw = {} if latin else {"direction": "ltr" if ltr else "rtl", "language": "ar"}
-        f = ImageFont.truetype(path, size * SCALE)
-        while fit and size > 14 and self.draw.textlength(s, font=f, **kw) > (w - 8) * SCALE:
+        path = LATIN_FONT if latin else (SYSTEM_ARABIC if system else ARABIC_FONT)
+        rtl = not latin and not ltr
+        f = font(path, size * SCALE)
+        while fit and size > 14 and f.width(s, rtl) > (w - 8) * SCALE:
             size -= 1
-            f = ImageFont.truetype(path, size * SCALE)
+            f = font(path, size * SCALE)
+        # centred like Pillow's anchor "mm": the advance width, and halfway between ascender and descender
+        m, adv = f.mask(s, rtl)
         cx = (x - self.ox + w / 2) * SCALE
         cy = (y - self.oy + h / 2) * SCALE
-        self.draw.text((cx, cy), s, font=f, fill=color, anchor="mm", **kw)
+        left, top = round(cx - adv / 2 - f.pad), round(cy + (f.asc + f.desc) / 2 - f.asc - f.pad)
+        ink = Image.new("RGBA", self.im.size, tuple(color[:3]) + (0,))
+        alpha = Image.new("L", self.im.size, 0)
+        alpha.paste(m, (left, top))  # clipped to the canvas
+        ink.putalpha(alpha)
+        self.im.alpha_composite(ink)
 
     def bar(self, frac, color):
         x, y, w, h = BAR

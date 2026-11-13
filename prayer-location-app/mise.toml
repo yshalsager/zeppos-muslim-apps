@@ -3,9 +3,13 @@
 [tools]
 uv = "latest"
 
+[vars]
+# Pillow wheel only (--no-build), pinned so the icon is drawn the same everywhere
+py = "uv run -q --no-project --no-build --with pillow==13.0.0 python3 -I"
+
 [tasks.gen]
 description = "Regenerate the app icon"
-run = "uv run -q --no-project --with pillow python3 -I tools/gen-icon.py"
+run = "{{vars.py}} tools/gen-icon.py"
 
 # :build prunes zeus's source archive (.ip-package) for sideloading; :build-store keeps it.
 [tasks.build]

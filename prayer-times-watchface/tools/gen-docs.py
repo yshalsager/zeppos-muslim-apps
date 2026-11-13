@@ -92,8 +92,7 @@ def menu(widgets):
             c.paste_image(ROOT / "assets" / "bip-max" / w["src"], w["x"], w["y"])
         elif w["type"] == "TEXT" and w.get("text"):
             s = w["text"]
-            # system-font text: SF Arabic (the stand-in) lacks - and +, which the watch's font has
-            system = not w.get("font") and not (set("-+") & set(s) and any(ord(ch) >= 0x600 for ch in s))
+            system = not w.get("font")
             color = w.get("color", 0xFFFFFF)
             c.text((w["x"], w["y"], w["w"], w["h"]), s, w["size"], (color >> 16, (color >> 8) & 255, color & 255),
                    system=system, ltr=s[0] in "+-")

@@ -1,20 +1,31 @@
 # Prayer Times watchface. Tasks run in this folder; node, pnpm and zeus come from the root mise.toml.
 #   mise run :build   regenerates everything, tests, and builds dist/*.zab
 # The Python tools run under uv with their dependencies, so no global Python packages are needed.
-# Pillow is built from source so it links Homebrew's libraqm (RTL Arabic shaping); the PyPI wheel has no raqm.
+# The image generators shape Arabic with uharfbuzz and draw it with freetype-py (tools/render.py), so
+# plain wheels are enough and the output is the same on macOS and Linux. Versions are pinned for that.
 
 [tools]
 uv = "latest"
 
+[vars]
+# Python with the generators' dependencies; wheels only (--no-build), so a locally built Pillow is never used
+py_font = "uv run -q --no-project --no-build --with fonttools==4.68.0 --with uharfbuzz==0.57.0 python3 -I"
+py_img = "uv run -q --no-project --no-build --with pillow==13.0.0 --with freetype-py==2.5.1 --with uharfbuzz==0.57.0 python3 -I"
+
+[tasks.deps]
+description = "Install the JavaScript dependencies (adhan), used by the tests and the generators"
+run = "pnpm install --frozen-lockfile --silent"
+
 [tasks.gen]
 description = "Regenerate the Hijri table, font, edit previews, picker preview and README screenshots"
+depends = [":deps"]
 run = [
   "node tools/gen-hijri-table.mjs",
   "tools/fetch-fonts.sh",
-  "uv run --no-project --with fonttools --with uharfbuzz python3 -I tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
-  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-edit-assets.py",
-  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-preview.py",
-  "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-docs.py",
+  "{{vars.py_font}} tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
+  "{{vars.py_img}} tools/gen-edit-assets.py",
+  "{{vars.py_img}} tools/gen-preview.py",
+  "{{vars.py_img}} tools/gen-docs.py",
 ]
 
 # Not part of :gen: downloads ~210 MB from GeoNames, which changes daily. Output is committed.
@@ -28,7 +39,8 @@ run = [
 
 [tasks.test]
 description = "Verify the prayer/Hijri math and countdown logic"
-run = ["pnpm install --frozen-lockfile --silent", "pnpm -s test"]
+depends = [":deps"]
+run = "pnpm -s test"
 
 # zeus packs a copy of the project source (.ip-package) into the .zab so the Zepp store can rebuild
 # for other devices; it never reaches the watch. :build prunes it for sideloading (Gadgetbridge,

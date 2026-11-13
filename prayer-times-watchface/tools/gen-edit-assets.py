@@ -65,7 +65,7 @@ def gen_runtime_assets():
         digit_image("٠١٢٣٤٥٦٧٨٩"[i], 26).save(wnum / f"ar_{i}.png")
         digit_image(str(i), 26).save(wnum / f"la_{i}.png")
     digit_image("°", 26).save(wnum / "deg.png")
-    digit_image("-", 26).save(wnum / "minus.png")  # Latin font: SF Arabic has no hyphen
+    digit_image("-", 26).save(wnum / "minus.png")
     # no weather data → nothing; digit-sized because zeus skips converting tiny images (stays raw PNG)
     Image.new("RGBA", (8, 32), (0, 0, 0, 0)).save(wnum / "none.png")
 

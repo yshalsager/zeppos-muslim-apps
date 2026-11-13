@@ -137,6 +137,7 @@ tools/gen-hijri-table.mjs  ← regenerates the Hijri table from Node's ICU calen
 tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits, lib/edit-options.js
 tools/gen-preview.py       ← renders assets/bip-max/icon.png (picker preview, 294×350) from the real layout
 tools/render.py            ← shared drawing for the above (layout boxes mirror watchface/index.js)
+tools/uax9.py              ← Unicode bidi runs for render.py (what FriBiDi does inside libraqm)
 tools/preview-data.mjs     ← sample face data for the previews, computed by lib/
 tools/gen-docs.py          ← README screenshots in ../docs/watchface/ (scenes from tools/docs-data.mjs)
 tools/gen-cities.py        ← city list from GeoNames (`mise run :gen-cities`, not part of :build; tools/fetch-geonames.sh downloads ~210 MB)
@@ -154,7 +155,8 @@ mise run :build-store      # same, but keeps zeus's source archive (for a Zepp s
 mise run :gen              # only regenerate (Hijri table, font, edit previews, picker icon)
 mise run :test             # only the math/countdown checks
 ```
-- The Python generators run under `uv`. Pillow is built from source on the first run (a few minutes, then cached) so that it links Homebrew's `libraqm` (`brew install libraqm`), which is needed to draw Arabic in the previews. The PyPI wheel has no RTL support.
+- The Python generators run under `uv` with pinned wheels, and need no system libraries or fonts. Arabic is shaped by HarfBuzz (`uharfbuzz`) and drawn by FreeType (`freetype-py`), with `tools/uax9.py` ordering the left-to-right and right-to-left runs (the Unicode bidi algorithm). Pillow's own Arabic support would need `libraqm`, which its macOS wheel lacks. Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in.
+- The images come out pixel-identical on macOS and Linux.
 - The source fonts are downloaded to `.cache/fonts/` at pinned versions and verified by checksum.
 - **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source (~75% of its size) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
 
