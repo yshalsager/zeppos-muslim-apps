@@ -1,7 +1,8 @@
 """Renders README screenshots from the face's real layout and logic (tools/docs-data.mjs).
 
-Writes ../docs/watchface/pages.png (the three pages + always-on display) and countdown.png
-(countdown line states). They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
+Writes ../docs/watchface/pages.png (the three pages + always-on display), countdown.png
+(countdown line states) and menu.png (settings menu screens, from tools/docs-menu.mjs, which runs
+the real menu code on stub @zos modules). They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
 """
 import json
 import subprocess
@@ -11,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I drops the script dir
 from PIL import Image, ImageDraw  # noqa: E402
 
-from render import (AOD, CLOCK, DIM, GOLD, GREG, HIJRI, NEXT, NIGHT, ORANGE, RADIUS, RED, ROOT, TEAL,  # noqa: E402
+from render import (AOD, CLOCK, DIM, GEAR, GOLD, GREG, HIJRI, NEXT, NIGHT, ORANGE, RADIUS, RED, ROOT, TEAL,  # noqa: E402
                     WHITE, H, W, Canvas, grid_x, rounded)
 
 OUT = ROOT.parent / "docs" / "watchface"  # repo-level docs/, so zeus does not pack them into the .zab
@@ -24,6 +25,7 @@ def header(c, d, time, next_text, next_color, bar=None):
     c.text(HIJRI[0], d["hijri"], HIJRI[1], GOLD)
     c.text(CLOCK[0], time, CLOCK[1], WHITE, system=True)
     c.text(GREG[0], d["greg"], GREG[1], DIM)
+    c.paste_icon("gear", *GEAR)
     c.text(NEXT[0], next_text, NEXT[1], next_color)
     if bar is not None:
         c.bar(bar, next_color)
@@ -82,6 +84,22 @@ def face(c, crop=None):
     return out
 
 
+def menu(widgets):
+    """A settings-menu screen from the widgets tools/docs-menu.mjs recorded."""
+    c = Canvas()
+    for w in widgets:
+        if w["type"] == "IMG":
+            c.paste_image(ROOT / "assets" / "bip-max" / w["src"], w["x"], w["y"])
+        elif w["type"] == "TEXT" and w.get("text"):
+            s = w["text"]
+            # system-font text: SF Arabic (the stand-in) lacks - and +, which the watch's font has
+            system = not w.get("font") and not (set("-+") & set(s) and any(ord(ch) >= 0x600 for ch in s))
+            color = w.get("color", 0xFFFFFF)
+            c.text((w["x"], w["y"], w["w"], w["h"]), s, w["size"], (color >> 16, (color >> 8) & 255, color & 255),
+                   system=system, ltr=s[0] in "+-")
+    return c
+
+
 def row(images, gap=28):
     w = sum(i.width for i in images) + gap * (len(images) - 1)
     out = Image.new("RGBA", (w, max(i.height for i in images)), (0, 0, 0, 0))
@@ -103,7 +121,10 @@ def main():
     top = (0, 0, W + 12, 300)
     states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
     states.save(OUT / "countdown.png", optimize=True)
-    for f in ("pages.png", "countdown.png"):
+    screens = json.loads(subprocess.check_output(
+        ["node", "--import", "./tools/zos-stub/register.mjs", str(ROOT / "tools" / "docs-menu.mjs")], cwd=ROOT))
+    row([face(menu(screens[k])) for k in ("root", "method", "value", "index")]).save(OUT / "menu.png", optimize=True)
+    for f in ("pages.png", "countdown.png", "menu.png"):
         im = Image.open(OUT / f)
         print(f"wrote docs/watchface/{f} {im.size} {(OUT / f).stat().st_size // 1024} KB")
 

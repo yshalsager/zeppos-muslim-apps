@@ -80,6 +80,8 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 - **Face menu** (tap the date line, marked with ⚙): **what the face calculates.** Location, method (automatic by country, or one of 13), Asr school, Hijri offset (−2…+2) and day start, iqama minutes per prayer plus Jumu'ah (0–60, with presets), extra Fajr/Isha angles (12°–20°, 1° and 0.1° steps), sunrise window (10/15/20 min), per-prayer minute adjustments (±30) and 12/24h (follows the watch by default, `getTimeFormat()`). The first page holds location, method, Hijri and iqama. Values are saved as one JSON in the face's `LocalStorage` and applied when the menu closes; `config.js` only holds their defaults.
 - **Edit slots** (long-press → Edit): **how it looks.** Digits and the three extras cells. Changing a slot rebuilds the face.
 
+![Settings menu: main list, method with today's Fajr and Isha, a value screen, and a location index](../docs/watchface/menu.png)
+
 **Face menu:** `watchface/menu.js` is a generic overlay whose widgets are created on the first tap (not in `build()`) and reused for every screen; `watchface/screens.js` defines the screens. While it's open the page and date tap targets are hidden; waking the screen closes it.
 - **Lists:** 4 rows of 68 px that touch, so every pixel of a row is tappable. ▲ / ▼ page through, with a counter (٢/٥) next to ▼. Back is the title row, marked ▶ (it closes the menu at the top level). Nothing tappable sits in the bottom ~60 px: taps there got mistaken for the watch's swipe-up gesture.
 - **Values** (iqama minutes, angles, adjustments, Hijri offset): the row opens a value screen with the number large in the middle and big − / + buttons on either side; angles add a 0.1° row underneath.
