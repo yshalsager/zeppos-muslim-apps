@@ -17,6 +17,15 @@ run = [
   "uv run --no-project --with pillow --no-binary-package pillow python3 -I tools/gen-docs.py",
 ]
 
+# Not part of :gen: downloads ~210 MB from GeoNames, which changes daily. Output is committed.
+[tasks.gen-cities]
+description = "Rebuild the city list (assets/bip-max/cities) from GeoNames, then regenerate the font"
+run = [
+  "tools/fetch-geonames.sh",
+  "python3 -I tools/gen-cities.py",
+  "mise run :gen",
+]
+
 [tasks.test]
 description = "Verify the prayer/Hijri math and countdown logic"
 run = ["pnpm install --frozen-lockfile --silent", "pnpm -s test"]

@@ -23,4 +23,4 @@ Install a `.zab` by opening it with Gadgetbridge, or via the Zepp app's Develope
 
 ## License
 
-[GPL-3.0](LICENSE). Bundled: an Arabic font under SIL OFL 1.1 ([details](prayer-times-watchface/README.md#font)) and [adhan-js](https://github.com/batoulapps/adhan-js) (MIT).
+[GPL-3.0](LICENSE). Bundled: an Arabic font under SIL OFL 1.1 ([details](prayer-times-watchface/README.md#font)), [adhan-js](https://github.com/batoulapps/adhan-js) (MIT), and a city list from [GeoNames](https://www.geonames.org/) (CC-BY 4.0) with Arabic names from Wikidata (CC0).

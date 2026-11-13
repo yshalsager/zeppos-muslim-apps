@@ -38,13 +38,13 @@ from fontTools.varLib import instancer
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "bip-max" / "fonts" / "naskh.ttf"
 FAMILY = "Prayer Face Naskh"
-SOURCES = [ROOT / "watchface" / "index.js", *(ROOT / "lib").glob("*.js")]
+SOURCES = [*(ROOT / "watchface").glob("*.js"), *(ROOT / "lib").glob("*.js"), *(ROOT / "assets" / "bip-max" / "cities").glob("*.json")]
 
 
 def used_chars():
     chars = {chr(c) for c in range(0x20, 0x7F)}
     for f in SOURCES:
-        chars |= {ch for ch in f.read_text() if ord(ch) > 0x7F}
+        chars |= {ch for ch in f.read_text(encoding="utf-8") if ord(ch) > 0x7F}
     # Escapes like '‏' in the source are written as text; add the marks/digits we emit.
     chars |= set("٠١٢٣٤٥٦٧٨٩٪°،‏")
     return "".join(sorted(chars))
