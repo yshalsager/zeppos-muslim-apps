@@ -99,16 +99,32 @@ def frame(w, h, color, width, radius):
 
 
 def arrows(dev):
-    """Settings menu (watchface/menu.js) arrows, at the layout's sizes. Tap areas are invisible
-    FILL_RECTs, no images. back points right: the way out in right-to-left reading; back-ltr left."""
+    """Settings menu (watchface/menu.js) arrows, at the layout's sizes (tap areas are IMGs
+    without an image). back points right: the way out in right-to-left reading; back-ltr left."""
     M = dev.L["menu"]
     shapes = {"up": (M["up"], [(0, 1), (0.5, 0), (1, 1)]), "down": (M["down"], [(0, 0), (0.5, 1), (1, 0)]),
               "back": (M["back"], [(0, 0), (1, 0.5), (0, 1)]), "back-ltr": (M["back"], [(1, 0), (0, 0.5), (1, 1)])}
     for name, (b, pts) in shapes.items():
         w, h = b["w"], b["h"]
         im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        ImageDraw.Draw(im).polygon([(x * w, y * h) for x, y in pts], fill=TEAL + (255,))
+        for x, y in triangle_pixels(w, h, pts):
+            im.putpixel((x, y), TEAL + (255,))
         im.save(dev.assets / f"arrow-{name}.png")
+
+
+def triangle_pixels(w, h, pts):
+    """Pixels of a w x h image whose centres lie inside (or on) the triangle pts (corners as 0, 0.5 or 1
+    of w and h). Exact integer maths in half-pixel units: Pillow's polygon fill rounds edge pixels
+    differently on arm64 and x86_64."""
+    P = [(round(px * 2 * w), round(py * 2 * h)) for px, py in pts]
+    out = []
+    for y in range(h):
+        for x in range(w):
+            cx, cy = 2 * x + 1, 2 * y + 1
+            c = [(bx - ax) * (cy - ay) - (by - ay) * (cx - ax) for (ax, ay), (bx, by) in zip(P, P[1:] + P[:1])]
+            if all(v >= 0 for v in c) or all(v <= 0 for v in c):
+                out.append((x, y))
+    return out
 
 
 def gen_edit(dev, data):
