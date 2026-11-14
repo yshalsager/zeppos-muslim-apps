@@ -88,7 +88,8 @@ export function rootScreen(ctx) {
     const groups = cityGroups(ctx.lang)
     if (!groups) return unreadable()
     return list(M.location, [
-      { label: M.locationFromApp, color: ctx.accent, tap: () => ctx.setCity(null) },
+      // TODO: bring back when the companion app ships; without it this row only falls back to Cairo
+      // { label: M.locationFromApp, color: ctx.accent, tap: () => ctx.setCity(null) },
       ...groups.map(([key, countries]) => ({
         label: M.groups[key],
         tap: () => list(M.groups[key], sorted(countries.map(([cc, name]) => ({ label: name, tap: country(cc, name) })))),
