@@ -15,7 +15,7 @@ How a project in this repo (a folder with an `app.json`, such as `prayer-times-w
 - **Licence notices:** the store agreement (https://upload-cdn.huami.com/tposts/7726, clause 4.1(b)) requires meeting the open-source licences of what the package contains. Each target ships `assets/<target>/NOTICE.txt` with the project's licence, the source URL and the third-party notices; the project's tests check that it exists. Add a notice when a new bundled dependency, font, icon set or data source comes in.
 - **Privacy policy:** the agreement (clause 13.1) requires one, published in the developer's own name. `PRIVACY.md` at the repo root covers the published projects; extend it before publishing a new one, and keep its date current. The URL is `https://github.com/<owner>/<repo>/blob/master/PRIVACY.md`, so it must be pushed before submission.
 - **Store text:** `<project>/store-listing.json` holds the category, the review notes, and per language the console's language label, a name (30 characters at most) and a description (400 at most). Update it when features change. Translations other than Arabic and English haven't had a native speaker's review: say so if you change them.
-- **Previews:** one PNG per listing language, at the size the form states (the screen size for rectangular watches, 432×514 for the Bip Max; 360×360 for every round listing, whatever the watch's size), at most 1 MB, not the always-on version. The watch face's generator writes them to `docs/watchface/store/<lang>.png` (other listings: `docs/watchface/<target>/store/`, round ones `docs/watchface/round/store/`) and the Daad keyboard's to `docs/daad-keyboard/store/<lang>.png`, both as part of `:gen`; CI checks they're up to date.
+- **Previews:** one PNG per listing language, at the size the form states (the screen size for rectangular watches, 432×514 for the Bip Max; 360×360 for every round listing, whatever the watch's size), at most 1 MB, not the always-on version. The watch face's generator writes them to `docs/watchface/store/<lang>.png` (other listings: `docs/watchface/<target>/store/`, round ones `docs/watchface/round/store/`) and the Daad keyboard's app-form images to `docs/daad-keyboard/store/` (see Mini apps below), both as part of `:gen`; CI checks they're up to date.
 
 ## 2. Build
 
@@ -48,7 +48,14 @@ The console needs the person's logged-in browser session, so use their own brows
 3. Check that output: one package (the right file name), the device the console detected, every name, `descs ok True`, one preview per language, no errors.
 4. Tell the person the form is ready, with what's in it, and leave "Submit for Review" to them.
 
-**Mini apps:** the fill script was written against the watch face form. The app form may name its category field differently (set `category_field` in the listing file to the field's `id`) or ask for more (several screenshots, a category per language). Read the form's fields before running it, and extend the script for what differs.
+**Mini apps:** the app form (seen November 2026) differs from the watch face form:
+
+- One listing takes every screen size and shape; the console reads the devices from the package (Daad: 55 ids, four sizes).
+- Screenshots per shape, 1–10 each, every one 360 × 360 PNG on a transparent background, interface text in English ([requirements](https://docs.zepp.com/docs/distribute/#app-introduction-screenshots)): a round screen fills the canvas inside the circle; a rectangular one is scaled to the full height and centred, transparent at the sides.
+- An icon: 240 × 240, a circle touching the edges, transparent outside, matching the package's icon.
+- A short description (100 characters at most; the listing file's `short`), a privacy statement, the permissions it uses, and whether it includes third-party SDKs.
+
+The fill script was written against the watch face form. The app form may name its category field differently (set `category_field` in the listing file to the field's `id`) or ask for more (several screenshots, a category per language). Read the form's fields before running it, and extend the script for what differs.
 
 ## Pitfalls seen in this console
 
