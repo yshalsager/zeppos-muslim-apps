@@ -120,22 +120,23 @@ def row(images, gap=28):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     written = []
-    for lang, suffix in LANGS.items():
-        d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs"), lang], cwd=ROOT))
-        s = d["scenes"]
-        pages = row([face(prayers(d, s["prayers"])), face(extras(d, s["extras"])),
-                     face(makruh(d, s["makruh"])), face(aod(d, s["aod"]))])
-        pages.save(OUT / f"pages{suffix}.png", optimize=True)
-        screens = json.loads(subprocess.check_output(
-            ["node", "--import", "./tools/zos-stub/register.mjs", str(ROOT / "tools" / "docs-menu.mjs"), lang], cwd=ROOT))
-        row([face(menu(screens[k], d["rtl"])) for k in ("root", "method", "value", "index")]).save(OUT / f"menu{suffix}.png", optimize=True)
-        written += [f"pages{suffix}.png", f"menu{suffix}.png"]
-        if lang == "ar":
-            # countdown states: top part of the face (date, clock, countdown line, progress bar)
-            top = (0, 0, DEV.w + 12, L["bar"]["y"] + 13)  # down to just below the progress bar
-            states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
-            states.save(OUT / "countdown.png", optimize=True)
-            written.append("countdown.png")
+    if not os.environ.get("STORE_ONLY"):  # STORE_ONLY: just the store previews (other listings' sizes)
+        for lang, suffix in LANGS.items():
+            d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs"), lang], cwd=ROOT))
+            s = d["scenes"]
+            pages = row([face(prayers(d, s["prayers"])), face(extras(d, s["extras"])),
+                         face(makruh(d, s["makruh"])), face(aod(d, s["aod"]))])
+            pages.save(OUT / f"pages{suffix}.png", optimize=True)
+            screens = json.loads(subprocess.check_output(
+                ["node", "--import", "./tools/zos-stub/register.mjs", str(ROOT / "tools" / "docs-menu.mjs"), lang], cwd=ROOT))
+            row([face(menu(screens[k], d["rtl"])) for k in ("root", "method", "value", "index")]).save(OUT / f"menu{suffix}.png", optimize=True)
+            written += [f"pages{suffix}.png", f"menu{suffix}.png"]
+            if lang == "ar":
+                # countdown states: top part of the face (date, clock, countdown line, progress bar)
+                top = (0, 0, DEV.w + 12, L["bar"]["y"] + 13)  # down to just below the progress bar
+                states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
+                states.save(OUT / "countdown.png", optimize=True)
+                written.append("countdown.png")
     # Zepp store preview per language: the prayers page at screen size, square corners, no bezel
     langs = json.loads(subprocess.check_output(
         ["node", "-e", "import('./lib/i18n/index.js').then((m) => console.log(JSON.stringify(m.LANG_CODES)))"], cwd=ROOT))
@@ -148,7 +149,7 @@ def main():
         written.append(f"store/{lang}.png")
     for f in written:
         im = Image.open(OUT / f)
-        print(f"wrote docs/watchface/{f} {im.size} {(OUT / f).stat().st_size // 1024} KB")
+        print(f"wrote {(OUT / f).resolve().relative_to(ROOT.parent)} {im.size} {(OUT / f).stat().st_size // 1024} KB")
 
 
 if __name__ == "__main__":

@@ -207,7 +207,7 @@ To add a screen: add it to `devices.json`, add an `app.json` target with its `de
 The repo is a mise monorepo: shared tools are in the root `mise.toml`, and this folder's tasks are in `./mise.toml`. Run them from this folder, or from anywhere in the repo as `mise run //prayer-times-watchface:build`.
 ```sh
 mise run :build            # fonts + generated assets → tests → lean dist/*.zab (~3.9 MB: 13 packages of ~300 KB, one per firmware group)
-mise run :build-store      # same, but keeps zeus's source archive (for a Zepp store submission)
+mise run :build-store      # store packages, one per screen size with a store listing: ../dist/prayer-times-watchface/*-<target>.zab
 mise run :gen              # only regenerate (Hijri table, font, edit previews, picker icon)
 mise run :test             # only the math/countdown checks
 mise run :ci               # :build, plus a check that the committed generated files are current (CI)
@@ -216,6 +216,7 @@ mise run :ci               # :build, plus a check that the committed generated f
 - The images come out pixel-identical on macOS and Linux. `mise run :ci` (used by GitHub Actions) regenerates everything and fails if a committed output is out of date (`scripts/check-generated.py`), comparing PNGs by pixels since their compressed bytes differ between arm64 and x86_64.
 - The source fonts are downloaded to the repo's `.cache/fonts/` by `scripts/fetch-fonts.sh`, at pinned versions and verified by checksum.
 - **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source with every target's assets (~2.6 MB of the 6.5 MB store build) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
+- **Store listings:** the Zepp store takes one screen size per watch face listing, so `:build-store` (`tools/store-build.py`) builds one package per target that has a listing: `PRAYER_TIMES_APP_ID` for the Bip Max, `PRAYER_TIMES_APP_ID_<TARGET>` (root `mise.toml` `[env]`) for the others. `store-listing.json` names each listing's watches in `watches`, which fill `{watches}` in the descriptions.
 
 Install:
 ```sh

@@ -28,6 +28,10 @@ run = [
   "{{vars.py_img}} tools/gen-text-width.py",
   "{{vars.py_img}} tools/gen-preview.py",
   "{{vars.py_img}} tools/gen-docs.py",
+  # store previews for the face's other store listings (one per screen size, see tools/store-build.py)
+  "ZOS_TARGET=square-390x450 DOCS_OUT=../docs/watchface/square-390x450 STORE_ONLY=1 {{vars.py_img}} tools/gen-docs.py",
+  # every round listing takes 360x360 previews, whatever the watch's size
+  "ZOS_TARGET=round-360 DOCS_OUT=../docs/watchface/round STORE_ONLY=1 {{vars.py_img}} tools/gen-docs.py",
 ]
 
 # Not part of :gen: downloads ~210 MB from GeoNames, which changes daily. Output is committed.
@@ -47,16 +51,17 @@ run = "pnpm -s test"
 
 # zeus packs a copy of the project source (.ip-package) into the .zab so the Zepp store can rebuild
 # for other devices; it never reaches the watch. :build prunes it for sideloading (Gadgetbridge,
-# GitHub releases); :build-store keeps it for a store submission.
+# GitHub releases); :build-store keeps it, and builds one package per screen size that has a store
+# listing, since a listing takes only one size (tools/store-build.py).
 [tasks.build]
 description = "Regenerate assets, run the tests, and build a lean watchface .zab (no source archive)"
 depends = [":gen", ":test"]
 run = ["zeus build", "zeus prune --ip"]
 
 [tasks.build-store]
-description = "Like :build, but keep zeus's source archive in the .zab for a Zepp store submission"
+description = "Store packages: ../dist/prayer-times-watchface/*-<target>.zab for each target with a store listing, keeping zeus's source archive"
 depends = [":gen", ":test"]
-run = "zeus build"
+run = "python3 -I tools/store-build.py"
 
 # CI (.github/workflows): everything :build does, and fail if the committed generated files are out
 # of date (compared by pixels for PNGs, see scripts/check-generated.py).

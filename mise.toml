@@ -10,6 +10,10 @@ config_roots = ["prayer-times-watchface", "prayer-location-app"]
 # companion's into the face's lib/app-ids.js (scripts/app-ids.py); zeus can't read env vars itself.
 [env]
 PRAYER_TIMES_APP_ID = "1136165"
+# the face's other store listings, one per screen size (prayer-times-watchface/tools/store-build.py)
+PRAYER_TIMES_APP_ID_SQUARE_390X450 = "1136433"
+PRAYER_TIMES_APP_ID_ROUND_480 = "1136434"
+PRAYER_TIMES_APP_ID_ROUND_466 = "1136440"
 PRAYER_LOCATION_APP_ID = "1136166"
 
 # Python for the image generators (shared/text_draw.py: HarfBuzz + FreeType), for every project's
