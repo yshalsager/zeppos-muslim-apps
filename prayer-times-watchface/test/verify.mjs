@@ -5,7 +5,8 @@ import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
 import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepCoord, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
 import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
-import { LANGS, LANG_CODES, resolveLang } from '../lib/i18n/index.js'
+import { LANG_CODES, LANG_NAMES, resolveLang, revive } from '../lib/i18n/index.js'
+import { LANGS } from '../lib/i18n/tables.js'
 import { gregLine } from '../lib/i18n/text.js'
 import { EDIT_GROUPS } from '../lib/edit-options.js'
 import { layout, DESIGN } from '../lib/layout.js'
@@ -299,6 +300,22 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   }
   check(resolveLang('auto', 13) === 'ar' && resolveLang('auto', 17) === 'tr' && resolveLang('auto', 0) === 'en' &&
     resolveLang('auto', undefined) === 'en' && resolveLang('fr', 13) === 'fr', 'language resolution')
+  // The watch reads assets/<target>/i18n/<lang>.json (tools/gen-i18n.mjs): same strings, templates give the same text
+  const p = { d: '1', mon: 'M', m: '2', y: '3', wd: 'W' }
+  for (const target of TARGETS) {
+    for (const code of LANG_CODES) {
+      const path = new URL(`../assets/${target}/i18n/${code}.json`, import.meta.url)
+      if (!existsSync(path)) { check(false, 'i18n json missing', target, code); continue }
+      const T = revive(readFileSync(path, 'utf8')), ref = LANGS[code]
+      check(T.name === LANG_NAMES[code], 'language name', code)
+      for (const k of Object.keys(ref)) {
+        const same = typeof ref[k] === 'function'
+          ? ref[k](p, 'b') === T[k](p, 'b') && ref[k]('a', 'b') === T[k]('a', 'b')
+          : JSON.stringify(ref[k]) === JSON.stringify(T[k])
+        check(same, 'i18n json', target, code, k)
+      }
+    }
+  }
 // Date line: the year only without a place; a long place is cut with "…" (tools/gen-text-width.py
 // checks the fit in the real fonts), a short one or coordinates are kept whole.
 {

@@ -1,10 +1,7 @@
-// Face lines built from a language's strings (lib/i18n/<lang>.js). Shared by watchface/index.js
-// and the docs/preview generators (tools/*.mjs), so screenshots show the face's own text.
+// Face lines built from a language's strings (T: lib/i18n/load.js on the watch, tables.js in Node).
+// Shared by watchface/index.js and the docs/preview generators (tools/*.mjs), so screenshots show the face's own text.
 // digits(s): the face's digit style (Arabic-Indic or Latin) applied to a string.
-import { LANGS, DEFAULT_LANG } from './index.js'
 import { TEXT_WIDTH } from '../text-width.js'
-
-export const strings = (lang) => LANGS[lang] || LANGS[DEFAULT_LANG]
 
 const RLM = '‏'
 // Right-to-left languages: force right-to-left layout only for text that starts with a digit

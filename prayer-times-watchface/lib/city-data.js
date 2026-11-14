@@ -13,7 +13,7 @@ import { utf8 } from './utf8.js'
 const DIR = 'cities/'
 
 // Text of a file in the face's /assets. API 3.0 path form first, then the 2.0 asset calls.
-function readAsset(path) {
+export function readAsset(path) {
   try {
     const s = readFileSync({ path: 'assets://' + path, options: { encoding: 'utf8' } })
     if (typeof s === 'string' && s.length) return s

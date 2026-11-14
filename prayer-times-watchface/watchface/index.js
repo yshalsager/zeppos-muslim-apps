@@ -19,8 +19,9 @@ import { makeSensors } from '../lib/extras.js'
 import { WEATHER_ICONS } from '../lib/weather-icons.js'
 import { layout, DESIGN } from '../lib/layout.js'
 import { resolveLang } from '../lib/i18n/index.js'
+import { strings } from '../lib/i18n/load.js'
 import {
-  strings, line, hijriLine, gregLine, fitBox, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
+  line, hijriLine, gregLine, fitBox, prayerName, nextLine, extraItems, rangeLine, MAKRUH_KEYS,
 } from '../lib/i18n/text.js'
 
 const { createWidget, deleteWidget, widget, align, prop, show_level, event } = ui
@@ -56,7 +57,7 @@ const FRIDAY = 5 // Time.getDay(): Monday = 1
 // Language (lib/i18n): T holds its strings. Layout below is written for right-to-left (Arabic);
 // box() mirrors a rectangle for left-to-right languages, so reading order matches the language.
 let lang = ''
-let T = strings('ar')
+let T = null // the language's strings, set by pickLanguage()
 const watchLanguage = () => {
   try {
     return getLanguage()

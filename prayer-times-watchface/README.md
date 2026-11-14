@@ -99,7 +99,7 @@ Time sensor ──► date + timezone ──► dayEvents() × yesterday / today
 
 **Pages:** pages 1 and 2 are created on the first tap away from page 0 (most face loads never leave it); after that, switching pages only toggles visibility. Widgets created later sit on top and take the taps, so the lower half's tap areas are recreated above the new pages, and opening the menu returns to page 0 first. An invisible tap area over the grid and extras row cycles the pages. On page 0, tapping weather opens the Weather app, steps or calories open Activity, and heart rate opens Heart Rate (`launchApp` with the API 3.0 system app IDs). The battery cell just cycles the pages. Tap areas are alpha-0 `FILL_RECT`s with `CLICK_DOWN`/`CLICK_UP` listeners, so no images are needed. Only a quick, still tap counts, so a long press still opens the face picker.
 
-**Languages:** `lib/i18n/<lang>.js` holds every string the face shows, with the same keys as `ar.js` (`test/verify.mjs` checks the keys and shapes). Templates are functions, so each language keeps its own word order (`nextIn('Dhuhr', '1:31')` → "Dhuhr in 1:31", "Öğle vaktine 1:31"). `lib/i18n/text.js` builds the face's lines from them, and the docs generators use it too. The layout is written for right to left, and `box()` in `watchface/index.js` mirrors every rectangle for the other languages. Arabic uses the bundled Naskh font; the others use the system font. The watch has no Urdu or Persian, so they aren't offered. The translations other than Arabic and English need a native speaker's review.
+**Languages:** `lib/i18n/<lang>.js` holds every string the face shows, with the same keys as `ar.js` (`test/verify.mjs` checks the keys and shapes). Templates are functions, so each language keeps its own word order (`nextIn('Dhuhr', '1:31')` → "Dhuhr in 1:31", "Öğle vaktine 1:31"). `tools/gen-i18n.mjs` turns each into `assets/<target>/i18n/<lang>.json` (functions become templates such as `"{0} in {1}"`), and the face reads only the chosen language's file (`lib/i18n/load.js`); the tests check the files give the same text. `lib/i18n/text.js` builds the face's lines from them, and the docs generators use it too. The layout is written for right to left, and `box()` in `watchface/index.js` mirrors every rectangle for the other languages. Arabic uses the bundled Naskh font; the others use the system font. The watch has no Urdu or Persian, so they aren't offered. The translations other than Arabic and English need a native speaker's review.
 - **Changing language** rebuilds every face widget (`relayout()`, deferred to after the tap that triggered it). The Edit slots, their previews and the digits default are set when the face loads, so they follow a new language after the face reloads (e.g. after editing it).
 - **Digits:** Arabic-Indic by default in Arabic, Latin in the other languages; the Digits Edit slot overrides either.
 
@@ -149,17 +149,19 @@ lib/hijri.js               ← Hijri conversion (Umm al-Qura table + tabular fal
 lib/hijri-table.js         ← GENERATED month-length table, 1440–1500 AH
 lib/settings.js            ← face settings: defaults, sanitizing, steppers, iqama presets, precedence with edit slots
 lib/methods.js             ← method order for the menu and the automatic method by country
-lib/i18n/                  ← strings per language (ar.js is the reference), language choice, face lines (text.js)
+lib/i18n/                  ← strings per language (ar.js is the reference), language choice, face lines (text.js), loading one language on the watch (load.js)
 lib/store.js               ← JSON values in the face's LocalStorage
 lib/location.js            ← newest of the picked city / coordinates and ../prayer-location-app's fix
 lib/app-ids.js             ← generated: the companion's appId, from the root mise.toml [env]
 lib/city-data.js           ← reads the city files on demand (@zos/fs); lib/utf8.js decodes them
 assets/<target>/cities/    ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
+assets/<target>/i18n/      ← GENERATED strings per language, read by the face (tools/gen-i18n.mjs)
 lib/extras.js              ← extras-row sensors (steps, heart rate, battery, calories)
 lib/weather-icons.js       ← GENERATED weather icon per Zepp weather code (tools/gen-edit-assets.py)
 lib/edit-options.js        ← GENERATED on-watch edit slots (tools/gen-edit-assets.py)
 
 tools/gen-hijri-table.mjs  ← regenerates the Hijri table from Node's ICU calendar
+tools/gen-i18n.mjs         ← writes assets/<target>/i18n/<lang>.json from lib/i18n/<lang>.js
 tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits and menu arrows per target, lib/edit-options.js
 tools/gen-preview.py       ← renders assets/<target>/icon.png (picker preview, size from devices.json) from the real layout
 tools/render.py            ← shared drawing for the above (boxes from lib/layout.js via tools/layout-data.mjs)

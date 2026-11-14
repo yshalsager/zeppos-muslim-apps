@@ -5,7 +5,8 @@
 // three widest dates, as { box, lines: { lang: [...] } }, for gen-text-width.py to check they fit.
 // Run: node tools/date-line-texts.mjs [--lines]
 import { readFileSync, readdirSync } from 'node:fs'
-import { LANGS, LANG_CODES } from '../lib/i18n/index.js'
+import { LANG_CODES } from '../lib/i18n/index.js'
+import { LANGS } from '../lib/i18n/tables.js'
 
 const DEVICES = JSON.parse(readFileSync(new URL('../devices.json', import.meta.url), 'utf8'))
 const target = Object.keys(DEVICES).find((k) => !k.startsWith('/'))

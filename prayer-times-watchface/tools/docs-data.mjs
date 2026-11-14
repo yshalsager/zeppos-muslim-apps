@@ -8,8 +8,9 @@ import { countdown } from '../lib/countdown.js'
 import { CONFIG } from '../config.js'
 import { layout } from '../lib/layout.js'
 import {
-  strings, hijriLine, gregLine, nextLine, extraItems, rangeLine, prayerName, line, MAKRUH_KEYS,
+  hijriLine, gregLine, nextLine, extraItems, rangeLine, prayerName, line, MAKRUH_KEYS,
 } from '../lib/i18n/text.js'
+import { strings } from '../lib/i18n/tables.js'
 
 const lang = process.argv[2] || 'ar'
 const T = strings(lang)

@@ -4,7 +4,7 @@
 import { cityGroups, countryCities, cityName } from '../lib/city-data.js'
 import { METHOD_KEYS } from '../lib/methods.js'
 import { HIGH_LAT_RULES, resolveHighLat } from '../lib/prayer.js'
-import { LANGS, LANG_CODES } from '../lib/i18n/index.js'
+import { LANG_NAMES, LANG_CODES } from '../lib/i18n/index.js'
 import {
   ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, iqamaPreset, stepAngle, stepCoord, stepInt,
 } from '../lib/settings.js'
@@ -127,8 +127,8 @@ export function rootScreen(ctx) {
   const language = {
     title: M.language,
     items: () => [
-      { label: `${M.auto} (${LANGS[ctx.watchLang()].name})`, plain: true, color: chosen(face.language === 'auto'), tap: pickLanguage('auto') },
-      ...LANG_CODES.map((code) => ({ label: LANGS[code].name, plain: true, color: chosen(face.language === code), tap: pickLanguage(code) })),
+      { label: `${M.auto} (${LANG_NAMES[ctx.watchLang()]})`, plain: true, color: chosen(face.language === 'auto'), tap: pickLanguage('auto') },
+      ...LANG_CODES.map((code) => ({ label: LANG_NAMES[code], plain: true, color: chosen(face.language === code), tap: pickLanguage(code) })),
     ],
   }
 
@@ -233,7 +233,7 @@ export function rootScreen(ctx) {
       { label: M.adjust, tap: () => adjust },
       { label: M.clock, value: () => CLOCK_NAMES[face.clock], tap: set(() => { face.clock = next(CLOCKS, face.clock) }) },
       // a chosen language is the one shown, so its own name fits the row's font
-      { label: M.language, value: () => (face.language === 'auto' ? M.auto : LANGS[face.language].name), tap: () => language },
+      { label: M.language, value: () => (face.language === 'auto' ? M.auto : LANG_NAMES[face.language]), tap: () => language },
     ],
   }
 }

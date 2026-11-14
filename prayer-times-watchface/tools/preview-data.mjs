@@ -5,7 +5,8 @@ import { prayerMinutes, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { CONFIG } from '../config.js'
 import { countdown } from '../lib/countdown.js'
-import { strings, hijriLine, gregLine, nextLine } from '../lib/i18n/text.js'
+import { hijriLine, gregLine, nextLine } from '../lib/i18n/text.js'
+import { strings } from '../lib/i18n/tables.js'
 import { layout } from '../lib/layout.js'
 
 const [y, m, d, nowMin, tz] = [2026, 11, 12, 10 * 60 + 9, 2]
