@@ -6,37 +6,37 @@
     "en": {
       "console": "English(Default)",
       "name": "Prayer Times",
-      "description": "Offline prayer times for Amazfit Bip Max: Hijri date, next prayer with countdown and iqama, all six times, night thirds, Duha and prohibited times. Pick one of ~5,000 cities or enter coordinates in the face menu (tap the date). 13 calculation methods, high-latitude rules, adjustments. Arabic, English, French, Turkish, Indonesian, Malay, Russian. No phone or internet needed."
+      "description": "Offline prayer times for Amazfit watches (Bip, Active, Balance, T-Rex, Cheetah, GTR, GTS…): Hijri date, next prayer with countdown and iqama, all six times, night thirds, Duha and prohibited times. Pick one of ~5,000 cities or enter coordinates in the face menu (tap the date). 13 calculation methods, high-latitude rules, adjustments. 7 languages, including Arabic. No phone or internet needed."
     },
     "ar": {
       "console": "Arabic",
       "name": "مواقيت الصلاة",
-      "description": "مواقيت الصلاة دون إنترنت لساعة Amazfit Bip Max: التاريخ الهجري، والصلاة القادمة مع عدّ تنازلي والإقامة، والمواقيت الستة، وأثلاث الليل، والضحى، وأوقات النهي. اختر من نحو ٥٠٠٠ مدينة أو أدخل الإحداثيات من قائمة الواجهة (اضغط على التاريخ). ١٣ طريقة حساب، وخطوط العرض العليا، وتعديل المواقيت. سبع لغات منها العربية. لا تحتاج هاتفًا ولا إنترنت."
+      "description": "مواقيت الصلاة دون إنترنت لساعات Amazfit (Bip وActive وBalance وT-Rex وCheetah وGTR وGTS…): التاريخ الهجري، والصلاة القادمة مع عدّ تنازلي والإقامة، والمواقيت الستة، وأثلاث الليل، والضحى، وأوقات النهي. اختر من نحو ٥٠٠٠ مدينة أو أدخل الإحداثيات من قائمة الواجهة (اضغط على التاريخ). ١٣ طريقة حساب، وخطوط العرض العليا، وتعديل المواقيت. سبع لغات منها العربية. لا تحتاج هاتفًا ولا إنترنت."
     },
     "fr": {
       "console": "French",
       "name": "Heures de prière",
-      "description": "Heures de prière hors ligne pour Amazfit Bip Max : date hégirienne, prochaine prière avec compte à rebours et iqama, les six horaires, tiers de la nuit, Duha et heures interdites. Choisissez parmi ~5 000 villes ou saisissez des coordonnées dans le menu du cadran (touchez la date). 13 méthodes de calcul, hautes latitudes, ajustements. 7 langues. Sans téléphone ni internet."
+      "description": "Heures de prière hors ligne pour Amazfit (Bip, Active, Balance, T-Rex, GTR…) : date hégirienne, prochaine prière avec compte à rebours et iqama, les six horaires, tiers de la nuit, Duha et heures interdites. Choisissez parmi ~5 000 villes ou entrez des coordonnées dans le menu du cadran (touchez la date). 13 méthodes de calcul, hautes latitudes, ajustements. 7 langues. Sans téléphone ni internet."
     },
     "tr": {
       "console": "Turkish",
       "name": "Namaz Vakitleri",
-      "description": "Amazfit Bip Max için çevrimdışı namaz vakitleri: Hicri tarih, geri sayım ve kametle sıradaki namaz, altı vakit, gecenin üçte birleri, kuşluk ve kerahat vakitleri. ~5.000 şehirden seçin veya kadran menüsünde koordinat girin (tarihe dokunun). 13 hesaplama yöntemi, yüksek enlem kuralları, düzeltmeler. 7 dil. Telefon veya internet gerekmez."
+      "description": "Amazfit saatler (Bip, Active, Balance, T-Rex, Cheetah, GTR, GTS…) için çevrimdışı namaz vakitleri: Hicri tarih, geri sayım ve kametle sıradaki namaz, altı vakit, gecenin üçte birleri, kuşluk ve kerahat vakitleri. ~5.000 şehirden seçin veya kadran menüsünde koordinat girin (tarihe dokunun). 13 hesaplama yöntemi, yüksek enlem kuralları, düzeltmeler. 7 dil. Telefon veya internet gerekmez."
     },
     "id": {
       "console": "Indonesian",
       "name": "Waktu Salat",
-      "description": "Jadwal salat offline untuk Amazfit Bip Max: tanggal Hijriah, salat berikutnya dengan hitung mundur dan iqamah, enam waktu, sepertiga malam, Duha, dan waktu terlarang. Pilih dari ~5.000 kota atau masukkan koordinat di menu wajah jam (ketuk tanggal). 13 metode perhitungan, aturan lintang tinggi, penyesuaian. 7 bahasa. Tanpa ponsel atau internet."
+      "description": "Jadwal salat offline untuk jam Amazfit (Bip, Active, Balance, T-Rex, Cheetah, GTR, GTS…): tanggal Hijriah, salat berikutnya dengan hitung mundur dan iqamah, enam waktu, sepertiga malam, Duha, dan waktu terlarang. Pilih dari ~5.000 kota atau masukkan koordinat di menu wajah jam (ketuk tanggal). 13 metode perhitungan, aturan lintang tinggi, penyesuaian. 7 bahasa. Tanpa ponsel atau internet."
     },
     "ms": {
       "console": "Malay",
       "name": "Waktu Solat",
-      "description": "Waktu solat luar talian untuk Amazfit Bip Max: tarikh Hijrah, solat seterusnya dengan kira detik dan iqamah, enam waktu, sepertiga malam, Dhuha dan waktu larangan. Pilih daripada ~5,000 bandar atau masukkan koordinat dalam menu muka jam (ketik tarikh). 13 kaedah pengiraan, peraturan latitud tinggi, pelarasan. 7 bahasa. Tanpa telefon atau internet."
+      "description": "Waktu solat luar talian untuk jam Amazfit (Bip, Active, Balance, T-Rex, Cheetah, GTR, GTS…): tarikh Hijrah, solat seterusnya dengan kira detik dan iqamah, enam waktu, sepertiga malam, Dhuha dan waktu larangan. Pilih daripada ~5,000 bandar atau masukkan koordinat dalam menu muka jam (ketik tarikh). 13 kaedah pengiraan, peraturan latitud tinggi, pelarasan. 7 bahasa. Tanpa telefon atau internet."
     },
     "ru": {
       "console": "Russian",
       "name": "Время намаза",
-      "description": "Время намаза офлайн для Amazfit Bip Max: дата по хиджре, следующий намаз с обратным отсчётом и икамой, все шесть времён, трети ночи, духа и запретное время. Выберите один из ~5000 городов или введите координаты в меню циферблата (нажмите на дату). 13 методов расчёта, высокие широты, поправки. 7 языков. Без телефона и интернета."
+      "description": "Время намаза офлайн для часов Amazfit (Bip, Active, Balance, T-Rex, Cheetah, GTR, GTS…): дата по хиджре, следующий намаз с обратным отсчётом и икамой, все шесть времён, трети ночи, духа и запретное время. Выберите один из ~5000 городов или введите координаты в меню циферблата (нажмите на дату). 13 методов расчёта, высокие широты, поправки. 7 языков. Без телефона и интернета."
     }
   }
 }
