@@ -1,6 +1,6 @@
-# Prayer Times watchface — Amazfit Bip Max
+# Prayer Times watchface — Amazfit Bip Max and other Zepp OS watches
 
-An offline Zepp OS watchface for the Bip Max (432×514, deviceSource `11206915`). It shows:
+An offline Zepp OS watchface for the Bip Max (432×514) and 24 other rectangular and round Zepp OS watches (see [Devices](#devices)). It shows:
 - the time
 - the Hijri date (Umm al-Qura)
 - the Gregorian date and the place the times are for
@@ -141,7 +141,7 @@ watchface/screens.js       ← face menu screens: location (city or coordinates)
 devices.json               ← the screens the face is built for (one app.json target each; see Devices)
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 
-lib/layout.js              ← every box the face draws, scaled from the Bip Max design to the screen
+lib/layout.js              ← every box the face draws: the Bip Max design scaled to rectangles, a round design scaled to circles
 lib/text-width.js          ← GENERATED estimated character widths, to shorten long place names (tools/gen-text-width.py)
 lib/prayer.js              ← adhan-js wrapper (npm, MIT, bundled by zeus) → local minutes; night portions, makruh windows
 lib/countdown.js           ← countdown line: next prayer, iqama, progress, last 10 min, last third of the night
@@ -180,19 +180,34 @@ test/verify.mjs            ← Hijri vs ICU; prayer wrapper vs adhan in Africa/C
 
 ## Devices
 
-The face is built for the Bip Max only, but it is laid out so more screens can be added:
+The face is designed on the Bip Max and scaled to the other rectangular watches with Zepp OS 3 or later; round watches get the same face in a round layout:
+
+| Target | Screen | Watches (deviceSource) | Tested |
+|---|---|---|---|
+| `bip-max` | 432 × 514 | Bip Max (11206915) | on the watch |
+| `square-390x450` | 390 × 450 | Bip 6 (9765120, 9765121, 10158337), Active 2 Square (10223872, 10223873, 10223875, 9830656, 9830657, 9830659), Active (8323328, 8323329), GTS 4 (7995648, 7995649), Cheetah Square (8257793) | simulator (Bip 6) |
+| `square-320x380` | 320 × 380 | Bip 5 Unity (8782081, 8782088, 8782089) | simulator |
+| `round-480` | 480 × 480 | Balance 3, Balance Ultra, Cheetah 2 Ultra, T-Rex Ultra 2, Active Max, T-Rex 3 Pro 48 mm, Balance 2, Balance 2 XT, T-Rex 3, Balance, Cheetah Pro | simulator (Balance) |
+| `round-466` | 466 × 466 | Cheetah 2 Pro, Active 3 Premium, T-Rex 3 Pro 44 mm, Active 2 Round, GTR 4 | not yet |
+| `round-454` | 454 × 454 | Cheetah Round, T-Rex Ultra | not yet |
+| `round-416` | 416 × 416 | Falcon | not yet |
+| `round-360` | 360 × 360 | Active Edge | simulator |
+
+Device ids, corner radii and preview sizes are from Zepp's [device list](https://docs.zepp.com/docs/reference/related-resources/device-list/); ids that only the store lists (Active 2 Square's second set, Balance 2 XT, and extra ids for several round models) are from the store's device list; the round targets' ids are in `app.json`. Older watches (Bip 5, GTS 4 mini, GTS 3, Band 7, GTR 3, GTR Mini, T-Rex 2) have Zepp OS 1–2, below the face's API 3.0. The T-Rex Dual Solar (456 × 456) is in the store but not yet in Zepp's device list, so it isn't included.
+
+How the targets work:
 
 - `devices.json` lists the targets: screen size, shape, corner radius (for screenshots) and picker preview size. Each key is an `app.json` `targets` entry and its `assets/<target>/` folder (`test/verify.mjs` checks they match).
-- `lib/layout.js` holds every box the face, the AOD layer, the Edit slots and the menu draw, in the Bip Max's 432 × 514 design. Another screen gets it scaled: x by width, y by height, text and icons by the smaller of the two. At 432 × 514 nothing is scaled, so the Bip Max is drawn exactly as designed.
-- `watchface/index.js` reads the screen size from `getDeviceInfo()`, and the generators (`tools/render.py` through `tools/layout-data.mjs`) write every target's images from the same boxes, so previews and screenshots match each screen. The font and city list are the same for every target and are copied into each folder.
+- `lib/layout.js` holds every box the face, the AOD layer, the Edit slots and the menu draw, in two designs: the Bip Max's 432 × 514 for rectangles and a 480 × 480 one for circles (screens with width = height). Another rectangle gets the Bip Max design scaled: x by width, y by height, text and icons by the smaller of the two; at 432 × 514 nothing is scaled, so the Bip Max is drawn exactly as designed. A round screen gets the round design scaled evenly. It has the same pages, rows and menu with narrower boxes and smaller text, and `test/verify.mjs` checks that everything drawn stays inside the circle.
+- `watchface/index.js` reads the screen size from `getDeviceInfo()` (it needs the `data:os.device.info` permission; without it the call fails and every screen gets the unscaled Bip Max layout), and the generators (`tools/render.py` through `tools/layout-data.mjs`) write every target's images from the same boxes, so previews and screenshots match each screen. The font, city list and `NOTICE.txt` are the same for every target and are copied into each folder.
 
-To add a rectangular screen: add it to `devices.json`, add an `app.json` target with its `deviceSource` and the same key, then run `mise run :gen` and `mise run :test`. Scaling only works for screens close to the Bip Max's shape; a round screen needs its own layout in `lib/layout.js`.
+To add a screen: add it to `devices.json`, add an `app.json` target with its `deviceSource`s and the same key, copy `assets/bip-max/cities/` and `assets/bip-max/NOTICE.txt` into `assets/<target>/`, then run `mise run :build`. zeus packs one `.zpk` per firmware group into the `.zab`, each with only its own target's assets, so a watch installs about 300 KB whatever the number of targets. Rectangles far from the Bip Max's proportions would need a design of their own. To check a target's layout without a watch, `ZOS_TARGET=<target> DOCS_OUT=<folder>` with `tools/gen-docs.py` renders its screenshots elsewhere.
 
 ## Build / install
 
 The repo is a mise monorepo: shared tools are in the root `mise.toml`, and this folder's tasks are in `./mise.toml`. Run them from this folder, or from anywhere in the repo as `mise run //prayer-times-watchface:build`.
 ```sh
-mise run :build            # fonts + generated assets → tests → lean dist/*.zab (~335 KB)
+mise run :build            # fonts + generated assets → tests → lean dist/*.zab (~3.9 MB: 13 packages of ~300 KB, one per firmware group)
 mise run :build-store      # same, but keeps zeus's source archive (for a Zepp store submission)
 mise run :gen              # only regenerate (Hijri table, font, edit previews, picker icon)
 mise run :test             # only the math/countdown checks
@@ -201,7 +216,7 @@ mise run :ci               # :build, plus a check that the committed generated f
 - The Python generators run under `uv` with pinned wheels, and need no system libraries or fonts. Arabic is shaped by HarfBuzz (`uharfbuzz`) and drawn by FreeType (`freetype-py`), with `tools/uax9.py` ordering the left-to-right and right-to-left runs (the Unicode bidi algorithm). Pillow's own Arabic support would need `libraqm`, which its macOS wheel lacks. Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in.
 - The images come out pixel-identical on macOS and Linux. `mise run :ci` (used by GitHub Actions) regenerates everything and fails if a committed output is out of date (`scripts/check-generated.py`), comparing PNGs by pixels since their compressed bytes differ between arm64 and x86_64.
 - The source fonts are downloaded to `.cache/fonts/` at pinned versions and verified by checksum.
-- **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source (~75% of its size) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
+- **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source with every target's assets (~2.6 MB of the 6.5 MB store build) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
 
 Install:
 ```sh
@@ -212,7 +227,7 @@ zeus preview               # QR code → scan from Zepp app (Developer Mode) to 
 
 Gadgetbridge can also install a `.zab`/`.zpk` directly: open the file with Gadgetbridge (the File Installer).
 
-**Simulator:** `mise run simulator`, boot the Bip Max image, then `zeus dev` here. The emulator clock runs on UTC, so prayer times look shifted there.
+**Simulator:** `mise run simulator`, boot a device image (Bip Max, Bip 6, Balance, Active Edge, …), then `zeus dev` here and pick that device. The emulator clock runs on UTC, so prayer times look shifted there.
 
 ## Verify the math
 

@@ -3,7 +3,7 @@
 // the system font). tools/gen-text-width.py measures them for lib/text-width.js.
 // With --lines: the face's date line (lib/i18n/text.js gregLine) for every city, on each language's
 // three widest dates, as { box, lines: { lang: [...] } }, for gen-text-width.py to check they fit.
-// Run: node tools/date-line-texts.mjs [--lines]
+// Run: node tools/date-line-texts.mjs [--lines [width height]]
 import { readFileSync, readdirSync } from 'node:fs'
 import { LANG_CODES } from '../lib/i18n/index.js'
 import { LANGS } from '../lib/i18n/tables.js'
@@ -25,7 +25,8 @@ if (process.argv[2] === '--lines') {
   const { gregLine } = await import('../lib/i18n/text.js')
   const { TEXT_WIDTH } = await import('../lib/text-width.js')
   const { layout } = await import('../lib/layout.js')
-  const box = layout().greg
+  const [w, h] = process.argv.slice(3).map(Number) // a screen size; the Bip Max design by default
+  const box = (w ? layout(w, h) : layout()).greg
   const lines = {}
   for (const lang of LANG_CODES) {
     const T = LANGS[lang]

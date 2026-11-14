@@ -7,6 +7,7 @@ left-to-right layout in English, and store/<lang>.png the Zepp store preview (pr
 screen size) in every face language. They show the first devices.json target. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
 """
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -16,12 +17,12 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 from render import AOD, DIM, GOLD, NIGHT, ORANGE, RED, ROOT, TEAL, WHITE, Canvas, device, rounded  # noqa: E402
 
-DEV = device()
+DEV = device(os.environ.get("ZOS_TARGET"))  # another devices.json target, to check its layout
 L = DEV.L
 
 LANGS = {"ar": "", "en": "-en"}  # lib/i18n language → file suffix
 
-OUT = ROOT.parent / "docs" / "watchface"  # repo-level docs/, so zeus does not pack them into the .zab
+OUT = Path(os.environ.get("DOCS_OUT") or ROOT.parent / "docs" / "watchface")  # DOCS_OUT: elsewhere, for checks; repo-level docs/, so zeus does not pack them into the .zab
 COLORS = {"teal": TEAL, "gold": GOLD, "orange": ORANGE, "night": NIGHT}
 SAMPLE_EXTRAS = {True: [("weather", "٢٤°"), ("steps", "٦٢١٠"), ("battery", "٨٨٪")],
                  False: [("weather", "24°"), ("steps", "6210"), ("battery", "88%")]}

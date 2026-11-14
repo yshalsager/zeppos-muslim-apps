@@ -3,9 +3,10 @@
 // takes the taps, even without a listener). Fixed time: Zepp's preview time on the docs day.
 import { readFileSync as read } from 'node:fs'
 
-// stub.target: the devices.json target whose screen and assets the face sees (the docs use the first)
+// stub.target: the devices.json target whose screen and assets the face sees (the docs use the first;
+// ZOS_TARGET picks another)
 const DEVICES = JSON.parse(read(new URL('../../devices.json', import.meta.url), 'utf8'))
-export const stub = { widgets: [], storage: {}, now: new Date(2026, 10, 12, 10, 9), target: Object.keys(DEVICES).find((k) => k !== '//') }
+export const stub = { widgets: [], storage: {}, now: new Date(2026, 10, 12, 10, 9), target: process.env.ZOS_TARGET || Object.keys(DEVICES).find((k) => k !== '//') }
 
 function createWidget(type, o = {}) {
   const w = {

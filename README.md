@@ -1,6 +1,6 @@
 # Zepp OS Muslim apps
 
-Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridge (no phone needed).
+Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridge (no phone needed). The watchface also runs on 24 other rectangular and round Zepp OS 3+ watches, such as the Bip 6, Active 2, Balance, T-Rex 3 and GTR 4.
 
 ![Prayer-times watchface pages](docs/watchface/pages.png)
 

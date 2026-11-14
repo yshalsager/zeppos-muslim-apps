@@ -342,7 +342,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
 }
 
 // Devices: devices.json and app.json name the same targets, each with its assets folder; every
-// layout box stays on its screen, and the design size is laid out as designed (scale 1).
+// layout box stays on its screen (inside the circle on round ones), and the design size is laid out as designed (scale 1).
 {
   const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
   check(JSON.stringify(Object.keys(app.targets)) === JSON.stringify(TARGETS), 'app.json targets = devices.json', Object.keys(app.targets), TARGETS)
@@ -355,16 +355,23 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
     check(existsSync(new URL(`../assets/${t}/icon.png`, import.meta.url)), 'target assets', t)
     check(existsSync(new URL(`../assets/${t}/NOTICE.txt`, import.meta.url)), 'license notices in the package', t)
     const L = layout(d.width, d.height)
-    const boxes = []
-    const walk = (v) => {
-      if (Array.isArray(v)) v.forEach(walk)
+    const boxes = [] // [path, box]
+    const walk = (v, path) => {
+      if (Array.isArray(v)) v.forEach((x, i) => walk(x, path + '.' + i))
       else if (v && typeof v === 'object') {
-        if ('x' in v && 'w' in v) boxes.push(v)
-        else Object.values(v).forEach(walk)
+        if ('x' in v && 'w' in v) boxes.push([path, v])
+        else for (const k in v) walk(v[k], path + '.' + k)
       }
     }
-    walk(L)
-    check(boxes.every((b) => b.x >= 0 && b.y >= 0 && b.x + b.w <= d.width && b.y + b.h <= d.height), 'layout boxes on screen', t)
+    walk(L, '')
+    check(boxes.every(([, b]) => b.x >= 0 && b.y >= 0 && b.x + b.w <= d.width && b.y + b.h <= d.height), 'layout boxes on screen', t)
+    if (d.shape === 'round') {
+      // everything drawn stays inside the circle (1.5 px for rounding); tap areas and the menu background may reach past it
+      const r = d.width / 2
+      const out = boxes.filter(([p, b]) => !/[Tt]ap$|\.bg$/.test(p) &&
+        [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]].some(([x, y]) => Math.hypot(x - r, y - r) > r + 1.5))
+      check(!out.length, 'layout boxes inside the round screen', t, out.map(([p]) => p))
+    }
   }
   const L = layout(DESIGN.width, DESIGN.height)
   check(L.hijri.x === 16 && L.hijri.text_size === 32 && L.comps[0].icon.x === 368 && L.menu.row[3].tap.y === 330, 'design layout unscaled')

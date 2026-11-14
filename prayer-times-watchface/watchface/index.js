@@ -27,7 +27,7 @@ import {
 const { createWidget, deleteWidget, widget, align, prop, show_level, event } = ui
 const dataType = ui.data_type || (typeof hmUI !== 'undefined' ? hmUI.data_type : {})
 
-// Every box comes from lib/layout.js for this screen (the Bip Max design, scaled to others).
+// Every box comes from lib/layout.js for this screen (the Bip Max design scaled to rectangles, a round one to circles).
 const screen = (() => {
   try {
     const info = getDeviceInfo()

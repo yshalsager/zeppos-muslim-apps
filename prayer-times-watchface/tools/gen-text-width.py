@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I drops the script 
 import uharfbuzz as hb  # noqa: E402
 import uax9  # noqa: E402
 
-from render import LATIN_FONT, ROOT, SCALE, device, font  # noqa: E402
+from render import LATIN_FONT, ROOT, SCALE, TARGETS, device, font  # noqa: E402
 
 # Widths are multiplied by SAFETY where it applies (see above); printed below: how often the estimate
 # covers a string's real width
@@ -97,8 +97,20 @@ def write(out):
 
 
 def check(dev):
-    """[(lang, width, line)] of the face's date lines wider than their box."""
-    check = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "date-line-texts.mjs"), "--lines"], cwd=ROOT))
+    """[(lang, width, line)] of the face's date lines wider than their box, on the rectangular design
+    and on the first round target (lib/layout.js has one design per shape)."""
+    over = []
+    shapes = {}
+    for t in TARGETS:
+        shapes.setdefault(device(t).w == device(t).h, t)
+    for t in shapes.values():
+        print(f"  {t}:")
+        over += check_box(dev, device(t).w, device(t).h)
+    return over
+
+
+def check_box(dev, w, h):
+    check = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "date-line-texts.mjs"), "--lines", str(w), str(h)], cwd=ROOT))
     box = check["box"]
     over = []
     for lang, lines in check["lines"].items():
