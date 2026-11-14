@@ -16,6 +16,7 @@
     "data:user.hd.step",
     "data:user.hd.heart_rate",
     "data:user.hd.calorie",
+    "data:os.device.info",
     "device:os.local_storage"
   ],
   "runtime": {

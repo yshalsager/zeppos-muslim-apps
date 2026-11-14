@@ -346,6 +346,8 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
 {
   const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
   check(JSON.stringify(Object.keys(app.targets)) === JSON.stringify(TARGETS), 'app.json targets = devices.json', Object.keys(app.targets), TARGETS)
+  // without it getDeviceInfo() throws and every screen falls back to the Bip Max design size
+  check(app.permissions.includes('data:os.device.info'), 'app.json permission data:os.device.info')
   for (const t of TARGETS) {
     const d = DEVICES[t]
     const p = app.targets[t] && app.targets[t].platforms
