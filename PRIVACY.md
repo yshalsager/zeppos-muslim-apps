@@ -1,8 +1,8 @@
 # Privacy Policy
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
-This policy covers the **Prayer Times** watch face for Zepp OS watches, published from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
+This policy covers the **Prayer Times** watch face for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
 
 ## In short
 

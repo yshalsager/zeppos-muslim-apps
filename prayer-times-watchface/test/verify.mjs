@@ -351,6 +351,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
     const p = app.targets[t] && app.targets[t].platforms
     check(p && p.some((x) => x.deviceSource === d.deviceSource), 'app.json deviceSource', t)
     check(existsSync(new URL(`../assets/${t}/icon.png`, import.meta.url)), 'target assets', t)
+    check(existsSync(new URL(`../assets/${t}/NOTICE.txt`, import.meta.url)), 'license notices in the package', t)
     const L = layout(d.width, d.height)
     const boxes = []
     const walk = (v) => {
