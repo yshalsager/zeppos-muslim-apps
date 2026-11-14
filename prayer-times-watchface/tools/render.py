@@ -202,7 +202,7 @@ class Canvas:
         ltr: lay out left to right, as the watch does for a string with no Arabic letter before its
         digits (e.g. "+٠.١")."""
         x, y, w, h = box
-        latin = all(ord(c) < 0x0600 for c in s)
+        latin = not any(0x0600 <= ord(c) <= 0x08FF or 0xFB50 <= ord(c) <= 0xFEFF for c in s)  # no Arabic script
         path = LATIN_FONT if latin else (SYSTEM_ARABIC if system or not self.rtl else self.dev.arabic_font)
         rtl = self.rtl and not latin and not ltr
         f = font(path, size * SCALE)

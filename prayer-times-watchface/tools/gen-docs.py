@@ -3,7 +3,8 @@
 Writes ../docs/watchface/pages.png (the three pages + always-on display), countdown.png
 (countdown line states) and menu.png (settings menu screens, from tools/docs-menu.mjs, which runs
 the real menu code on stub @zos modules); pages-en.png and menu-en.png show the mirrored
-left-to-right layout in English. They show the first devices.json target. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
+left-to-right layout in English, and store/<lang>.png the Zepp store preview (prayers page, full
+screen size) in every face language. They show the first devices.json target. They live outside this folder so zeus doesn't pack them into the .zab. Run: python3 -I tools/gen-docs.py (via `mise run :gen`).
 """
 import json
 import subprocess
@@ -134,6 +135,16 @@ def main():
             states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
             states.save(OUT / "countdown.png", optimize=True)
             written.append("countdown.png")
+    # Zepp store preview per language: the prayers page at screen size, square corners, no bezel
+    langs = json.loads(subprocess.check_output(
+        ["node", "-e", "import('./lib/i18n/index.js').then((m) => console.log(JSON.stringify(m.LANG_CODES)))"], cwd=ROOT))
+    (OUT / "store").mkdir(exist_ok=True)
+    for lang in langs:
+        d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs"), lang], cwd=ROOT))
+        im = Image.new("RGBA", (DEV.w, DEV.h), (0, 0, 0, 255))
+        im.alpha_composite(prayers(d, d["scenes"]["prayers"]).image())
+        im.convert("RGB").save(OUT / "store" / f"{lang}.png", optimize=True)
+        written.append(f"store/{lang}.png")
     for f in written:
         im = Image.open(OUT / f)
         print(f"wrote docs/watchface/{f} {im.size} {(OUT / f).stat().st_size // 1024} KB")
