@@ -1,6 +1,13 @@
 {
-  "//": "Zepp store listing for daad-keyboard. Names <= 30 characters, short descriptions <= 100 (the app form's search text), descriptions <= 400. Console language names in 'console'. The category is a guess: check the app form's list.",
-  "category": "Tools",
+  "//": "Zepp store listing for daad-keyboard (the app form: .agents/skills/zepp-store-release/fill_app_form.py). Names <= 30 characters and the same as app.json's i18n appName, short descriptions <= 100 (the search text), descriptions <= 1500. Console language names in 'console'. category: the form's App Classification (Workout, Health & Fitness, Utilities, Lifestyle, Productivity, Games); service_category: General unless the app sells or handles health or insurance. permissions: the form's values (none, heartrate, network, location, background, other).",
+  "category": "Utilities",
+  "service_category": "General",
+  "permissions": [
+    "none"
+  ],
+  "third_party_sdk": false,
+  "music": false,
+  "privacy": "Daad Arabic Keyboard does not collect, send or share any data. It has no network access and no phone-side component. What you type goes only to the app or reply you are typing into; the keyboard does not record it. It stores one thing on the watch: the language you used last, so it opens in that language. Uninstalling the keyboard removes it. Full policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
   "notes": "After installing, enable the keyboard in Settings > Preferences > Keyboard (the app's own screen has a shortcut), then open any text field, e.g. a notification reply. Tap EN/ع to switch language, ١٢٣ for digits and symbols, رد for phrases; long-press letters for variants. No network, no phone app, no data collection; only the last-used language is stored on the watch. Source code (GPL-3.0): https://github.com/yshalsager/zeppos-muslim-apps . Privacy policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
   "langs": {
     "en": {
