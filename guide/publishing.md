@@ -16,6 +16,7 @@ Practical points:
 - **Write the listing in a file** (name, description and review notes per language) and keep it in the repo, so the next upload reuses it.
 - **Review quota:** the console allows about six submissions a week.
 - **The form is fiddly** (dropdowns, file uploads that get duplicated if resent). The [`zepp-store-release`](../.agents/skills/zepp-store-release/SKILL.md) skill fills it from the listing file; a person still submits.
+- **One screen size per watch face listing (console, November 2026).** The console rejects a watch face package whose devices have different shapes ("multiple shapes (round and square)") or different resolutions ("multiple resolutions"). A face for several screen sizes needs one listing per size, each with its own appId: build a package per size (we write a temporary `app.json` with one target and that listing's appId, then run `zeus build`). The GitHub `.zab` can keep every size, since Gadgetbridge installs from it directly.
 - **The store holds devices per variant.** Make sure `app.json` lists every `deviceSource` of each model you support (see [multiple devices](multiple-devices.md)).
 
 To see how similar apps are described, which devices they support and what permissions they ask for, use [Zepp Explorer](https://ze.mmk.pw/catalog/) or the [`zepp-store-inspect`](../.agents/skills/zepp-store-inspect/SKILL.md) skill.

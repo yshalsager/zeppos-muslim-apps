@@ -24,7 +24,7 @@ What worked for a rectangular face:
 
 - **Nothing per watch (build).** Each watch installs only its own package, about the same size as before; smaller screens get smaller images.
 - **A bigger `.zab`.** The file you sideload or attach to a GitHub release bundles every package: ours went from 0.3 MB (one package) to 1.5 MB (five) to 3.9 MB (thirteen, with the round targets). Gadgetbridge and the store pick the right one by device id; we have seen the store do it, not Gadgetbridge.
-- **A much bigger store upload.** The store build keeps zeus's source copy (`.ip-package`), which holds every target's assets: ours is 6.5 MB, of which 2.6 MB is the source copy. We don't know whether the store has a size limit.
+- **More store listings.** A watch face listing on the Zepp store takes one screen size, so each size you sell there needs its own listing, appId, previews and review (see [publishing](publishing.md)). Each store package then holds one target: 2.8 MB for ours with the source copy, instead of 6.5 MB for all eight.
 - **Testing.** A model nobody has tried is a guess. Mark untested targets as such, and use the simulator, which includes most models.
 
 ## Round screens
