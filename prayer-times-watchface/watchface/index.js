@@ -198,14 +198,15 @@ const setText = (wd, s) => {
   const m = memo(wd)
   if (m.t !== s) { m.t = s; wd.setProperty(prop.TEXT, s) }
 }
-// Invisible tap area: an alpha-0 FILL_RECT with listeners, so no image is needed. Only a quick,
+// Invisible tap area: an IMG with a size and no image, with listeners. (An alpha-0 FILL_RECT works
+// on API 4 watches, but API 3.5 firmware ignores alpha and draws it black over the face.) Only a quick,
 // still tap counts: a long press (face picker) or a swipe that starts here stays the system's.
 // Widgets created later sit on top and take the taps, so tap areas are created last.
 // onPress(true/false) runs on touch down / up (the menu highlights the pressed row).
 const TAP_MAX_MS = 600
 const TAP_MAX_MOVE = 24 // px
 const tap = (area, onTap, onPress) => {
-  const wd = make(widget.FILL_RECT, { ...area, color: 0x000000, alpha: 0, show_level: show_level.ONLY_NORMAL })
+  const wd = make(widget.IMG, { ...area, show_level: show_level.ONLY_NORMAL })
   let down = null
   wd.addEventListener(event.CLICK_DOWN, (e) => {
     down = { t: Date.now(), x: e && e.x, y: e && e.y }

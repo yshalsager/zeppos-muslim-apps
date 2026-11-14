@@ -95,7 +95,7 @@ def menu(widgets, rtl):
     """A settings-menu screen from the widgets tools/docs-menu.mjs recorded."""
     c = Canvas(DEV, rtl=rtl)
     for w in widgets:
-        if w["type"] == "IMG":
+        if w["type"] == "IMG" and "src" in w:  # an IMG without src is an invisible tap area
             c.paste_image(DEV.assets / w["src"], w["x"], w["y"])
         elif w["type"] == "TEXT" and w.get("text"):
             s = w["text"]

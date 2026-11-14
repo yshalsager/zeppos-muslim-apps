@@ -72,3 +72,4 @@ export class LocalStorage {
 export class TypedStorage { getInt64(k, d) { return d } getDouble(k, d) { return d } }
 export const readFileSync = ({ path }) => read(new URL(`../../assets/${stub.target}/${path.replace('assets://', '')}`, import.meta.url), 'utf8')
 export const openAssetsSync = () => 0, statAssetsSync = () => undefined, readSync = () => 0, closeSync = () => {}, O_RDONLY = 0
+export const openSync = () => 0, writeSync = () => 0, statSync = () => undefined, rmSync = () => {}, O_WRONLY = 1, O_CREAT = 64, O_TRUNC = 512
