@@ -3,6 +3,7 @@
 The IDs are the ones registered on the Zepp developer console (console.zepp.com):
   PRAYER_TIMES_APP_ID     the watchface
   PRAYER_LOCATION_APP_ID  the location companion; the face reads its shared location by this ID
+  DAAD_KEYBOARD_APP_ID    the Daad keyboard
 
   python3 scripts/app-ids.py PROJECT   (a folder name, e.g. prayer-times-watchface)
 
@@ -16,7 +17,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OWN_ID = {"prayer-times-watchface": "PRAYER_TIMES_APP_ID", "prayer-location-app": "PRAYER_LOCATION_APP_ID"}
+OWN_ID = {"prayer-times-watchface": "PRAYER_TIMES_APP_ID", "prayer-location-app": "PRAYER_LOCATION_APP_ID",
+          "daad-keyboard": "DAAD_KEYBOARD_APP_ID"}
 
 
 def app_id(var):

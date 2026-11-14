@@ -1,0 +1,394 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 1136372,
+    "appName": "Daad Arabic Keyboard",
+    "appType": "app",
+    "version": {
+      "code": 19,
+      "name": "1.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "custom",
+    "_pikeCompatibled": 1,
+    "description": "Arabic/English custom keyboard with correct right-to-left text"
+  },
+  "permissions": [
+    "device:os.input.method",
+    "data:os.device.info",
+    "device:os.local_storage"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.2"
+    }
+  },
+  "targets": {
+    "bip-max": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "data-widget/index.page"
+          ]
+        },
+        "data-widget": {
+          "widgets": [
+            {
+              "name": "ضاد",
+              "path": "data-widget/index.page",
+              "icon": "icon.png",
+              "runtime": {
+                "ability": [
+                  {
+                    "name": "ar-EG",
+                    "type": 2,
+                    "subType": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "name": "bip-max",
+          "deviceSource": 11206915,
+          "st": "s",
+          "sr": "w432",
+          "dw": 432
+        }
+      ],
+      "designWidth": 432
+    },
+    "square-390x450": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "data-widget/index.page"
+          ]
+        },
+        "data-widget": {
+          "widgets": [
+            {
+              "name": "ضاد",
+              "path": "data-widget/index.page",
+              "icon": "icon.png",
+              "runtime": {
+                "ability": [
+                  {
+                    "name": "ar-EG",
+                    "type": 2,
+                    "subType": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "name": "square-390x450",
+          "deviceSource": 9765120
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 9765121
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 10158337
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 10223872
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 10223873
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 10223875
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 9830656
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 9830657
+        },
+        {
+          "name": "square-390x450",
+          "deviceSource": 9830659
+        }
+      ],
+      "designWidth": 390
+    },
+    "round-480": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "data-widget/index.page"
+          ]
+        },
+        "data-widget": {
+          "widgets": [
+            {
+              "name": "ضاد",
+              "path": "data-widget/index.page",
+              "icon": "icon.png",
+              "runtime": {
+                "ability": [
+                  {
+                    "name": "ar-EG",
+                    "type": 2,
+                    "subType": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "name": "round-480",
+          "deviceSource": 11141376
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11141377
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11141379
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11145472
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11145473
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11145475
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11075840
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11075841
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11092224
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 11092225
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9961728
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9961729
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9978112
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9978113
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10879232
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10879233
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10879235
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10813697
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10813699
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10551552
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10551553
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10551555
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9568512
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9568513
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 9568515
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10486016
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10486017
+        },
+        {
+          "name": "round-480",
+          "deviceSource": 10486019
+        }
+      ],
+      "designWidth": 480
+    },
+    "round-466": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "data-widget/index.page"
+          ]
+        },
+        "data-widget": {
+          "widgets": [
+            {
+              "name": "ضاد",
+              "path": "data-widget/index.page",
+              "icon": "icon.png",
+              "runtime": {
+                "ability": [
+                  {
+                    "name": "ar-EG",
+                    "type": 2,
+                    "subType": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "name": "round-466",
+          "deviceSource": 11010304
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 11010305
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 11010307
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10944768
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10944769
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10944771
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10948867
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10682624
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10682625
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10682627
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 8913152
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 8913153
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 8913155
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 8913159
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10092800
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10092801
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10092803
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10092807
+        },
+        {
+          "name": "round-466",
+          "deviceSource": 10617091
+        }
+      ],
+      "designWidth": 466
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Daad Arabic Keyboard"
+    },
+    "ar-EG": {
+      "appName": "ضاد: لوحة مفاتيح عربية"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

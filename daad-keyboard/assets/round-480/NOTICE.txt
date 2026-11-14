@@ -1,0 +1,10 @@
+Daad Arabic Keyboard
+Copyright (C) 2026 yshalsager
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License version 3 as published by the Free Software Foundation. It comes with
+ABSOLUTELY NO WARRANTY. Source code and the full license:
+https://github.com/yshalsager/zeppos-muslim-apps (LICENSE, GPL-3.0)
+
+The package bundles no third-party code or fonts. The letter in the icon was drawn at build time
+with Prayer Face Naskh, a subset of SIL's Scheherazade New (SIL Open Font License 1.1).

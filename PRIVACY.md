@@ -2,7 +2,7 @@
 
 Last updated: 2026-11-14
 
-This policy covers the **Prayer Times** watch face for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
+This policy covers the **Prayer Times** watch face and the **Daad Arabic Keyboard** for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
 
 ## In short
 
@@ -15,9 +15,13 @@ The face does not collect, send or share any data. It has no phone-side componen
 - **Health and battery data.** If you put steps, heart rate, calories or battery in one of the face's slots, the face reads the current value from the watch only to display it. It does not record or store these values.
 - **Weather.** The weather slot is drawn by the watch's own firmware from data it already has. The face does not request or handle weather data itself.
 
+## Daad Arabic Keyboard
+
+The keyboard does not collect, send or share any data, and it has no phone-side component or network access. What you type goes only to the app or reply you are typing into; the keyboard does not record it. It stores one thing on the watch: the language you used last, so it opens in that language.
+
 ## Data removal
 
-All the data lives on your watch. Uninstalling the face removes its settings and saved location. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
+All the data lives on your watch. Uninstalling the face removes its settings and saved location; uninstalling the keyboard removes its saved language. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
 
 ## Children
 

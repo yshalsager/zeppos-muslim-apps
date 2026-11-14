@@ -1,0 +1,19 @@
+{
+  "//": "Zepp store listing for daad-keyboard. Names <= 30 characters, short descriptions <= 100 (the app form's search text), descriptions <= 400. Console language names in 'console'. The category is a guess: check the app form's list.",
+  "category": "Tools",
+  "notes": "After installing, enable the keyboard in Settings > Preferences > Keyboard (the app's own screen has a shortcut), then open any text field, e.g. a notification reply. Tap EN/ع to switch language, ١٢٣ for digits and symbols, رد for phrases; long-press letters for variants. No network, no phone app, no data collection; only the last-used language is stored on the watch. Source code (GPL-3.0): https://github.com/yshalsager/zeppos-muslim-apps . Privacy policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
+  "langs": {
+    "en": {
+      "console": "English(Default)",
+      "name": "Daad Arabic Keyboard",
+      "short": "Arabic and English keyboard, Arabic shown right to left while typing, with tashkeel and phrases",
+      "description": "Arabic and English keyboard for Amazfit Bip Max, Bip 6, Active 2, Balance, Cheetah 2 and more. The phone's Arabic layout, with Arabic shown in the right order while you type. Long-press for أ إ آ ة ئ ؤ. Arabic and Western digits, tashkeel, symbols, emoji, and a page of ready phrases: greetings, replies and honorifics such as ﷺ. Key preview, vibration, auto-capitals, hold DEL for words."
+    },
+    "ar": {
+      "console": "Arabic",
+      "name": "ضاد: لوحة مفاتيح عربية",
+      "short": "لوحة مفاتيح عربية وإنجليزية يظهر فيها النص العربي من اليمين أثناء الكتابة، مع التشكيل وعبارات جاهزة",
+      "description": "لوحة مفاتيح عربية وإنجليزية لساعات Amazfit Bip Max وBip 6 وActive 2 وBalance وCheetah 2 وغيرها، بترتيب أحرف لوحة الهاتف، ويظهر النص العربي بالاتجاه الصحيح أثناء الكتابة. اضغط مطولًا للحصول على أ إ آ ة ئ ؤ وغيرها. أرقام عربية وغربية، وتشكيل، ورموز، وإيموجي، وصفحة عبارات جاهزة: التحية والردود وعبارات مثل ﷺ. معاينة الحرف، واهتزاز خفيف، والضغط المطول على الحذف يمسح كلمات. تعمل دون إنترنت."
+    }
+  }
+}

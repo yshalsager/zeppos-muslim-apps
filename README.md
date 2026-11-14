@@ -8,6 +8,7 @@ Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridg
 |---|---|
 | [Prayer-times watchface](prayer-times-watchface/README.md) | Hijri date, next prayer countdown, iqama, night and prohibited times; Arabic, English, French, Turkish, Indonesian, Malay, Russian |
 | [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface |
+| [Daad keyboard](daad-keyboard/README.md) | Arabic and English keyboard with long-press variants, digits and tashkeel, ready phrases; Arabic shown in the right order while typing |
 
 ## Build
 

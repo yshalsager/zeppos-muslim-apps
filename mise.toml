@@ -4,7 +4,7 @@
 monorepo_root = true
 
 [monorepo]
-config_roots = ["prayer-times-watchface", "prayer-location-app"]
+config_roots = ["prayer-times-watchface", "prayer-location-app", "daad-keyboard"]
 
 # App IDs registered on the Zepp developer console. :gen writes them into each app.json, and the
 # companion's into the face's lib/app-ids.js (scripts/app-ids.py); zeus can't read env vars itself.
@@ -15,6 +15,7 @@ PRAYER_TIMES_APP_ID_SQUARE_390X450 = "1136433"
 PRAYER_TIMES_APP_ID_ROUND_480 = "1136434"
 PRAYER_TIMES_APP_ID_ROUND_466 = "1136440"
 PRAYER_LOCATION_APP_ID = "1136166"
+DAAD_KEYBOARD_APP_ID = "1136372"
 
 # Python for the image generators (shared/text_draw.py: HarfBuzz + FreeType), for every project's
 # tasks. Wheels only (--no-build), pinned so the output is the same on macOS and Linux.
