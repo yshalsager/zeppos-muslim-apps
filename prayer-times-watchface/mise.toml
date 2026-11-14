@@ -43,6 +43,7 @@ run = [
 [tasks.test]
 description = "Verify the prayer/Hijri math and countdown logic"
 depends = [":deps"]
+wait_for = [":gen"] # tasks depending on both (:build, :ci) run their tests on the regenerated files
 run = "pnpm -s test"
 
 # zeus packs a copy of the project source (.ip-package) into the .zab so the Zepp store can rebuild
