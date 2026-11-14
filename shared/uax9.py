@@ -1,9 +1,9 @@
-"""The Unicode bidi algorithm (UAX #9) for one line of plain text, as tools/render.py needs it:
+"""The Unicode bidi algorithm (UAX #9) for one line of plain text, as text_draw.py needs it:
 which parts of a line run left to right or right to left, in visual order. HarfBuzz shapes each run
 but doesn't reorder them; this does the job FriBiDi does inside libraqm.
 
 Covers the rules plain text uses: weak types (W1–W7), neutrals (N1–N2), implicit levels (I1–I2) and
-reordering (L2). No explicit embeddings or isolates (the face's strings have none), and no bracket
+reordering (L2). No explicit embeddings or isolates (our strings have none), and no bracket
 pairs (N0), which only change the result when a bracket pair holds text of the other direction.
 """
 import unicodedata

@@ -25,9 +25,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I drops the script dir
 import uharfbuzz as hb  # noqa: E402
-import uax9  # noqa: E402
 
-from render import LATIN_FONT, ROOT, SCALE, TARGETS, device, font  # noqa: E402
+from render import LATIN_FONT, ROOT, SCALE, TARGETS, device, font  # noqa: E402 (puts ../shared on sys.path)
+import uax9  # noqa: E402
 
 # Widths are multiplied by SAFETY where it applies (see above); printed below: how often the estimate
 # covers a string's real width

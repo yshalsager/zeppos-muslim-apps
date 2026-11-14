@@ -3,34 +3,27 @@
 Boxes come from lib/layout.js (via tools/layout-data.mjs) for each devices.json target, so every
 target's previews match its watch. device(target) holds a target's screen, layout and assets folder.
 
-Text is shaped by HarfBuzz (uharfbuzz) and drawn by FreeType (freetype-py), both bundled in their
-wheels, so the output is the same on macOS and Linux (CI) without Pillow's libraqm or system fonts.
-tools/uax9.py puts the left-to-right and right-to-left runs of a line in visual order.
+Text is shaped and drawn by ../../shared/text_draw.py (HarfBuzz and FreeType, the same output on macOS
+and Linux), shared with the other projects' generators.
 """
 import functools
 import json
-import math
 import subprocess
+import sys
 from pathlib import Path
 
-import freetype
-import uharfbuzz as hb
-from PIL import Image, ImageChops, ImageDraw
-
-import uax9  # tools/ is on sys.path (the generators add it)
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-SCALE = 3  # supersample for smooth text
+sys.path.insert(0, str(ROOT.parent / "shared"))
+from text_draw import FONTS, LATIN_FONT, SCALE, SYSTEM_ARABIC, font  # noqa: E402,F401 (re-exported)
 
 WHITE, DIM, GOLD, TEAL = (255, 255, 255), (156, 163, 175), (250, 204, 21), (45, 212, 191)
 RED, ORANGE, NIGHT, AOD = (248, 113, 113), (251, 146, 60), (167, 139, 250), (138, 138, 138)  # watchface/index.js
 # Fonts. Arabic text uses the face's bundled font (tools/gen-font.py), so previews match the watch.
 # Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in
-# (downloaded by tools/fetch-fonts.sh, which `mise run :gen` runs first).
-_FONTS = ROOT / ".cache" / "fonts"
-SYSTEM_ARABIC = _FONTS / "NotoSansArabic.ttf"
-LATIN_FONT = _FONTS / "NotoSans.ttf"
-LUCIDE_FONT = _FONTS / "lucide.ttf"  # Lucide icons (ISC), glyphs on a 1000-unit em square
+# (downloaded by ../scripts/fetch-fonts.sh, which `mise run :gen` runs first).
+LUCIDE_FONT = FONTS / "lucide.ttf"  # Lucide icons (ISC), glyphs on a 1000-unit em square
 
 # Weather icon per Zepp weather code 0–28 (IMG_LEVEL + data_type.WEATHER picks one; Zepp watchface
 # spec "Type data"). None = unknown weather (25): a transparent image.
@@ -97,7 +90,7 @@ def icon_image(name, size, color=DIM):
 
 @functools.cache
 def _lucide_codepoints():
-    return json.loads((_FONTS / "lucide-codepoints.json").read_text())
+    return json.loads((FONTS / "lucide-codepoints.json").read_text())
 
 
 def lucide_image(name, size, color=DIM, scale=SCALE):
@@ -110,60 +103,6 @@ def lucide_image(name, size, color=DIM, scale=SCALE):
     im = Image.new("RGBA", m.size, color + (255,))
     im.putalpha(m)
     return im if scale == SCALE else im.resize((size * scale, size * scale), Image.LANCZOS)
-
-
-class Font:
-    """One font file at one pixel size."""
-
-    def __init__(self, path, px):
-        self.ft = freetype.Face(str(path))
-        self.ft.set_pixel_sizes(0, px)
-        self.hb = hb.Font(hb.Face(hb.Blob.from_file_path(str(path))))
-        self.hb.scale = (px * 64, px * 64)  # 26.6 fixed point, as FreeType
-        self.asc, self.desc = self.ft.size.ascender / 64, self.ft.size.descender / 64  # desc < 0
-        self.pad = px  # room for marks above the ascender / below the descender
-
-    def glyphs(self, s, rtl):
-        """[(glyph id, x, y)] relative to the pen start on the baseline, and the advance width."""
-        out, x = [], 0.0
-        for text, run_rtl in uax9.runs(s, rtl):
-            buf = hb.Buffer()
-            buf.add_str(text)
-            buf.guess_segment_properties()
-            buf.direction = "rtl" if run_rtl else "ltr"
-            hb.shape(self.hb, buf, {})
-            for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-                out.append((info.codepoint, x + pos.x_offset / 64, -pos.y_offset / 64))
-                x += pos.x_advance / 64
-        return out, x
-
-    def width(self, s, rtl):
-        return self.glyphs(s, rtl)[1]
-
-    def mask(self, s, rtl):
-        """Coverage of the line as an "L" image with the baseline at y = pad + asc and the pen
-        starting at x = pad, plus its advance width."""
-        glyphs, adv = self.glyphs(s, rtl)
-        p = self.pad
-        im = Image.new("L", (math.ceil(adv) + 2 * p, math.ceil(self.asc - self.desc) + 2 * p), 0)
-        base = p + self.asc
-        for gid, gx, gy in glyphs:
-            self.ft.load_glyph(gid, freetype.FT_LOAD_DEFAULT | freetype.FT_LOAD_NO_HINTING)
-            g = self.ft.glyph
-            g.render(freetype.FT_RENDER_MODE_NORMAL)
-            bm = g.bitmap
-            if not (bm.width and bm.rows):
-                continue
-            glyph = Image.frombytes("L", (bm.width, bm.rows), bytes(bm.buffer))
-            x, y = round(p + gx) + g.bitmap_left, round(base + gy) - g.bitmap_top
-            box = (x, y, x + bm.width, y + bm.rows)
-            im.paste(ImageChops.lighter(im.crop(box), glyph), box)
-        return im, adv
-
-
-@functools.cache
-def font(path, px):
-    return Font(path, px)
 
 
 # Digit images share one box: DIGIT_LINE × size tall with the baseline DIGIT_BASE × size from the top

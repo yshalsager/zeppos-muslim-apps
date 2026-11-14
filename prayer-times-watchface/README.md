@@ -166,14 +166,13 @@ tools/gen-hijri-table.mjs  ← regenerates the Hijri table from Node's ICU calen
 tools/gen-i18n.mjs         ← writes assets/<target>/i18n/<lang>.json from lib/i18n/<lang>.js
 tools/gen-edit-assets.py   ← edit-slot previews, runtime icons/digits and menu arrows per target, lib/edit-options.js
 tools/gen-preview.py       ← renders assets/<target>/icon.png (picker preview, size from devices.json) from the real layout
-tools/render.py            ← shared drawing for the above (boxes from lib/layout.js via tools/layout-data.mjs)
+tools/render.py            ← the face's drawing for the above (boxes from lib/layout.js via tools/layout-data.mjs); text via ../shared/text_draw.py
 tools/layout-data.mjs      ← prints lib/layout.js's boxes for one devices.json target, for the Python generators
-tools/uax9.py              ← Unicode bidi runs for render.py (what FriBiDi does inside libraqm)
 tools/gen-text-width.py    ← lib/text-width.js from every date-line string (tools/date-line-texts.mjs), then checks every city's date line fits
 tools/preview-data.mjs     ← sample face data for the previews, computed by lib/
 tools/gen-docs.py          ← README screenshots in ../docs/watchface/ (scenes from tools/docs-data.mjs)
 tools/gen-cities.py        ← city list from GeoNames (`mise run :gen-cities`, not part of :build; tools/fetch-geonames.sh downloads ~210 MB)
-tools/gen-font.py          ← builds the Naskh subset (see Font); tools/fetch-fonts.sh downloads its pinned sources
+tools/gen-font.py          ← builds the Naskh subset (see Font); ../scripts/fetch-fonts.sh downloads its pinned sources
 
 test/verify.mjs            ← Hijri vs ICU; prayer wrapper vs adhan in Africa/Cairo; event windows; countdown logic; face-menu settings
 ```
@@ -213,9 +212,9 @@ mise run :gen              # only regenerate (Hijri table, font, edit previews, 
 mise run :test             # only the math/countdown checks
 mise run :ci               # :build, plus a check that the committed generated files are current (CI)
 ```
-- The Python generators run under `uv` with pinned wheels, and need no system libraries or fonts. Arabic is shaped by HarfBuzz (`uharfbuzz`) and drawn by FreeType (`freetype-py`), with `tools/uax9.py` ordering the left-to-right and right-to-left runs (the Unicode bidi algorithm). Pillow's own Arabic support would need `libraqm`, which its macOS wheel lacks. Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in.
+- The Python generators run under `uv` with pinned wheels, and need no system libraries or fonts. Arabic is shaped by HarfBuzz (`uharfbuzz`) and drawn by FreeType (`freetype-py`), with `shared/uax9.py` ordering the left-to-right and right-to-left runs (the Unicode bidi algorithm). Pillow's own Arabic support would need `libraqm`, which its macOS wheel lacks. Text the watch draws in its system font uses Noto Sans / Noto Sans Arabic as a stand-in. The text drawing (`shared/text_draw.py`) is shared with the other projects' generators; a change there rebuilds every project in CI.
 - The images come out pixel-identical on macOS and Linux. `mise run :ci` (used by GitHub Actions) regenerates everything and fails if a committed output is out of date (`scripts/check-generated.py`), comparing PNGs by pixels since their compressed bytes differ between arm64 and x86_64.
-- The source fonts are downloaded to `.cache/fonts/` at pinned versions and verified by checksum.
+- The source fonts are downloaded to the repo's `.cache/fonts/` by `scripts/fetch-fonts.sh`, at pinned versions and verified by checksum.
 - **Lean vs store builds:** `zeus build` adds `.ip-package` to the `.zab`, a copy of the project source with every target's assets (~2.6 MB of the 6.5 MB store build) that lets the Zepp store rebuild for other devices. It never reaches the watch. `:build` removes it with `zeus prune --ip` for Gadgetbridge sideloading and releases; `:build-store` keeps it.
 
 Install:

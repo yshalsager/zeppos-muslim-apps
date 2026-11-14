@@ -16,7 +16,7 @@ with open("mise.toml", "rb") as f:
     PROJECTS = tomllib.load(f)["monorepo"]["config_roots"]
 
 # Files outside the projects that affect every build.
-SHARED = ("mise.toml", "mise.lock", ".github/", "scripts/")
+SHARED = ("mise.toml", "mise.lock", ".github/", "scripts/", "shared/")
 
 
 def changed(base, head):

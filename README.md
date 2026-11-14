@@ -21,6 +21,8 @@ mise run simulator                        # Zepp OS simulator (macOS)
 
 Install a `.zab` by opening it with Gadgetbridge, or via the Zepp app's Developer Mode (`zeus preview`).
 
+Shared between projects: `scripts/` (app IDs, the generated-files check, font downloads into `.cache/fonts/`) and `shared/` (Python text drawing for the image generators: HarfBuzz shaping, FreeType, the Unicode bidi algorithm). A change to either rebuilds every project in CI.
+
 ## License
 
 [GPL-3.0](LICENSE). Bundled: an Arabic font under SIL OFL 1.1 ([details](prayer-times-watchface/README.md#font)), [adhan-js](https://github.com/batoulapps/adhan-js) (MIT), icons from [Lucide](https://lucide.dev) (ISC), and a city list from [GeoNames](https://www.geonames.org/) (CC-BY 4.0) with Arabic names from Wikidata (CC0) and country names from CLDR (Unicode License).

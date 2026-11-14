@@ -10,7 +10,6 @@ uv = "latest"
 [vars]
 # Python with the generators' dependencies; wheels only (--no-build), so a locally built Pillow is never used
 py_font = "uv run -q --no-project --no-build --with fonttools==4.68.0 --with uharfbuzz==0.57.0 python3 -I"
-py_img = "uv run -q --no-project --no-build --with pillow==13.0.0 --with freetype-py==2.5.1 --with uharfbuzz==0.57.0 python3 -I"
 
 [tasks.deps]
 description = "Install the JavaScript dependencies (adhan), used by the tests and the generators"
@@ -23,8 +22,8 @@ run = [
   "python3 -I ../scripts/app-ids.py prayer-times-watchface",
   "node tools/gen-hijri-table.mjs",
   "node tools/gen-i18n.mjs",
-  "tools/fetch-fonts.sh",
-  "{{vars.py_font}} tools/gen-font.py .cache/fonts/ScheherazadeNew-Medium.ttf .cache/fonts/NotoSans.ttf .cache/fonts/NotoSansArabic.ttf",
+  "../scripts/fetch-fonts.sh",
+  "{{vars.py_font}} tools/gen-font.py ../.cache/fonts/ScheherazadeNew-Medium.ttf ../.cache/fonts/NotoSans.ttf ../.cache/fonts/NotoSansArabic.ttf",
   "{{vars.py_img}} tools/gen-edit-assets.py",
   "{{vars.py_img}} tools/gen-text-width.py",
   "{{vars.py_img}} tools/gen-preview.py",

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Downloads the source fonts for tools/gen-font.py and the Lucide icon font for the generators'
-# icons into .cache/fonts (pinned, checksum-verified).
+# Downloads the fonts every project's generators use into the repo's .cache/fonts (pinned,
+# checksum-verified): Noto Sans / Noto Sans Arabic (system-font stand-ins, shared/text_draw.py),
+# Scheherazade New (the watchface's Naskh source, Daad's icon) and Lucide (the watchface's icons).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 dir=.cache/fonts

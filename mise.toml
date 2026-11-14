@@ -12,6 +12,11 @@ config_roots = ["prayer-times-watchface", "prayer-location-app"]
 PRAYER_TIMES_APP_ID = "1136165"
 PRAYER_LOCATION_APP_ID = "1136166"
 
+# Python for the image generators (shared/text_draw.py: HarfBuzz + FreeType), for every project's
+# tasks. Wheels only (--no-build), pinned so the output is the same on macOS and Linux.
+[vars]
+py_img = "uv run -q --no-project --no-build --with pillow==13.0.0 --with freetype-py==2.5.1 --with uharfbuzz==0.57.0 python3 -I"
+
 [tools]
 node = "26"
 pnpm = "12"
