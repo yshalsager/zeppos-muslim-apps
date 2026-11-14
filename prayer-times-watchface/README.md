@@ -157,6 +157,7 @@ lib/city-data.js           ← reads the city files on demand (@zos/fs); lib/utf
 assets/<target>/cities/    ← GENERATED city list: index.json + one <CC>.json per country (tools/gen-cities.py)
 assets/<target>/i18n/      ← GENERATED strings per language, read by the face (tools/gen-i18n.mjs)
 assets/<target>/NOTICE.txt ← license and third-party notices shipped in the .zab (copy it for a new target)
+store-listing.json         ← Zepp store names, descriptions and review notes per language (../.agents/skills/zepp-store-release)
 lib/extras.js              ← extras-row sensors (steps, heart rate, battery, calories)
 lib/weather-icons.js       ← GENERATED weather icon per Zepp weather code (tools/gen-edit-assets.py)
 lib/edit-options.js        ← GENERATED on-watch edit slots (tools/gen-edit-assets.py)
