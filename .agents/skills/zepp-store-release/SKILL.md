@@ -15,11 +15,12 @@ How a project in this repo (a folder with an `app.json`, such as `prayer-times-w
 - **Licence notices:** the store agreement (https://upload-cdn.huami.com/tposts/7726, clause 4.1(b)) requires meeting the open-source licences of what the package contains. Each target ships `assets/<target>/NOTICE.txt` with the project's licence, the source URL and the third-party notices; the project's tests check that it exists. Add a notice when a new bundled dependency, font, icon set or data source comes in.
 - **Privacy policy:** the agreement (clause 13.1) requires one, published in the developer's own name. `PRIVACY.md` at the repo root covers the published projects; extend it before publishing a new one, and keep its date current. The URL is `https://github.com/<owner>/<repo>/blob/master/PRIVACY.md`, so it must be pushed before submission.
 - **Store text:** `<project>/store-listing.json` holds the category, the review notes, and per language the console's language label, a name (30 characters at most) and a description (400 at most). Update it when features change. Translations other than Arabic and English haven't had a native speaker's review: say so if you change them.
-- **Previews:** one PNG per listing language, at the device's screen size (432×514 for the Bip Max), at most 1 MB, not the always-on version. The watch face's generator writes them to `docs/watchface/store/<lang>.png` as part of `:gen`; CI checks they're up to date.
+- **Previews:** one PNG per listing language, at the size the form states (the screen size for rectangular watches, 432×514 for the Bip Max; 360×360 for every round listing, whatever the watch's size), at most 1 MB, not the always-on version. The watch face's generator writes them to `docs/watchface/store/<lang>.png` (other listings: `docs/watchface/<target>/store/`, round ones `docs/watchface/round/store/`) and the Daad keyboard's to `docs/daad-keyboard/store/<lang>.png`, both as part of `:gen`; CI checks they're up to date.
 
 ## 2. Build
 
 - **Store:** `mise run //<project>:build-store`. It keeps zeus's source archive inside the `.zab`, which the store uses to build for other devices. Upload this one to the store.
+- **One screen size per watch face listing:** the console rejects a watch face package whose devices have more than one shape ("multiple shapes (round and square)") or more than one resolution ("multiple resolutions"). A face built for several sizes needs one listing, and one appId, per size. The watch face's `:build-store` writes `dist/prayer-times-watchface/*-<target>.zab` (repo root) for each target that has an appId (`tools/store-build.py`; the Bip Max uses `PRAYER_TIMES_APP_ID`, others `PRAYER_TIMES_APP_ID_<TARGET>` in the root `mise.toml` `[env]`). A new listing's appId comes from "Create Watch Face" in the console, which the person does.
 - **GitHub / sideloading:** `mise run //<project>:build` prunes the source archive (a smaller `.zab`). The release workflow builds this itself.
 - Both run the generators and the tests first. Check the tests passed, that `git status` shows no regenerated files left uncommitted, and that the package has what you expect: unzip the `.zab`, then its `.zpk`, then `device.zip` (look for `assets/NOTICE.txt`).
 
@@ -37,7 +38,7 @@ The console needs the person's logged-in browser session, so use their own brows
 2. With the form open in the attached tab, run the fill script:
 
    ```bash
-   ZAB=/abs/path/<project>/dist/<file>.zab \
+   TARGET=<target> ZAB=/abs/path/<project>/dist/<file>.zab \
    LISTING=/abs/path/<project>/store-listing.json \
    PREVIEWS=/abs/path/docs/watchface/store \
      browser-use < .agents/skills/zepp-store-release/fill_form.py
@@ -55,5 +56,7 @@ The console needs the person's logged-in browser session, so use their own brows
 - **React fields:** setting `.value` isn't enough. Use the native value setter, then dispatch an `input` event (see `set_value` in the script).
 - **Slow uploads:** a preview can take several seconds to appear. Sending it again adds a second image to that language; the script waits instead. To remove an image, `.click()` its `button[title="Remove file"]`.
 - **Replacing the package:** removing an uploaded `.zab` and adding another left the upload list in a broken state (the old file stuck, the new one without its size). Reload the form page and re-run the fill script instead; it fills everything again from the files.
+- **`{watches}` in descriptions:** the listing file's `watches` map names each listing's watches (a description says "for Amazfit {watches}"); `TARGET` picks the entry. Keep every description at most 400 characters with each entry filled in.
+- **Withdrawing a submission under review:** the list shows "Under Review(Can be Withdrawn)" with a Withdraw action; after withdrawing, the row's Edit action opens the same form for a new upload. Only withdraw when the person asks.
 - **Selectors that look alike:** the device box and the language box are both multi-selects. The script uses the language box's id (`#otherLanguage`) and the category's (`#category_watch` on the watch face form).
 - **Review quota:** the form shows how many reviews are left this week (it resets on Monday). Get everything right before the person submits; a rejected or resubmitted version uses another.

@@ -1,8 +1,9 @@
 # Fills a Zepp developer console release form (watch face or app) from a project's store listing
 # file. Never submits. Run with the form already open in the attached browser-use tab:
-#   ZAB=/abs/x.zab LISTING=/abs/store-listing.json PREVIEWS=/abs/dir \
+#   ZAB=/abs/x.zab LISTING=/abs/store-listing.json PREVIEWS=/abs/dir [TARGET=name] \
 #     browser-use < .agents/skills/zepp-store-release/fill_form.py
-# PREVIEWS holds one <lang>.png per listing language. Safe to re-run: steps already done are
+# PREVIEWS holds one <lang>.png per listing language. TARGET picks the listing's entry in the
+# listing file's optional "watches" map, which replaces {watches} in the descriptions. Safe to re-run: steps already done are
 # skipped. Prints the form's state at the end; check it before handing over.
 import json, os, time
 
@@ -10,6 +11,10 @@ L = json.load(open(os.environ["LISTING"]))
 ZAB = os.environ["ZAB"]
 PREVIEWS = os.environ["PREVIEWS"].rstrip("/") + "/"
 LANGS = list(L["langs"])  # en first: the console's default language panel
+if "watches" in L:
+    W = L["watches"][os.environ["TARGET"]]
+    for v in L["langs"].values():
+        v["description"] = v["description"].replace("{watches}", W)
 CAT = '#' + L.get('category_field', 'category_watch')  # the watch face form's id; check the app form's
 NAME, DESC = "input[placeholder='Up to 30 Characters']", "textarea[placeholder='Up to 400 Characters']"
 
@@ -49,10 +54,22 @@ def preview_counts():
 
 
 # 1. package: the console reads the supported devices from it
-if os.path.basename(ZAB) not in js("document.querySelector('.ant-upload-list-text')?.innerText || ''"):
-    cdp("DOM.setFileInputFiles", nodeId=file_inputs(".zab")[0], files=[ZAB])
-    wait(f"document.querySelector('.ant-upload-list-text')?.innerText.includes({json.dumps(os.path.basename(ZAB))})", 60)
-    time.sleep(3)
+# A freshly opened form can drop the upload, leaving the list empty: send again only then (sending
+# while one is listed adds a duplicate), and wait for the finished state, not just the file's name.
+UPLOADED = ("[...document.querySelectorAll('.ant-upload-list-text .ant-upload-list-item')]"
+            f".some(i => i.className.includes('success') && i.innerText.includes({json.dumps(os.path.basename(ZAB))}))")
+for _ in range(3):
+    if js(UPLOADED):
+        break
+    if not js("!!document.querySelector('.ant-upload-list-text .ant-upload-list-item')"):
+        time.sleep(3)  # let a just-opened form settle first
+        cdp("DOM.setFileInputFiles", nodeId=file_inputs(".zab")[0], files=[ZAB])
+    wait(UPLOADED, 120)
+if not js(UPLOADED):
+    raise SystemExit("package upload did not finish; check the form's upload list")
+# devices and the preview fields appear once the console has read the package
+wait("!(document.body.innerText.match(/Supported Devices\\s*Automatic recognition/))", 60)
+time.sleep(3)
 
 # 2. category: the first option is highlighted when the list opens, so ArrowDown + Enter picks it
 for _ in range(3):
