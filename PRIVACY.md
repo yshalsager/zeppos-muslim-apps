@@ -1,8 +1,8 @@
 # Privacy Policy
 
-Last updated: 2026-11-14
+Last updated: 2026-11-15
 
-This policy covers the **Prayer Times** watch face and the **Daad Arabic Keyboard** for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
+This policy covers the **Prayer Times** watch face, the **Daad Arabic Keyboard** and **Sleep Time** for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
 
 ## In short
 
@@ -19,9 +19,13 @@ The face does not collect, send or share any data. It has no phone-side componen
 
 The keyboard does not collect, send or share any data, and it has no phone-side component or network access. What you type goes only to the app or reply you are typing into; the keyboard does not record it. It stores one thing on the watch: the language you used last, so it opens in that language.
 
+## Sleep Time
+
+Sleep Time does not collect, send or share any data, and it has no phone-side component or network access. It reads the watch's screen size, language, clock format and the current time to show its results. It stores its settings on the watch: cycle length, time to fall asleep, clock format, the mode it opens in, snooze length, the last wake-up and bed times you set, and the time of the alarm and bedtime reminder you set, if any. Alarms are timers on the watch that open the app when they're due.
+
 ## Data removal
 
-All the data lives on your watch. Uninstalling the face removes its settings and saved location; uninstalling the keyboard removes its saved language. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
+All the data lives on your watch. Uninstalling the face removes its settings and saved location; uninstalling the keyboard removes its saved language; uninstalling Sleep Time removes its settings and alarm. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
 
 ## Children
 

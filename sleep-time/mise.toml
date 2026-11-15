@@ -1,0 +1,42 @@
+# Shared Zeus CLI and Node versions come from ../mise.toml.
+
+[tools]
+uv = "latest"
+
+[vars]
+# Pillow wheel only (--no-build), pinned so the icon is drawn the same everywhere
+py = "uv run -q --no-project --no-build --with pillow==13.0.0 python3 -I"
+
+[tasks.gen]
+description = "Write the app ID, and regenerate the app icon and the preview images (fonts and text drawing from ../shared)"
+run = [
+  "python3 -I ../scripts/app-ids.py sleep-time",
+  "../scripts/fetch-fonts.sh",
+  "{{vars.py}} tools/gen-icon.py",
+  "{{vars.py_img}} tools/gen-previews.py",
+]
+
+[tasks.test]
+description = "Test the sleep maths, the layout on every screen, the pages and the package"
+wait_for = [":gen"] # :build and :ci test the regenerated icons
+run = "node --test test/*.test.js"
+
+[tasks.build]
+description = "Test and build Sleep Time for sideloading"
+depends = [":test", ":gen"]
+run = ["zeus build", "zeus prune --ip"]
+
+[tasks.build-store]
+description = "Like :build, but keep zeus's source archive for a Zepp store submission"
+depends = [":test", ":gen"]
+run = "zeus build"
+
+# CI (.github/workflows): :build, and fail if the committed icon or previews are out of date
+[tasks.ci]
+description = "Test, regenerate and check the icon and previews, and build a lean .zab (CI)"
+depends = [":test", ":gen"]
+run = ["{{vars.py}} ../scripts/check-generated.py sleep-time/assets docs/sleep-time", "zeus build", "zeus prune --ip"]
+
+[tasks.preview]
+description = "Generate a device preview QR code (requires zeus login)"
+run = "zeus preview"
