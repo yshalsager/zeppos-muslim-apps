@@ -3,7 +3,7 @@ import { Coordinates, CalculationMethod, HighLatitudeRule, Madhab, PrayerTimes }
 import { prayerMinutes, dayEvents, nightPortions, resolveHighLat, HIGH_LAT_RULES, METHODS, PRAYER_ORDER } from '../lib/prayer.js'
 import { hijriFromEpochDay, epochDay } from '../lib/hijri.js'
 import { countdown, URGENT_MIN } from '../lib/countdown.js'
-import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepCoord, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS } from '../lib/settings.js'
+import { sanitizeSettings, defaultSettings, effectiveSettings, stepAngle, stepCoord, stepInt, iqamaPreset, LIMITS, IQAMA_PRESETS, customFromMethod, stepCustomAngle, stepIshaMin } from '../lib/settings.js'
 import { METHOD_KEYS, autoMethod } from '../lib/methods.js'
 import { LANG_CODES, LANG_NAMES, resolveLang, revive } from '../lib/i18n/index.js'
 import { LANGS } from '../lib/i18n/tables.js'
@@ -112,6 +112,27 @@ for (const [name, lat, lon] of cities) {
   check(!isNaN(q.extraFajr) && !isNaN(q.extraIsha) && q.extraFajr > q.fajr, 'umm al-qura extras shown', q.extraFajr, q.extraIsha)
   const e = dayEvents(2026, 11, 12, { ...base, method: 'egypt', extraFajrAngle: 19.5 })
   check(isNaN(e.extraFajr), 'egypt 19.5° extra suppressed')
+}
+// Custom method: the same angles (or Isha minutes) as a preset give its Fajr and Isha, and Custom
+// starts from the preset in use.
+{
+  const base = { lat: 30.0444, lon: 31.2357, tz: 2, asrFactor: 1 }
+  const same = (a, b, k) => a[k] === b[k]
+  for (const key of ['egypt', 'makkah', 'uiof', 'isna']) {
+    const c = dayEvents(2026, 11, 12, { ...base, method: 'custom', ...customFromMethod(key) })
+    const m = dayEvents(2026, 11, 12, { ...base, method: key })
+    check(same(c, m, 'fajr') && same(c, m, 'isha'), 'custom = preset', key, c.fajr, m.fajr, c.isha, m.isha)
+  }
+  const q = customFromMethod('makkah')
+  check(q.customMethodFajr === 18.5 && q.customMethodIshaMin === 90, 'custom from umm al-qura', q)
+  const c = dayEvents(2026, 11, 12, { ...base, method: 'custom', customMethodFajr: 18, customMethodIsha: 17, customMethodIshaMin: 100 })
+  check(c.isha - c.maghrib === 100, 'custom isha minutes', c.isha - c.maghrib)
+  let a = 18
+  for (let i = 0; i < 5; i++) a = stepCustomAngle(a, 0.1)
+  check(a === 18.5 && stepCustomAngle(22, 1) === 22 && stepCustomAngle(10, -0.1) === 10, 'custom angle steps', a)
+  check(stepIshaMin(90, 5) === 95 && stepIshaMin(60, -1) === 60 && stepIshaMin(150, 5) === 150, 'isha minute steps')
+  const s = sanitizeSettings({ method: 'custom', customMethodFajr: 30, customMethodIsha: 'x', customMethodIshaMin: 30 }, CONFIG)
+  check(s.method === 'custom' && s.customMethodFajr === 22 && s.customMethodIsha === 0 && s.customMethodIshaMin === 60, 'custom settings', s)
 }
 // High-latitude rule: London at midsummer, where the sun never reaches 18° below the horizon.
 // Each rule matches adhan given that rule directly; 'auto' is the seventh above 48° (either

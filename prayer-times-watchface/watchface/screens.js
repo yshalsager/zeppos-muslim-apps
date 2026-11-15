@@ -6,7 +6,8 @@ import { METHOD_KEYS } from '../lib/methods.js'
 import { HIGH_LAT_RULES, resolveHighLat } from '../lib/prayer.js'
 import { LANG_NAMES, LANG_CODES } from '../lib/i18n/index.js'
 import {
-  ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, iqamaPreset, stepAngle, stepCoord, stepInt,
+  ADJUST_KEYS, CLOCKS, IQAMA_PRESETS, LIMITS, SUNRISE_WINDOWS, customFromMethod, iqamaPreset, stepAngle,
+  stepCoord, stepCustomAngle, stepInt, stepIshaMin,
 } from '../lib/settings.js'
 
 const IQAMA_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
@@ -99,12 +100,46 @@ export function rootScreen(ctx) {
   }
 
   // Method: picking one stays on the list, and the title shows today's Fajr / Isha with it.
-  const methodName = () => T.methods[face.method === 'auto' ? ctx.autoMethod() : face.method]
+  const methodName = () => (face.method === 'custom' ? M.custom : T.methods[face.method === 'auto' ? ctx.autoMethod() : face.method])
+  // Custom: a Fajr angle, and Isha by angle or by minutes after Maghrib (the Isha mode row; minutes
+  // start at Umm al-Qura's 90). Angles step 1° on the big buttons and 0.1° underneath, minutes 5 / 1.
+  const stepper = (label, value, by, big, fine) => ({
+    label,
+    title: () => prayerTimes(),
+    value,
+    dec: set(() => by(-big)),
+    inc: set(() => by(big)),
+    fine: { label: digits(String(fine)), dec: set(() => by(-fine)), inc: set(() => by(fine)) },
+  })
+  const customAngle = (key) => (d) => { face[key] = stepCustomAngle(face[key], d) }
+  const customMethod = {
+    title: () => prayerTimes(),
+    items: () => [
+      stepper(T.prayers.fajr, () => degrees(face.customMethodFajr), customAngle('customMethodFajr'), 1, 0.1),
+      face.customMethodIshaMin
+        ? stepper(T.prayers.isha, () => minutes(face.customMethodIshaMin),
+          (d) => { face.customMethodIshaMin = stepIshaMin(face.customMethodIshaMin, d) }, 5, 1)
+        : stepper(T.prayers.isha, () => degrees(face.customMethodIsha), customAngle('customMethodIsha'), 1, 0.1),
+      {
+        label: M.ishaBy,
+        value: () => (face.customMethodIshaMin ? M.byMinutes : M.byAngle),
+        tap: set(() => { face.customMethodIshaMin = face.customMethodIshaMin ? 0 : 90 }),
+      },
+    ],
+  }
+  const pickCustom = () => {
+    // first use: start from the method in use
+    if (!face.customMethodFajr) Object.assign(face, customFromMethod(face.method === 'auto' ? ctx.autoMethod() : face.method))
+    face.method = 'custom'
+    ctx.changed()
+    return customMethod
+  }
   const method = {
     title: () => prayerTimes(),
     items: () => [
       { label: M.auto, value: () => T.methods[ctx.autoMethod()], color: chosen(face.method === 'auto'), tap: set(() => { face.method = 'auto' }) },
       ...METHOD_KEYS.map((k) => ({ label: T.methods[k], color: chosen(face.method === k), tap: set(() => { face.method = k }) })),
+      { label: M.custom, color: chosen(face.method === 'custom'), tap: pickCustom },
     ],
   }
 

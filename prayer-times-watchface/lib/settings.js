@@ -10,7 +10,7 @@
 //  - Edit slots (long-press → Edit): how it looks. Digits and the extras row.
 import { METHOD_KEYS, autoMethod } from './methods.js'
 import { LANG_CODES } from './i18n/index.js'
-import { HIGH_LAT_RULES } from './prayer.js'
+import { HIGH_LAT_RULES, METHODS as METHOD_PARAMS } from './prayer.js'
 
 export const SETTINGS_KEY = 'settings'
 export const ADJUST_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
@@ -29,6 +29,8 @@ export const LIMITS = {
   iqama: [0, 60], // minutes, 0 = no iqama countdown
   angle: [12, 20], // degrees; below the minimum the extra time is off (0)
   hijriOffset: [-2, 2], // days
+  customAngle: [10, 22], // the custom method's Fajr / Isha angles, degrees
+  ishaMin: [60, 150], // the custom method's Isha after Maghrib, minutes; 0 = by angle
 }
 
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v))
@@ -39,7 +41,10 @@ const angle = (v, d) => {
   if (typeof v !== 'number' || !isFinite(v)) return d
   return v < LIMITS.angle[0] ? 0 : Math.round(clamp(v, LIMITS.angle) * 10) / 10
 }
-const METHODS = ['auto', ...METHOD_KEYS]
+const METHODS = ['auto', ...METHOD_KEYS, 'custom']
+// The custom method's values: 0 = not set yet (the menu fills them from a method when Custom is picked)
+const customAngle = (v, d) => (typeof v === 'number' && isFinite(v) && v > 0 ? Math.round(clamp(v, LIMITS.customAngle) * 10) / 10 : d)
+const ishaMin = (v) => (v > 0 ? clamp(v, LIMITS.ishaMin) : 0)
 
 export function defaultSettings(config) {
   return {
@@ -52,6 +57,9 @@ export function defaultSettings(config) {
     iqamaJumuah: config.iqamaJumuah,
     extraFajrAngle: config.extraFajrAngle,
     extraIshaAngle: config.extraIshaAngle,
+    customMethodFajr: config.customMethodFajr,
+    customMethodIsha: config.customMethodIsha,
+    customMethodIshaMin: config.customMethodIshaMin,
     sunriseWindowMin: config.sunriseWindowMin,
     adjust: { ...config.adjust },
     clock: config.clock,
@@ -76,6 +84,9 @@ export function sanitizeSettings(stored, config) {
     iqamaJumuah: clamp(int(s.iqamaJumuah, d.iqamaJumuah), LIMITS.iqama),
     extraFajrAngle: angle(s.extraFajrAngle, angle(d.extraFajrAngle, 0)),
     extraIshaAngle: angle(s.extraIshaAngle, angle(d.extraIshaAngle, 0)),
+    customMethodFajr: customAngle(s.customMethodFajr, customAngle(d.customMethodFajr, 0)),
+    customMethodIsha: customAngle(s.customMethodIsha, customAngle(d.customMethodIsha, 0)),
+    customMethodIshaMin: ishaMin(int(s.customMethodIshaMin, ishaMin(int(d.customMethodIshaMin, 0)))),
     sunriseWindowMin: oneOf(s.sunriseWindowMin, SUNRISE_WINDOWS, d.sunriseWindowMin),
     adjust,
     clock: oneOf(s.clock, CLOCKS, d.clock),
@@ -91,6 +102,20 @@ export function stepAngle(v, delta) {
 }
 
 export const stepInt = (v, delta, limits) => clamp(v + delta, limits)
+
+// The custom method: angles and Isha minutes step within their limits.
+export const stepCustomAngle = (v, delta) => Math.round(clamp(v + delta, LIMITS.customAngle) * 10) / 10
+export const stepIshaMin = (v, delta) => clamp(v + delta, LIMITS.ishaMin)
+
+// The custom method's starting values, from a preset (the one in use when Custom is first picked).
+export function customFromMethod(key) {
+  const p = METHOD_PARAMS[key]()
+  return {
+    customMethodFajr: stepCustomAngle(p.fajrAngle, 0),
+    customMethodIsha: stepCustomAngle(p.ishaAngle || p.fajrAngle, 0), // Umm al-Qura has no Isha angle
+    customMethodIshaMin: ishaMin(p.ishaInterval || 0),
+  }
+}
 
 // One stepper tap on a coordinate, kept to 0.1° (≈ 11 km; under half a minute of prayer time).
 // Latitude stops at ±90; longitude wraps around at ±180 (180 → -179.9).

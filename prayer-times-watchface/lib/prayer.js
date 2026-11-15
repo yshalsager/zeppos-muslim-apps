@@ -12,6 +12,16 @@ const uiof = () => {
   return p
 }
 
+// The custom method (settings customMethodFajr, customMethodIsha, customMethodIshaMin): Isha by angle, or
+// minutes after Maghrib when customMethodIshaMin is set. 18° / 17° (MWL) when the angles aren't set.
+const custom = (o) => {
+  const p = CalculationMethod.Other()
+  p.fajrAngle = o.customMethodFajr || 18
+  p.ishaAngle = o.customMethodIsha || 17
+  if (o.customMethodIshaMin) p.ishaInterval = o.customMethodIshaMin
+  return p
+}
+
 // Order = order in the watch's Method edit slot.
 export const METHODS = {
   egypt: () => CalculationMethod.Egyptian(), // 19.5° / 17.5°, Dhuhr +1 min
@@ -56,10 +66,11 @@ const NaNsafe = (v) => (typeof v === 'number' && isFinite(v) ? Math.round(v) : N
 /**
  * All times for one Gregorian date, as local minutes after midnight (NaN if the sun never
  * reaches the angle). opts: { lat, lon, tz (hours), method, asrFactor, adjust,
- *   sunriseWindowMin (10|15|20), extraFajrAngle?, extraIshaAngle?, highLatRule? (HIGH_LAT_RULES, default 'auto') }
+ *   sunriseWindowMin (10|15|20), extraFajrAngle?, extraIshaAngle?, highLatRule? (HIGH_LAT_RULES, default 'auto'),
+ *   customMethodFajr?, customMethodIsha?, customMethodIshaMin? (method 'custom') }
  */
 export function dayEvents(y, m, d, opts) {
-  const params = (METHODS[opts.method] || METHODS.egypt)()
+  const params = opts.method === 'custom' ? custom(opts) : (METHODS[opts.method] || METHODS.egypt)()
   params.madhab = opts.asrFactor === 2 ? Madhab.Hanafi : Madhab.Shafi
   params.highLatitudeRule = HIGH_LAT[resolveHighLat(opts.highLatRule, opts.lat)]
   if (opts.adjust) params.adjustments = { ...params.adjustments, ...opts.adjust }

@@ -8,7 +8,7 @@ export const CONFIG = {
   lat: 30.0444,
   lon: 31.2357,
   country: 'EG', // its country, for the automatic method
-  // Calculation method: 'auto' (by the location's country, lib/methods.js) or a lib/prayer.js METHODS key
+  // Calculation method: 'auto' (by the location's country, lib/methods.js), a lib/prayer.js METHODS key, or 'custom'
   method: 'auto',
   // Far from the equator: how Fajr and Isha are capped when the sun stays near the horizon.
   // 'auto' (seventh of the night above 48°, middle below), 'middle', 'seventh' or 'twilight' (lib/prayer.js)
@@ -25,6 +25,11 @@ export const CONFIG = {
   // Extra Fajr / Isha at these sun angles (degrees, 12–20); 0 = none
   extraFajrAngle: 0,
   extraIshaAngle: 0,
+  // Custom method (method: 'custom'): Fajr and Isha sun angles (degrees, 10–22), or Isha this many
+  // minutes after Maghrib (60–150; 0 = by angle). 0 angles: filled from the method in use when picked.
+  customMethodFajr: 0,
+  customMethodIsha: 0,
+  customMethodIshaMin: 0,
   // Prohibited window after sunrise ends this many minutes after sunrise (10, 15 or 20);
   // Duha starts then too.
   sunriseWindowMin: 15,

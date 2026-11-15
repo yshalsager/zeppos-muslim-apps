@@ -104,6 +104,7 @@ function eventsFor(ed, tz, opts) {
     lat: o.lat, lon: o.lon, tz, method: o.method, asrFactor: o.asrFactor, adjust: o.adjust,
     sunriseWindowMin: o.sunriseWindowMin, extraFajrAngle: o.extraFajrAngle, extraIshaAngle: o.extraIshaAngle,
     highLatRule: o.highLatRule,
+    customMethodFajr: o.customMethodFajr, customMethodIsha: o.customMethodIsha, customMethodIshaMin: o.customMethodIshaMin,
   })
 }
 
