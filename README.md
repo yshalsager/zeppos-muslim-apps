@@ -4,12 +4,12 @@ Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridg
 
 ![Prayer-times watchface pages](docs/watchface/pages.png)
 
-| Project | |
-|---|---|
-| [Prayer-times watchface](prayer-times-watchface/README.md) | Hijri date, next prayer countdown, iqama, night and prohibited times; Arabic, English, French, Turkish, Indonesian, Malay, Russian |
-| [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface |
-| [Daad keyboard](daad-keyboard/README.md) | Arabic and English keyboard with long-press variants, digits and tashkeel, ready phrases; Arabic shown in the right order while typing |
-| [Sleep Time](sleep-time/README.md) | Sleep-cycle calculator: when to go to bed or wake up; Arabic and English |
+| Project | | |
+|---|---|---|
+| [Prayer-times watchface](prayer-times-watchface/README.md) | Hijri date, next prayer countdown, iqama, night and prohibited times; Arabic, English, French, Turkish, Indonesian, Malay, Russian | <img src="docs/watchface/store/ar.png" width="120" alt="Prayer-times watchface"> |
+| [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface | |
+| [Daad keyboard](daad-keyboard/README.md) | Arabic and English keyboard with long-press variants, digits and tashkeel, ready phrases; Arabic shown in the right order while typing | <img src="docs/daad-keyboard/store/ar-square.png" width="120" alt="Daad keyboard"> |
+| [Sleep Time](sleep-time/README.md) | Sleep-cycle calculator: when to go to bed or wake up, with its own alarm; Arabic and English | <img src="docs/sleep-time/en-wake.png" width="120" alt="Sleep Time"> |
 
 **Download:** the latest `.zab` of each app is in [RELEASES.md](RELEASES.md).
 

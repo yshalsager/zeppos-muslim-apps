@@ -2,6 +2,10 @@
 
 An Arabic and English keyboard for the **Amazfit Bip Max**, **Bip 6**, **Active 2** and recent round Amazfit watches such as the **Balance 2/3**, **Cheetah 2**, **T-Rex 3 Pro** and **Active 3 Premium** (Zepp OS 4.2+ custom keyboard, see [Devices](#devices)). It works offline and with Gadgetbridge, including notification replies.
 
+| | | | |
+|---|---|---|---|
+| ![Arabic letters on the Bip Max](../docs/daad-keyboard/store/ar-square.png) | ![English letters on the Bip Max](../docs/daad-keyboard/store/en-square.png) | ![Arabic letters on a round watch](../docs/daad-keyboard/store/ar-round.png) | ![English letters on a round watch](../docs/daad-keyboard/store/en-round.png) |
+
 ## Features
 
 - **Arabic:** the phone's (Gboard) layout in 3 rows of 11. Long-press for variants: ا → أ إ آ ٱ, ي → ئ ى, و → ؤ, ه → ة, ء → أ إ ؤ ئ, ج ك ف ب → چ گ ڤ پ, ، → ؟ ؛ . ! « » :. Keys with variants are tinted.
