@@ -10,6 +10,7 @@ uv = "latest"
 [vars]
 # Python with the generators' dependencies; wheels only (--no-build), so a locally built Pillow is never used
 py_font = "uv run -q --no-project --no-build --with fonttools==4.68.0 --with uharfbuzz==0.57.0 python3 -I"
+generated = "prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/weather-icons.js prayer-times-watchface/lib/hijri-table.js prayer-times-watchface/lib/text-width.js docs/watchface" # checked by :ci
 
 [tasks.deps]
 description = "Install the JavaScript dependencies (adhan), used by the tests and the generators"
@@ -49,27 +50,14 @@ depends = [":deps"]
 wait_for = [":gen"] # tasks depending on both (:build, :ci) run their tests on the regenerated files
 run = "pnpm -s test"
 
-# zeus packs a copy of the project source (.ip-package) into the .zab so the Zepp store can rebuild
-# for other devices; it never reaches the watch. :build prunes it for sideloading (Gadgetbridge,
-# GitHub releases); :build-store keeps it, and builds one package per screen size that has a store
-# listing, since a listing takes only one size (tools/store-build.py).
 [tasks.build]
-description = "Regenerate assets, run the tests, and build a lean watchface .zab (no source archive)"
-depends = [":gen", ":test"]
-run = ["zeus build", "zeus prune --ip"]
+extends = "zeus-build"
 
+# A watch face store listing takes one screen size: one package per target that has a listing
 [tasks.build-store]
+extends = "zeus-store"
 description = "Store packages: ../dist/prayer-times-watchface/*-<target>.zab for each target with a store listing, keeping zeus's source archive"
-depends = [":gen", ":test"]
 run = "python3 -I tools/store-build.py"
 
-# CI (.github/workflows): everything :build does, and fail if the committed generated files are out
-# of date (compared by pixels for PNGs, see scripts/check-generated.py).
 [tasks.ci]
-description = "Regenerate and check the committed assets, run the tests, and build a lean .zab (CI)"
-depends = [":gen", ":test"]
-run = [
-  "{{vars.py_img}} ../scripts/check-generated.py prayer-times-watchface/app.json prayer-times-watchface/lib/app-ids.js prayer-times-watchface/assets prayer-times-watchface/lib/edit-options.js prayer-times-watchface/lib/weather-icons.js prayer-times-watchface/lib/hijri-table.js prayer-times-watchface/lib/text-width.js docs/watchface",
-  "zeus build",
-  "zeus prune --ip",
-]
+extends = "zeus-ci"

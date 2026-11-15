@@ -1,7 +1,7 @@
 // Minimal @zos/* for running the pages in Node (tools/preview-data.mjs, test/*.test.js). Widgets
 // record their properties; nothing is drawn. Alarms, vibration and storage are recorded in `stub`.
 // Set `stub` before importing a page.
-import { registerHooks } from 'node:module'
+import { serve, widgets } from '../../shared/zos-stub.mjs'
 
 export const stub = {
   widgets: [], width: 432, height: 514, lang: 2, h24: true, store: {}, pages: [],
@@ -9,19 +9,7 @@ export const stub = {
   alarms: new Map(), nextAlarm: 1, alarmFails: false, vibrating: null, pushed: null, exited: false, launched: null, timers: [],
 }
 
-function make(type, o) {
-  const w = {
-    type, o: { ...o }, visible: true, listeners: {},
-    setProperty(p, v) {
-      if (p === 'TEXT') this.o.text = v
-      else if (p === 'VISIBLE') this.visible = v
-    },
-    addEventListener(e, fn) { this.listeners[e] = fn },
-  }
-  stub.widgets.push(w)
-  return w
-}
-
+const make = widgets(stub)
 const names = new Proxy({}, { get: (_, k) => k })
 const parts = {
   ui: { createWidget: make, deleteWidget(w) { w.visible = false }, setStatusBarVisible() {}, widget: names, prop: names, align: names, event: names, text_style: names },
@@ -63,19 +51,4 @@ globalThis.Page = (def) => stub.pages.push(def)
 globalThis.setTimeout = (fn, ms) => (ms ? stub.timers.push({ fn, ms }) : fn(), stub.timers.length)
 globalThis.clearTimeout = (i) => { if (stub.timers[i - 1]) stub.timers[i - 1].fn = () => {} }
 
-const HERE = new URL(import.meta.url).href
-registerHooks({
-  resolve(spec, ctx, next) {
-    const m = spec.startsWith('@zos/') && spec.slice(5)
-    if (m && parts[m]) return { url: `${HERE}?m=${m}`, shortCircuit: true }
-    if (spec.startsWith('.') && !/\.\w+$/.test(spec)) return next(spec + '.js', ctx) // zeus-style imports
-    return next(spec, ctx)
-  },
-  load(url, ctx, next) {
-    const m = url.startsWith(HERE + '?m=') && url.slice(HERE.length + 3)
-    if (!m) return next(url, ctx)
-    const source = `export const { ${Object.keys(parts[m]).join(', ')} } = globalThis.__zos.${m}\n`
-    return { format: 'module', source, shortCircuit: true }
-  },
-})
-globalThis.__zos = parts
+serve(parts)

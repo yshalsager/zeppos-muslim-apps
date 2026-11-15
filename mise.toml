@@ -21,7 +21,29 @@ SLEEP_TIME_APP_ID = "1136529"
 # Python for the image generators (shared/text_draw.py: HarfBuzz + FreeType), for every project's
 # tasks. Wheels only (--no-build), pinned so the output is the same on macOS and Linux.
 [vars]
+# Pillow only, for the icons and the generated-files check
+py = "uv run -q --no-project --no-build --with pillow==13.0.0 python3 -I"
 py_img = "uv run -q --no-project --no-build --with pillow==13.0.0 --with freetype-py==2.5.1 --with uharfbuzz==0.57.0 python3 -I"
+
+# The build steps every app shares: `[tasks.build] extends = "zeus-build"` in the app's mise.toml.
+# zeus packs a copy of the project source (.ip-package) into the .zab so the Zepp store can rebuild for
+# other devices; it never reaches the watch. :build prunes it for sideloading (Gadgetbridge, GitHub
+# releases); :build-store keeps it. :ci (.github/workflows) also fails if the files the app lists in
+# vars.generated are out of date (PNGs compared by pixels, scripts/check-generated.py).
+[task_templates.zeus-build]
+description = "Regenerate, test, and build a lean .zab for sideloading (no source archive)"
+depends = [":gen", ":test"]
+run = ["zeus build", "zeus prune --ip"]
+
+[task_templates.zeus-store]
+description = "Like :build, but keep zeus's source archive for a Zepp store submission"
+depends = [":gen", ":test"]
+run = "zeus build"
+
+[task_templates.zeus-ci]
+description = "Regenerate and check the committed generated files, test, and build a lean .zab (CI)"
+depends = [":gen", ":test"]
+run = ["{{vars.py}} ../scripts/check-generated.py {{vars.generated}}", "zeus build", "zeus prune --ip"]
 
 [tools]
 node = "26"

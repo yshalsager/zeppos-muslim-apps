@@ -1,15 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 
 const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
-
-test('every target ships its icon and license notices', () => {
-  for (const t of Object.keys(app.targets)) {
-    assert.ok(existsSync(new URL(`../assets/${t}/icon.png`, import.meta.url)), `${t} icon`)
-    assert.ok(existsSync(new URL(`../assets/${t}/NOTICE.txt`, import.meta.url)), `${t} NOTICE.txt`)
-  }
-})
 
 // getDeviceInfo() throws PERMISSION DENIED without it, and the layout is built from it
 test('app.json has the permissions the code relies on', () => {

@@ -1,29 +1,24 @@
-# Location companion. node, pnpm and zeus come from the root mise.toml.
+# Location companion. node, pnpm, zeus, the Python commands and the build tasks come from ../mise.toml.
 
 [tools]
 uv = "latest"
 
 [vars]
-# Pillow wheel only (--no-build), pinned so the icon is drawn the same everywhere
-py = "uv run -q --no-project --no-build --with pillow==13.0.0 python3 -I"
+generated = "prayer-location-app/app.json prayer-location-app/assets" # checked by :ci
 
 [tasks.gen]
 description = "Write the app ID and regenerate the app icon"
 run = ["python3 -I ../scripts/app-ids.py prayer-location-app", "{{vars.py}} tools/gen-icon.py"]
 
-# :build prunes zeus's source archive (.ip-package) for sideloading; :build-store keeps it.
+# No tests yet
 [tasks.build]
-description = "Build a lean location companion .zab (no source archive)"
+extends = "zeus-build"
 depends = [":gen"]
-run = ["zeus build", "zeus prune --ip"]
 
 [tasks.build-store]
-description = "Like :build, but keep zeus's source archive for a Zepp store submission"
+extends = "zeus-store"
 depends = [":gen"]
-run = "zeus build"
 
-# CI (.github/workflows): :build, and fail if the committed icon is out of date
 [tasks.ci]
-description = "Regenerate and check the icon, and build a lean .zab (CI)"
+extends = "zeus-ci"
 depends = [":gen"]
-run = ["{{vars.py}} ../scripts/check-generated.py prayer-location-app/app.json prayer-location-app/assets", "zeus build", "zeus prune --ip"]
