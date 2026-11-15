@@ -7,11 +7,12 @@ The latest version of each app. Each release has one `.zab` with every supported
 
 | App | Version | Released | Download | Watches |
 |---|---|---|---|---|
-| [Prayer Times](prayer-times-watchface/README.md) | [1.1.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.1.0) | 2026-11-14 | [`prayer-times-watchface-v1.1.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/prayer-times-watchface/v1.1.0/prayer-times-watchface-v1.1.0.zab) (3.9 MB) | [list](prayer-times-watchface/README.md#devices) |
+| [Prayer Times](prayer-times-watchface/README.md) | [1.2.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.2.0) | 2026-11-15 | [`prayer-times-watchface-v1.2.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/prayer-times-watchface/v1.2.0/prayer-times-watchface-v1.2.0.zab) (3.9 MB) | [list](prayer-times-watchface/README.md#devices) |
 | [Daad Arabic Keyboard](daad-keyboard/README.md) | [1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/daad-keyboard/v1.0.0) | 2026-11-14 | [`daad-keyboard-v1.0.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/daad-keyboard/v1.0.0/daad-keyboard-v1.0.0.zab) (80 KB) | [list](daad-keyboard/README.md#devices) |
 
 ## Prayer Times
 
+- **[1.2.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.2.0)** (2026-11-15): The Prayer Times watch face can now use **your own calculation method**, for mosques and calendars that don't follow one of the 13 built-in methods.
 - **[1.1.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.1.0)** (2026-11-14): The Prayer Times watch face now runs on **25 Amazfit watches**, rectangular and round, not only the Bip Max. It still works fully offline, so it also works with Gadgetbridge.
 - **[1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.0.0)** (2026-11-14): The first release of the Prayer Times watch face for the **Amazfit Bip Max**. It works fully offline: prayer times and the Hijri date are calculated on the watch, with no phone app or network, so it also works with …
 
