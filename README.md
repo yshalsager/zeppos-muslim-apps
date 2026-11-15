@@ -10,6 +10,8 @@ Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridg
 | [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface |
 | [Daad keyboard](daad-keyboard/README.md) | Arabic and English keyboard with long-press variants, digits and tashkeel, ready phrases; Arabic shown in the right order while typing |
 
+**Download:** the latest `.zab` of each app is in [RELEASES.md](RELEASES.md).
+
 ## Build
 
 Tools are managed by [mise](https://mise.jdx.dev) (a [monorepo](https://mise.jdx.dev/tasks/monorepo.html): shared tools at the root, tasks per project).
