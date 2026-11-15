@@ -138,7 +138,6 @@ In Arabic, text (dates, names, labels) uses **Prayer Face Naskh**, a 64 KB subse
 watchface/index.js         ← UI (normal + AOD + edit slots), lifecycle and refresh (see How it works)
 watchface/menu.js          ← face menu overlay (rows, steppers, paging, back)
 watchface/screens.js       ← face menu screens: location (city or coordinates), high latitudes, adjustments, iqama, angles, 12/24h, sunrise window
-devices.json               ← the screens the face is built for (one app.json target each; see Devices)
 config.js                  ← defaults (fallback location, and defaults for the face-menu settings)
 
 lib/layout.js              ← every box the face draws: the Bip Max design scaled to rectangles, a round design scaled to circles
@@ -192,15 +191,15 @@ The face is designed on the Bip Max and scaled to the other rectangular watches 
 | `round-416` | 416 × 416 | Falcon | not yet |
 | `round-360` | 360 × 360 | Active Edge | simulator |
 
-Device ids, corner radii and preview sizes are from Zepp's [device list](https://docs.zepp.com/docs/reference/related-resources/device-list/); ids that only the store lists (Active 2 Square's second set, Balance 2 XT, and extra ids for several round models) are from the store's device list; the round targets' ids are in `app.json`. Older watches (Bip 5, GTS 4 mini, GTS 3, Band 7, GTR 3, GTR Mini, T-Rex 2) have Zepp OS 1–2, below the face's API 3.0. The T-Rex Dual Solar (456 × 456) is in the store but not yet in Zepp's device list, so it isn't included.
+Device ids, corner radii and preview sizes are from Zepp's [device list](https://docs.zepp.com/docs/reference/related-resources/device-list/); ids that only the store lists (Active 2 Square's second set, Balance 2 XT, and extra ids for several round models) are from the store's device list; every id is in the repo's `devices.json`. Older watches (Bip 5, GTS 4 mini, GTS 3, Band 7, GTR 3, GTR Mini, T-Rex 2) have Zepp OS 1–2, below the face's API 3.0. The T-Rex Dual Solar (456 × 456) is in the store but not yet in Zepp's device list, so it isn't included.
 
 How the targets work:
 
-- `devices.json` lists the targets: screen size, shape, corner radius (for screenshots) and picker preview size. Each key is an `app.json` `targets` entry and its `assets/<target>/` folder (`test/verify.mjs` checks they match).
+- The repo's `devices.json` lists every screen our apps use: size, shape, corner radius (for screenshots), picker preview size and the watches' device ids. The face's `app.json` names its targets, each a `devices.json` key and an `assets/<target>/` folder (`test/verify.mjs` checks the folders); `:gen` fills in each target's device ids (`../scripts/targets.py`).
 - `lib/layout.js` holds every box the face, the AOD layer, the Edit slots and the menu draw, in two designs: the Bip Max's 432 × 514 for rectangles and a 480 × 480 one for circles (screens with width = height). Another rectangle gets the Bip Max design scaled: x by width, y by height, text and icons by the smaller of the two; at 432 × 514 nothing is scaled, so the Bip Max is drawn exactly as designed. A round screen gets the round design scaled evenly. It has the same pages, rows and menu with narrower boxes and smaller text, and `test/verify.mjs` checks that everything drawn stays inside the circle.
 - `watchface/index.js` reads the screen size from `getDeviceInfo()` (it needs the `data:os.device.info` permission; without it the call fails and every screen gets the unscaled Bip Max layout), and the generators (`tools/render.py` through `tools/layout-data.mjs`) write every target's images from the same boxes, so previews and screenshots match each screen. The font, city list and `NOTICE.txt` are the same for every target and are copied into each folder.
 
-To add a screen: add it to `devices.json`, add an `app.json` target with its `deviceSource`s and the same key, copy `assets/bip-max/cities/` and `assets/bip-max/NOTICE.txt` into `assets/<target>/`, then run `mise run :build`. zeus packs one `.zpk` per firmware group into the `.zab`, each with only its own target's assets, so a watch installs about 300 KB whatever the number of targets. Rectangles far from the Bip Max's proportions would need a design of their own. To check a target's layout without a watch, `ZOS_TARGET=<target> DOCS_OUT=<folder>` with `tools/gen-docs.py` renders its screenshots elsewhere.
+To add a screen: add it to the repo's `devices.json` if it isn't there, add `"<key>": {}` to the `app.json` targets, copy `assets/bip-max/cities/` and `assets/bip-max/NOTICE.txt` into `assets/<target>/`, then run `mise run :build`. zeus packs one `.zpk` per firmware group into the `.zab`, each with only its own target's assets, so a watch installs about 300 KB whatever the number of targets. Rectangles far from the Bip Max's proportions would need a design of their own. To check a target's layout without a watch, `ZOS_TARGET=<target> DOCS_OUT=<folder>` with `tools/gen-docs.py` renders its screenshots elsewhere.
 
 ## Build / install
 

@@ -3,12 +3,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { layout } from '../lib/layout.js'
 
-const { '//': _, ...SCREENS } = JSON.parse(readFileSync(new URL('../tools/screens.json', import.meta.url), 'utf8'))
+// Each app.json target's screen: [width, height, corner radius], from ../../devices.json
+const DEVICES = JSON.parse(readFileSync(new URL('../../devices.json', import.meta.url), 'utf8'))
 const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
-
-test('every app.json target has a screen here', () => {
-  assert.deepEqual(Object.keys(app.targets).sort(), Object.keys(SCREENS).sort())
-})
+const SCREENS = Object.fromEntries(Object.keys(app.targets).map((t) => [t, [DEVICES[t].width, DEVICES[t].height, DEVICES[t].radius]]))
 
 // Inside a rounded rectangle (a circle when the radius is half the width), allowing 1.5 px for rounding
 const inside = (W, H, R) => (x, y) => {

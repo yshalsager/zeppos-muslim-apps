@@ -1,0 +1,30 @@
+{
+  "//": "Every screen our apps are built for, one app.json target each (scripts/targets.py writes each app's targets from it). width/height: screen px; shape: square (rectangle) or round; radius: screen corner radius, for screenshots; preview: watch face picker preview size; watches: the models (device ids, deviceSource) with the lowest API level among them, so an app gets the ones at or above its runtime minVersion; pike: the Bip Max's real-size fields, for apps with _pikeCompatibled. Sources: Zepp's device list (https://docs.zepp.com/docs/reference/related-resources/device-list/), and the store's for ids the list lacks (guide/multiple-devices.md).",
+  "bip-max": {"width": 432, "height": 514, "shape": "square", "radius": 106, "preview": [294, 350], "pike": {"st": "s", "sr": "w432", "dw": 432}, "watches": [
+      {"models": "Bip Max", "api": "4.4", "ids": [11206915]}
+    ]},
+  "square-390x450": {"width": 390, "height": 450, "shape": "square", "radius": 86, "preview": [266, 307], "watches": [
+      {"models": "Bip 6, Active 2 Square", "api": "4.2", "ids": [9765120, 9765121, 10158337, 10223872, 10223873, 10223875, 9830656, 9830657, 9830659]},
+      {"models": "Active, GTS 4, Cheetah Square", "api": "3.6", "ids": [8323328, 8323329, 7995648, 7995649, 8257793]}
+    ]},
+  "square-320x380": {"width": 320, "height": 380, "shape": "square", "radius": 69, "preview": [200, 238], "watches": [
+      {"models": "Bip 5 Unity", "api": "3.0", "ids": [8782081, 8782088, 8782089]}
+    ]},
+  "round-480": {"width": 480, "height": 480, "shape": "round", "radius": 240, "preview": [324, 324], "watches": [
+      {"models": "Balance 3, Balance Ultra, Cheetah 2 Ultra, T-Rex Ultra 2, Active Max, T-Rex 3 Pro 48 mm, Balance 2, Balance 2 XT", "api": "4.2", "ids": [11141376, 11141377, 11141379, 11145472, 11145473, 11145475, 11075840, 11075841, 11092224, 11092225, 9961728, 9961729, 9978112, 9978113, 10879232, 10879233, 10879235, 10813697, 10813699, 10551552, 10551553, 10551555, 9568512, 9568513, 9568515, 10486016, 10486017, 10486019]},
+      {"models": "T-Rex 3, Balance, Cheetah Pro", "api": "3.6", "ids": [8716544, 8716545, 8716547, 8519936, 8519937, 8519939, 8126720, 8126721, 8126727]}
+    ]},
+  "round-466": {"width": 466, "height": 466, "shape": "round", "radius": 233, "preview": [314, 314], "watches": [
+      {"models": "Cheetah 2 Pro, Active 3 Premium, T-Rex 3 Pro 44 mm, Active 2 Round", "api": "4.2", "ids": [11010304, 11010305, 11010307, 10944768, 10944769, 10944771, 10948867, 10682624, 10682625, 10682627, 8913152, 8913153, 8913155, 8913159, 10092800, 10092801, 10092803, 10092807, 10617091]},
+      {"models": "GTR 4", "api": "3.6", "ids": [7930112, 7930113, 7864576, 7864577, 9437441]}
+    ]},
+  "round-454": {"width": 454, "height": 454, "shape": "round", "radius": 227, "preview": [306, 306], "watches": [
+      {"models": "Cheetah Round, T-Rex Ultra", "api": "3.6", "ids": [8192256, 8192257, 6553856, 6553857]}
+    ]},
+  "round-416": {"width": 416, "height": 416, "shape": "round", "radius": 208, "preview": [280, 280], "watches": [
+      {"models": "Falcon", "api": "3.6", "ids": [414, 415]}
+    ]},
+  "round-360": {"width": 360, "height": 360, "shape": "round", "radius": 180, "preview": [243, 243], "watches": [
+      {"models": "Active Edge", "api": "3.5", "ids": [8388864, 8388865]}
+    ]}
+}

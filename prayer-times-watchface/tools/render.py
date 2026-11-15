@@ -39,7 +39,8 @@ SAMPLE_WEATHER = "cloud-sun"  # previews and screenshots
 
 TRACK = (38, 38, 38)  # progress bar track
 
-_DEVICES = {k: v for k, v in json.loads((ROOT / "devices.json").read_text()).items() if not k.startswith("/")}
+_CATALOGUE = json.loads((ROOT.parent / "devices.json").read_text())  # every screen; the face's are its app.json targets
+_DEVICES = {t: _CATALOGUE[t] for t in json.loads((ROOT / "app.json").read_text())["targets"]}
 TARGETS = list(_DEVICES)  # the first is the one the docs show
 
 

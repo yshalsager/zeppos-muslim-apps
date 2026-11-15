@@ -6,8 +6,7 @@ import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 import { LANGS } from '../lib/i18n/tables.js'
 
 const ROOT = new URL('../', import.meta.url)
-const DEVICES = JSON.parse(readFileSync(new URL('devices.json', ROOT), 'utf8'))
-const TARGETS = Object.keys(DEVICES).filter((k) => !k.startsWith('/'))
+const TARGETS = Object.keys(JSON.parse(readFileSync(new URL('app.json', ROOT), 'utf8')).targets)
 
 const arg = (i) => new Proxy({}, {
   get: (_, k) => (k === Symbol.toPrimitive ? () => `{${i}}` : `{${i}.${String(k)}}`),

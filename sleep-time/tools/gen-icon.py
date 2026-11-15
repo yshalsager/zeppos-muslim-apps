@@ -18,7 +18,7 @@ NIGHT, MOON = (38, 35, 90, 255), (255, 214, 10, 255)  # the page's "best result"
 APP = Path(__file__).resolve().parents[1]
 DOCS = APP.parent / "docs" / "sleep-time"  # outside the app, so zeus doesn't pack it
 TARGETS = json.loads((APP / "app.json").read_text())["targets"]
-SCREENS = json.loads((APP / "tools" / "screens.json").read_text())
+DEVICES = json.loads((APP.parent / "devices.json").read_text())  # each target's screen
 FONTS = APP.parent / ".cache" / "fonts"
 LUCIDE = json.loads((FONTS / "lucide-codepoints.json").read_text())
 # lib/ui.js colours: the chip's yellow, the keys' grey and pressed grey
@@ -68,7 +68,7 @@ def glyph(name, size, color, background=None):
 
 def icons():
     for t in TARGETS:
-        w, h, _ = SCREENS[t]
+        w, h = DEVICES[t]["width"], DEVICES[t]["height"]
         m = json.loads(subprocess.check_output(["node", str(APP / "tools" / "layout-data.mjs"), str(w), str(h)]))["main"]
         out = APP / "assets" / t / "icons"
         out.mkdir(exist_ok=True)

@@ -25,7 +25,7 @@ mise run simulator                        # Zepp OS simulator (macOS)
 
 Install a `.zab` by opening it with Gadgetbridge, or via the Zepp app's Developer Mode (`zeus preview`).
 
-Shared between projects: the root `mise.toml` (tools, the Python commands, and the `zeus-build`, `zeus-store` and `zeus-ci` task templates each app's `:build`, `:build-store` and `:ci` extend), `scripts/` (app IDs, the generated-files check, font downloads into `.cache/fonts/`) and `shared/` (text and widget drawing for the image generators: HarfBuzz shaping, FreeType, the Unicode bidi algorithm; the mini apps' stub `@zos` modules and package test). A change to any of them rebuilds every project in CI.
+Shared between projects: the root `mise.toml` (tools, the Python commands, and the `zeus-build`, `zeus-store` and `zeus-ci` task templates each app's `:build`, `:build-store` and `:ci` extend), `devices.json` (every screen and its watches' device ids, from which `:gen` writes each app's `app.json` targets), `scripts/` (app IDs, targets, the generated-files check, font downloads into `.cache/fonts/`) and `shared/` (text and widget drawing for the image generators: HarfBuzz shaping, FreeType, the Unicode bidi algorithm; the mini apps' stub `@zos` modules and package test). A change to any of them rebuilds every project in CI.
 
 ## License
 

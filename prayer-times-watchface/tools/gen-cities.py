@@ -39,7 +39,7 @@ from babel import Locale
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / ".cache" / "geonames"
-TARGETS = [k for k in json.loads((ROOT / "devices.json").read_text()) if not k.startswith("/")]
+TARGETS = list(json.loads((ROOT / "app.json").read_text())["targets"])
 OUT = ROOT / "assets" / TARGETS[0] / "cities"
 
 ARAB = set("DZ BH KM DJ EG IQ JO KW LB LY MR MA OM PS QA SA SO SD SY TN AE YE".split())

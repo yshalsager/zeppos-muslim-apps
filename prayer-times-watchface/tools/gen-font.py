@@ -39,7 +39,7 @@ from fontTools.varLib import instancer
 
 ROOT = Path(__file__).resolve().parent.parent
 # One font for every devices.json target (the same file in each assets/<target>/fonts/)
-TARGETS = [k for k in json.loads((ROOT / "devices.json").read_text()) if not k.startswith("/")]
+TARGETS = list(json.loads((ROOT / "app.json").read_text())["targets"])
 OUT = ROOT / "assets" / TARGETS[0] / "fonts" / "naskh.ttf"
 FAMILY = "Prayer Face Naskh"
 # The font only draws Arabic text (watchface/index.js uses it when the language is Arabic), so other

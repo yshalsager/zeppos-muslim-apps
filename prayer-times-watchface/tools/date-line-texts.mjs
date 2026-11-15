@@ -8,8 +8,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { LANG_CODES } from '../lib/i18n/index.js'
 import { LANGS } from '../lib/i18n/tables.js'
 
-const DEVICES = JSON.parse(readFileSync(new URL('../devices.json', import.meta.url), 'utf8'))
-const target = Object.keys(DEVICES).find((k) => !k.startsWith('/'))
+const target = Object.keys(JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).targets)[0]
 const dir = new URL(`../assets/${target}/cities/`, import.meta.url)
 const rows = []
 for (const f of readdirSync(dir)) {

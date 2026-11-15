@@ -14,8 +14,9 @@ import { CONFIG } from '../config.js'
 import { utf8 } from '../lib/utf8.js'
 import { readFileSync, existsSync } from 'node:fs'
 
-const DEVICES = JSON.parse(readFileSync(new URL('../devices.json', import.meta.url), 'utf8'))
-const TARGETS = Object.keys(DEVICES).filter((k) => !k.startsWith('/'))
+// the screens (../../devices.json) of the face's targets (app.json, written from it by ../scripts/targets.py)
+const DEVICES = JSON.parse(readFileSync(new URL('../../devices.json', import.meta.url), 'utf8'))
+const TARGETS = Object.keys(JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).targets)
 let fail = 0
 const check = (ok, ...msg) => { if (!ok && fail++ < 10) console.log('FAIL', ...msg) }
 
@@ -362,17 +363,14 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   console.log(`i18n: ${LANG_CODES.join(', ')} have every key of ar.js`)
 }
 
-// Devices: devices.json and app.json name the same targets, each with its assets folder; every
+// Devices: each target has its assets folder; every
 // layout box stays on its screen (inside the circle on round ones), and the design size is laid out as designed (scale 1).
 {
   const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'))
-  check(JSON.stringify(Object.keys(app.targets)) === JSON.stringify(TARGETS), 'app.json targets = devices.json', Object.keys(app.targets), TARGETS)
   // without it getDeviceInfo() throws and every screen falls back to the Bip Max design size
   check(app.permissions.includes('data:os.device.info'), 'app.json permission data:os.device.info')
   for (const t of TARGETS) {
     const d = DEVICES[t]
-    const p = app.targets[t] && app.targets[t].platforms
-    check(p && p.some((x) => x.deviceSource === d.deviceSource), 'app.json deviceSource', t)
     check(existsSync(new URL(`../assets/${t}/icon.png`, import.meta.url)), 'target assets', t)
     check(existsSync(new URL(`../assets/${t}/NOTICE.txt`, import.meta.url)), 'license notices in the package', t)
     const L = layout(d.width, d.height)
@@ -396,7 +394,7 @@ console.log('Cairo 2026-11-12:', PRAYER_ORDER.map((k) => `${k} ${f(base[k])}`).j
   }
   const L = layout(DESIGN.width, DESIGN.height)
   check(L.hijri.x === 16 && L.hijri.text_size === 32 && L.comps[0].icon.x === 368 && L.menu.row[3].tap.y === 330, 'design layout unscaled')
-  console.log(`devices: ${TARGETS.join(', ')} match app.json; layout boxes fit their screens`)
+  console.log(`devices: ${TARGETS.join(', ')} have their assets; layout boxes fit their screens`)
 }
 
 // The face reads the companion's shared location by its appId; a mismatch fails silently on the watch.
