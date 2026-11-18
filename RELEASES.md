@@ -10,6 +10,7 @@ The latest version of each app. Each release has one `.zab` with every supported
 | [Prayer Times](prayer-times-watchface/README.md) | [1.2.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/prayer-times-watchface/v1.2.0) | 2026-11-15 | [`prayer-times-watchface-v1.2.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/prayer-times-watchface/v1.2.0/prayer-times-watchface-v1.2.0.zab) (3.9 MB) | [list](prayer-times-watchface/README.md#devices) |
 | [Daad Arabic Keyboard](daad-keyboard/README.md) | [1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/daad-keyboard/v1.0.0) | 2026-11-14 | [`daad-keyboard-v1.0.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/daad-keyboard/v1.0.0/daad-keyboard-v1.0.0.zab) (80 KB) | [list](daad-keyboard/README.md#devices) |
 | [Sleep Time](sleep-time/README.md) | [1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/sleep-time/v1.0.0) | 2026-11-15 | [`sleep-time-v1.0.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/sleep-time/v1.0.0/sleep-time-v1.0.0.zab) (731 KB) | [list](sleep-time/README.md#devices) |
+| [Qistas](qistas/README.md) | [1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/qistas/v1.0.0) | 2026-11-18 | [`qistas-v1.0.0.zab`](https://github.com/yshalsager/zeppos-muslim-apps/releases/download/qistas/v1.0.0/qistas-v1.0.0.zab) (1.6 MB) | [list](qistas/README.md#devices) |
 
 ## Prayer Times
 
@@ -24,3 +25,7 @@ The latest version of each app. Each release has one `.zab` with every supported
 ## Sleep Time
 
 - **[1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/sleep-time/v1.0.0)** (2026-11-15): First release of **Sleep Time (وقت النوم)**, a sleep-cycle calculator for Zepp OS watches. Pick when you want to wake up or go to bed, and the watch lists the times that line up with whole 90-minute sleep cycles. Fully …
+
+## Qistas
+
+- **[1.0.0](https://github.com/yshalsager/zeppos-muslim-apps/releases/tag/qistas/v1.0.0)** (2026-11-18): First release of **Qistas (قسطاس)**, an offline units converter for Zepp OS watches, with Islamic measures alongside everyday ones. Fully offline; works with Gadgetbridge.
