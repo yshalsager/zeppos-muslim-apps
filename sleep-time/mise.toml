@@ -7,7 +7,7 @@ uv = "latest"
 generated = "sleep-time/app.json sleep-time/assets docs/sleep-time" # checked by :ci
 
 [tasks.gen]
-description = "Write the app ID, and regenerate the app icon and the preview images (fonts and text drawing from ../shared)"
+description = "Write the app ID, and regenerate icons and README previews (fonts and text drawing from ../shared)"
 run = [
   "python3 -I ../scripts/app-ids.py sleep-time",
   "python3 -I ../scripts/targets.py sleep-time",
@@ -29,3 +29,8 @@ extends = "zeus-store"
 
 [tasks.ci]
 extends = "zeus-ci"
+
+[tasks.previews]
+description = "Render every screen in both languages and shapes into ../.cache/previews/sleep-time/ for reviewing layout; not committed"
+depends = [":gen"]
+run = "{{vars.py_img}} tools/gen-previews.py --all"

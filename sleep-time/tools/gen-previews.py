@@ -6,10 +6,11 @@ BUTTONs, FILL_RECTs, IMGs and TEXTs, with ../../shared/widget_draw.py (HarfBuzz,
 and Noto Sans Arabic standing in for the system font, fetched by ../../scripts/fetch-fonts.sh). Fails
 if a text is wider than its box.
 
-Writes ../docs/sleep-time/<lang>-<name>.png: the Bip Max's 432 × 514 screen with its rounded
-corners (radius 106) transparent; and round-<name>-<lang>.png: the 480 × 480 round design, shrunk to
-the store's 360 × 360 with the outside of the circle transparent. Run: mise run :gen
+By default writes only the README's Bip Max wake/now/ring images to ../docs/sleep-time/.
+With --all writes every screen in both languages/shapes to ../.cache/previews/sleep-time/.
+Round previews are rendered at 480 × 480 and reduced to 360 × 360. Both modes check text fit.
 """
+import argparse
 import json
 import subprocess
 import sys
@@ -22,7 +23,7 @@ from PIL import Image, ImageDraw  # noqa: E402
 from widget_draw import draw  # noqa: E402
 
 ASSETS = APP / "assets"  # the images the pages show, per target (tools/gen-icon.py)
-OUT = APP.parent / "docs" / "sleep-time"  # outside the app, so zeus doesn't pack it
+README_SHOTS = {f"{lang}-{shot}.png" for lang in ("en", "ar") for shot in ("wake", "now", "ring")}
 # screen → (target, width, height, corner radius, saved size)
 SCREENS = {"": ("bip-max", 432, 514, 106, None), "round-": ("round-480", 480, 480, 240, 360)}
 # name → page, main-page mode, page params
@@ -46,17 +47,23 @@ def render(data, target, radius):
 
 
 def main():
-    OUT.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--all', action='store_true', help='Render every screen into .cache/previews/sleep-time')
+    args = parser.parse_args()
+    out = APP.parent / ('.cache/previews/sleep-time' if args.all else 'docs/sleep-time')
+    out.mkdir(parents=True, exist_ok=True)
     for prefix, (target, w, h, radius, size) in SCREENS.items():
         for lang in ("en", "ar"):
             for shot, (page, mode, params) in SHOTS.items():
-                args = ["node", str(APP / "tools" / "preview-data.mjs"), page, lang, mode, params, str(w), str(h)]
-                im = render(json.loads(subprocess.check_output(args, cwd=APP)), target, radius)
+                name = f"{prefix}{shot}-{lang}.png" if prefix else f"{lang}-{shot}.png"
+                if not args.all and name not in README_SHOTS:
+                    continue
+                command = ["node", str(APP / "tools" / "preview-data.mjs"), page, lang, mode, params, str(w), str(h)]
+                im = render(json.loads(subprocess.check_output(command, cwd=APP)), target, radius)
                 if size:
                     im = im.resize((size, size), Image.LANCZOS)
-                name = f"{prefix}{shot}-{lang}.png" if prefix else f"{lang}-{shot}.png"
-                im.save(OUT / name, optimize=True)
-            print(f"wrote docs/sleep-time/{name}")
+                im.save(out / name, optimize=True)
+    print(f'wrote {len(SHOTS) * 4 if args.all else len(README_SHOTS)} previews to {out.relative_to(APP.parent)}')
 
 
 if __name__ == "__main__":
