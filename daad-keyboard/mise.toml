@@ -29,7 +29,3 @@ extends = "zeus-store"
 
 [tasks.ci]
 extends = "zeus-ci"
-
-[tasks.preview]
-description = "Generate a device preview QR code (requires zeus login)"
-run = "zeus preview"
