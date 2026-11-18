@@ -1,6 +1,6 @@
 # Qistas (قسطاس)
 
-An offline units converter for Zepp OS 3+ watches, including the Amazfit Bip Max. Arabic and English follow the watch language. Both use Western digits (`0–9`) and `.` by default; Settings → **Arabic-Indic digits** / **أرقام هندية (٠١٢)** optionally switches values, keypad keys and numeric unit labels to `٠–٩` and `٫`, independently of language. No account, phone component, network, currency rates or permissions beyond screen information and local storage. Works with Gadgetbridge.
+An offline units converter for Zepp OS 3+ watches, including the Amazfit Bip Max. Arabic and English follow the watch language. Both use Western digits (`0–9`) and `.` by default; Settings → **Arabic-Indic digits** / **أرقام هندية (١٢٣)** optionally switches values, keypad keys and numeric unit labels to `٠–٩` and `٫`, independently of language. No account, phone component, network, currency rates or permissions beyond screen information and local storage. Works with Gadgetbridge.
 
 | Bip Max · English | Bip Max · العربية |
 |---|---|
@@ -202,7 +202,7 @@ All newly added factors above were checked against the linked publications or ar
 | `round-416` | 416 × 416 | Falcon |
 | `round-360` | 360 × 360 | Active Edge |
 
-API 3.0. `devices.json` is the authoritative device-ID list; `scripts/targets.py` writes targets into `app.json`. `_pikeCompatibled: 1` gives the Bip Max its real dimensions. Rectangles scale from 360 × 428 and rounds from 360 × 360. All interactive boxes are at least 30 px. Fixed converter/keypad controls fit rounded screens and stay above the round screen's bottom 12.5% swipe zone; scrolling lists use narrow rows that are fully readable in the centre and enough bottom padding to reach the final row. All targets have layout/stub tests; no physical-watch testing has been done for this app.
+API 3.0. `devices.json` is the authoritative device-ID list; `scripts/targets.py` writes targets into `app.json`. `_pikeCompatibled: 1` gives the Bip Max its real dimensions. Rectangles scale from 360 × 428 and rounds from 360 × 360. All interactive boxes are at least 30 px. Fixed converter/keypad controls fit rounded screens and stay above the round screen's bottom 12.5% swipe zone; scrolling lists use narrow rows that are fully readable in the centre and enough bottom padding to reach the final row. All targets have layout/stub tests; tested on the Bip Max, the other sizes by layout tests and previews only.
 
 ## Build and checks
 
