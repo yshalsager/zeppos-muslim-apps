@@ -10,6 +10,7 @@ Offline Zepp OS apps for the **Amazfit Bip Max**, built to work with Gadgetbridg
 | [Location companion](prayer-location-app/) | Shares a GPS fix with the watchface | |
 | [Daad keyboard](daad-keyboard/README.md) | Arabic and English keyboard with long-press variants, digits and tashkeel, ready phrases; Arabic shown in the right order while typing | <img src="docs/daad-keyboard/store/ar-square.png" width="120" alt="Daad keyboard"> |
 | [Sleep Time](sleep-time/README.md) | Sleep-cycle calculator: when to go to bed or wake up, with its own alarm; Arabic and English | <img src="docs/sleep-time/en-wake.png" width="120" alt="Sleep Time"> |
+| [Qistas](qistas/README.md) | Offline units converter with cooking measures, running pace and Islamic measures; Arabic and English | <img src="docs/qistas/en-converter.png" width="120" alt="Qistas units converter"> |
 
 **Download:** the latest `.zab` of each app is in [RELEASES.md](RELEASES.md).
 

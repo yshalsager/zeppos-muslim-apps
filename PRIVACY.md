@@ -1,8 +1,8 @@
 # Privacy Policy
 
-Last updated: 2026-11-15
+Last updated: 2026-11-18
 
-This policy covers the **Prayer Times** watch face, the **Daad Arabic Keyboard** and **Sleep Time** for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
+This policy covers the **Prayer Times** watch face, the **Daad Arabic Keyboard**, **Sleep Time** and **Qistas** for Zepp OS watches, published by yshalsager from [github.com/yshalsager/zeppos-muslim-apps](https://github.com/yshalsager/zeppos-muslim-apps).
 
 ## In short
 
@@ -23,9 +23,13 @@ The keyboard does not collect, send or share any data, and it has no phone-side 
 
 Sleep Time does not collect, send or share any data, and it has no phone-side component or network access. It reads the watch's screen size, language, clock format and the current time to show its results. It stores its settings on the watch: cycle length, time to fall asleep, clock format, the mode it opens in, snooze length, the last wake-up and bed times you set, and the time of the alarm and bedtime reminder you set, if any. Alarms are timers on the watch that open the app when they're due.
 
+## Qistas
+
+Qistas is an offline units converter. It does not collect, send or share data and has no phone-side component, network access, analytics or ads. It reads the watch's screen size and language and stores only its settings (including the chosen Islamic-measure opinions and last conversion pair/value), favourites and last ten conversions in LocalStorage on the watch.
+
 ## Data removal
 
-All the data lives on your watch. Uninstalling the face removes its settings and saved location; uninstalling the keyboard removes its saved language; uninstalling Sleep Time removes its settings and alarm. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
+All the data lives on your watch. Uninstalling the face removes its settings and saved location; uninstalling the keyboard removes its saved language; uninstalling Sleep Time removes its settings and alarm; uninstalling Qistas removes its settings, favourites and recent conversions. You can also pick another city or enter other coordinates at any time, which replaces the saved location.
 
 ## Children
 

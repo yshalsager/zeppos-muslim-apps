@@ -1,0 +1,36 @@
+# Shared Zeus CLI and Node versions, the Python commands and the build tasks come from ../mise.toml.
+
+[tools]
+uv = "latest"
+
+[vars]
+generated = "qistas/app.json qistas/assets docs/qistas"
+
+[tasks.gen]
+description = "Generate app ID, targets, icons and README previews"
+run = [
+  "python3 -I ../scripts/app-ids.py qistas",
+  "python3 -I ../scripts/targets.py qistas",
+  "../scripts/fetch-fonts.sh",
+  "{{vars.py}} tools/gen-icon.py",
+  "{{vars.py_img}} tools/gen-previews.py",
+]
+
+[tasks.test]
+description = "Test exact factors, opinions, formatting, pages, every target layout and package"
+wait_for = [":gen"]
+run = "node --test test/*.test.js ../shared/package.test.mjs"
+
+[tasks.build]
+extends = "zeus-build"
+
+[tasks.build-store]
+extends = "zeus-store"
+
+[tasks.ci]
+extends = "zeus-ci"
+
+[tasks.previews]
+description = "Render every screen in both languages and shapes into ../.cache/previews/qistas/ for reviewing layout; not committed"
+depends = [":gen"]
+run = "{{vars.py_img}} tools/gen-previews.py --all"
