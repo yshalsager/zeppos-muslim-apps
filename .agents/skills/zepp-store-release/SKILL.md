@@ -51,7 +51,7 @@ The console needs the person's logged-in browser session, so use their own brows
 **Mini apps:** the app form (seen November 2026) differs from the watch face form:
 
 - One listing takes every screen size and shape; the console reads the devices from the package (Daad: 55 ids, four sizes).
-- Screenshots per shape, 1–10 each, every one 360 × 360 PNG on a transparent background, interface text in English ([requirements](https://docs.zepp.com/docs/distribute/#app-introduction-screenshots)): a round screen fills the canvas inside the circle; a rectangular one is scaled to the full height and centred, transparent at the sides.
+- Screenshots per shape, 1–10 each, every one 360 × 360 PNG on a transparent background, interface text in English ([requirements](https://docs.zepp.com/docs/distribute/#app-introduction-screenshots)): a round screen fills the canvas inside the circle; a rectangular one is scaled to the full height and centred, transparent at the sides and outside the screen's rounded corners (`devices.json` `radius`).
 - An icon: 240 × 240, a circle touching the edges, transparent outside, matching the package's icon.
 - A short description (100 characters at most; the listing file's `short`), a privacy statement, the permissions it uses, and whether it includes third-party SDKs.
 
