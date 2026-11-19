@@ -7,7 +7,7 @@ Sans and Noto Sans Arabic standing in for the system font, fetched by ../../scri
 Writes ../docs/daad-keyboard/store/<lang>-round.png and <lang>-square.png, the app form's screenshots
 (https://docs.zepp.com/docs/distribute/#app-introduction-screenshots): 360 × 360 PNGs on a transparent
 background. Round: the screen fills the canvas, transparent outside the circle. Rectangular: the screen
-scaled to the full height and centred. Run: mise run :gen
+scaled to the full height, centred, with the screen's rounded corners. Run: mise run :gen
 """
 import json
 import subprocess
@@ -27,6 +27,7 @@ SHOT = 360  # the app form's screenshot size, for both shapes
 # shape → the screen drawn (width, height, input field height): the Active 2 Round as measured in the
 # simulator, the Bip Max as measured on the watch
 SHAPES = {"round": (466, 466, 146), "square": (432, 514, 132)}
+RADIUS = json.loads((APP.parent / "devices.json").read_text())["bip-max"]["radius"]  # the square screen's corners
 
 
 def shot(screen, shape):
@@ -35,9 +36,12 @@ def shot(screen, shape):
         mask = Image.new("L", (SHOT * 4, SHOT * 4), 0)
         ImageDraw.Draw(mask).ellipse([0, 0, SHOT * 4 - 1, SHOT * 4 - 1], fill=255)
         canvas.paste(screen.resize((SHOT, SHOT), Image.LANCZOS), (0, 0), mask.resize((SHOT, SHOT), Image.LANCZOS))
-    else:
+    else:  # cut to the Bip Max's rounded corners: the store rejects square-cornered previews
         w = round(screen.width * SHOT / screen.height)
-        canvas.paste(screen.resize((w, SHOT), Image.LANCZOS), ((SHOT - w) // 2, 0))
+        r = RADIUS * SHOT / screen.height
+        mask = Image.new("L", (w * 4, SHOT * 4), 0)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, w * 4 - 1, SHOT * 4 - 1], radius=r * 4, fill=255)
+        canvas.paste(screen.resize((w, SHOT), Image.LANCZOS), ((SHOT - w) // 2, 0), mask.resize((w, SHOT), Image.LANCZOS))
     return canvas
 
 
