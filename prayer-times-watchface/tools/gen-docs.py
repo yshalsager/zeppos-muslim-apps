@@ -137,7 +137,8 @@ def main():
                 states = row([face(prayers(d, s[k]), top) for k in ("prayers", "urgent", "iqama", "lastThird")])
                 states.save(OUT / "countdown.png", optimize=True)
                 written.append("countdown.png")
-    # Zepp store preview per language: the prayers page at screen size, square corners, no bezel
+    # Zepp store preview per language: the prayers page at screen size, cut to the screen's shape
+    # (transparent corners; the store rejected square ones), no bezel
     langs = json.loads(subprocess.check_output(
         ["node", "-e", "import('./lib/i18n/index.js').then((m) => console.log(JSON.stringify(m.LANG_CODES)))"], cwd=ROOT))
     (OUT / "store").mkdir(exist_ok=True)
@@ -145,7 +146,7 @@ def main():
         d = json.loads(subprocess.check_output(["node", str(ROOT / "tools" / "docs-data.mjs"), lang], cwd=ROOT))
         im = Image.new("RGBA", (DEV.w, DEV.h), (0, 0, 0, 255))
         im.alpha_composite(prayers(d, d["scenes"]["prayers"]).image())
-        im.convert("RGB").save(OUT / "store" / f"{lang}.png", optimize=True)
+        rounded(im, DEV.radius).save(OUT / "store" / f"{lang}.png", optimize=True)
         written.append(f"store/{lang}.png")
     for f in written:
         im = Image.open(OUT / f)
