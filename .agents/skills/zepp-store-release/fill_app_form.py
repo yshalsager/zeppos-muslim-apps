@@ -99,6 +99,7 @@ wait("!!document.querySelector('#version').value", 30)
 tick("Pricing", "0")
 tick("Distribution Regions", "all")
 pick("document.querySelector('input#category')", L.get("service_category", "General"))
+time.sleep(1)  # the service category's dropdown must close first, or this pick is lost
 pick("document.querySelector('div#category_watch input')", L["category"])
 
 # 3. extra languages: add each in the "other languages" box, then tick its checkbox (opens its panel)
@@ -140,6 +141,8 @@ for label, pattern in SLOTS.items():
 set_value("document.querySelector('textarea#privacy_statement')", L["privacy"], "HTMLTextAreaElement")
 for p in L.get("permissions", ["none"]):
     tick("App Permissions", p)
+if L.get("other_permission"):  # "Others" opens a text field for what the permission is for
+    set_value("document.getElementById('otherAuth')", L["other_permission"], "HTMLInputElement")
 tick("Includes Third-Party SDKs", "true" if L.get("third_party_sdk") else "false")
 tick("Plays Full Music Tracks", "1" if L.get("music") else "0")
 set_value("document.querySelector('textarea#remarks')", L["notes"], "HTMLTextAreaElement")

@@ -3,8 +3,9 @@
   "category": "Health & Fitness",
   "service_category": "General",
   "permissions": [
-    "none"
+    "other"
   ],
+  "other_permission": "Alarm (device:os.alarm): sets the alarm the user picks, which opens the app to ring at the chosen wake-up time, and an optional bedtime reminder. Nothing runs in the background otherwise.",
   "third_party_sdk": false,
   "music": false,
   "privacy": "Sleep Time does not collect, send or share any data. It has no network access and no phone-side component. It stores its settings on the watch (cycle length, time to fall asleep, clock format, the mode it opens in, snooze length, the last times you set) and the time of the alarm and bedtime reminder you set, if any. Uninstalling the app removes them. Full policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",

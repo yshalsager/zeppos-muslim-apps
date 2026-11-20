@@ -55,7 +55,7 @@ The console needs the person's logged-in browser session, so use their own brows
 - An icon: 240 × 240, a circle touching the edges, transparent outside, matching the package's icon.
 - A short description (100 characters at most; the listing file's `short`), a privacy statement, the permissions it uses, and whether it includes third-party SDKs.
 
-Fill it with `fill_app_form.py` (the listing file adds `category`, `service_category`, `privacy`, `permissions`, `third_party_sdk`, `music` and a `short` per language; see `daad-keyboard/store-listing.json`):
+Fill it with `fill_app_form.py` (the listing file adds `category`, `service_category`, `privacy`, `permissions` (with `other_permission`, the text the form asks for when "Others" is ticked), `third_party_sdk`, `music` and a `short` per language; see `daad-keyboard/store-listing.json`):
 
 ```bash
 ZAB=/abs/path/<project>/dist/<file>.zab LISTING=/abs/path/<project>/store-listing.json \
@@ -63,7 +63,7 @@ IMAGES=/abs/path/docs/<project>/store \
   browser-use < .agents/skills/zepp-store-release/fill_app_form.py
 ```
 
-Check its output as for the watch face: the right package and version, both selects, every name, one image per slot, no errors. The console ticks the Work Statement (agreement) box by itself; leave it to the person. The app form's selects can't be searched, so pick options with the arrow keys, and some fields' wrappers share the field's id (`div#category_watch`, `textarea#privacy_statement`): select by tag.
+Check its output as for the watch face: the right package and version, both selects (the App Classification has come back empty: check it on the page and pick it again), every name, one image per slot, no errors. The console ticks the Work Statement (agreement) box by itself; leave it to the person. The app form's selects can't be searched, so pick options with the arrow keys, and some fields' wrappers share the field's id (`div#category_watch`, `textarea#privacy_statement`): select by tag.
 
 ## Pitfalls seen in this console
 
