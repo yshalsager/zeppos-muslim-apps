@@ -7,13 +7,14 @@ from pathlib import Path
 APP = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP.parent / 'shared'))
 from PIL import Image, ImageDraw
-from widget_draw import draw
+from widget_draw import draw, store_shot
 
 README_SHOTS = {
     'en-home.png', 'en-converter.png', 'en-keypad.png',
     'ar-islamic.png', 'ar-settings.png', 'ar-fitr.png',
     'round-pace-en.png', 'round-pace-keypad-ar.png',
 }
+STORE = 'converter'  # the store's screenshot: docs/qistas/<lang>-{square,round}.png, 360 x 360
 SHOTS = {
     'home': ('index', '', ''), 'converter': ('converter', '', ''),
     'keypad': ('keypad', '', ''), 'units': ('units', '', 'from'),
@@ -45,7 +46,7 @@ def main():
         for lang in ('en', 'ar'):
             for shot, (page, mode, params) in SHOTS.items():
                 name = f'{prefix}{shot}-{lang}.png' if prefix else f'{lang}-{shot}.png'
-                if not args.all and name not in README_SHOTS:
+                if not args.all and name not in README_SHOTS and shot != STORE:
                     continue
                 command = ['node', str(APP / 'tools' / 'preview-data.mjs'), page, lang, mode, params, str(w), str(h)]
                 data = json.loads(subprocess.check_output(command, cwd=APP))
@@ -53,9 +54,12 @@ def main():
                 mask = Image.new('L', (w * 4, h * 4), 0)
                 ImageDraw.Draw(mask).rounded_rectangle((0, 0, w * 4 - 1, h * 4 - 1), radius=radius * 4, fill=255)
                 im.putalpha(mask.resize((w, h), Image.Resampling.LANCZOS))
+                if not args.all and shot == STORE:
+                    store_shot(im).save(out / f"{lang}-{'round' if prefix else 'square'}.png", optimize=True)
                 if prefix:
                     im = im.resize((360, 360), Image.Resampling.LANCZOS)
-                im.save(out / name, optimize=True)
+                if args.all or name in README_SHOTS:
+                    im.save(out / name, optimize=True)
     print(f'wrote {len(SHOTS) * 4 if args.all else len(README_SHOTS)} previews to {out.relative_to(APP.parent)}')
 
 

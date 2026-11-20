@@ -20,10 +20,11 @@ APP = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP.parent / "shared"))  # -I drops script dirs
 from PIL import Image, ImageDraw  # noqa: E402
 
-from widget_draw import draw  # noqa: E402
+from widget_draw import draw, store_shot  # noqa: E402
 
 ASSETS = APP / "assets"  # the images the pages show, per target (tools/gen-icon.py)
 README_SHOTS = {f"{lang}-{shot}.png" for lang in ("en", "ar") for shot in ("wake", "now", "ring")}
+STORE = "wake"  # the store's screenshot: docs/sleep-time/<lang>-{square,round}.png, 360 x 360
 # screen → (target, width, height, corner radius, saved size)
 SCREENS = {"": ("bip-max", 432, 514, 106, None), "round-": ("round-480", 480, 480, 240, 360)}
 # name → page, main-page mode, page params
@@ -56,13 +57,16 @@ def main():
         for lang in ("en", "ar"):
             for shot, (page, mode, params) in SHOTS.items():
                 name = f"{prefix}{shot}-{lang}.png" if prefix else f"{lang}-{shot}.png"
-                if not args.all and name not in README_SHOTS:
+                if not args.all and name not in README_SHOTS and shot != STORE:
                     continue
                 command = ["node", str(APP / "tools" / "preview-data.mjs"), page, lang, mode, params, str(w), str(h)]
                 im = render(json.loads(subprocess.check_output(command, cwd=APP)), target, radius)
+                if not args.all and shot == STORE:
+                    store_shot(im).save(out / f"{lang}-{'round' if prefix else 'square'}.png", optimize=True)
                 if size:
                     im = im.resize((size, size), Image.LANCZOS)
-                im.save(out / name, optimize=True)
+                if args.all or name in README_SHOTS:
+                    im.save(out / name, optimize=True)
     print(f'wrote {len(SHOTS) * 4 if args.all else len(README_SHOTS)} previews to {out.relative_to(APP.parent)}')
 
 

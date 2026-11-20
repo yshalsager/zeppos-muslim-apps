@@ -50,3 +50,12 @@ def draw(data, assets=None):
         elif w["type"] == "TEXT" and w.get("text"):
             text(im, w)
     return im.resize((data["width"], data["height"]), Image.LANCZOS)
+
+
+def store_shot(im):
+    """The app form's 360 × 360 screenshot of a rendered screen (its corners already transparent): a round
+    screen fills it, a rectangle is scaled to the full height and centred, transparent around it."""
+    w = round(im.width * 360 / im.height)
+    out = Image.new("RGBA", (360, 360), (0, 0, 0, 0))
+    out.alpha_composite(im.resize((w, 360), Image.LANCZOS), ((360 - w) // 2, 0))
+    return out

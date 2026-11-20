@@ -1,0 +1,26 @@
+{
+  "//": "Zepp store listing for sleep-time (the app form: .agents/skills/zepp-store-release/fill_app_form.py). Names <= 30 characters and the same as app.json's i18n appName, short descriptions <= 100 (the search text), descriptions <= 1500. Console language names in 'console'. category: the form's App Classification (Workout, Health & Fitness, Utilities, Lifestyle, Productivity, Games); service_category: General unless the app sells or handles health or insurance. permissions: the form's values (none, heartrate, network, location, background, other).",
+  "category": "Health & Fitness",
+  "service_category": "General",
+  "permissions": [
+    "none"
+  ],
+  "third_party_sdk": false,
+  "music": false,
+  "privacy": "Sleep Time does not collect, send or share any data. It has no network access and no phone-side component. It stores its settings on the watch (cycle length, time to fall asleep, clock format, the mode it opens in, snooze length, the last times you set) and the time of the alarm and bedtime reminder you set, if any. Uninstalling the app removes them. Full policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
+  "notes": "Pick Wake up, Bedtime or Now and set a time with - and +; the app lists times that line up with whole 90-minute sleep cycles. Tap a result to set the app's own alarm (Settings has a test alarm in 1 minute). The watch doesn't ring app alarms in Do Not Disturb or Sleep mode, so the app warns about that and offers the watch's Alarm app. No network, no phone app, no data collection; only settings and the alarm time are stored on the watch. Source code (GPL-3.0): https://github.com/yshalsager/zeppos-muslim-apps . Privacy policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
+  "langs": {
+    "en": {
+      "console": "English(Default)",
+      "name": "Sleep Time",
+      "short": "When to sleep or wake up in whole 90-minute sleep cycles, with its own alarm",
+      "description": "Wake up refreshed: pick when you want to wake up or go to bed, and the watch lists the times that line up with whole 90-minute sleep cycles, with how long you'd sleep; 5 and 6 cycles are highlighted. Three modes: Wake up (lists bedtimes), Bedtime and Now (list wake-up times). Tap a result to be woken at that time by the app's own alarm, with snooze and a bedtime reminder. Settings: cycle length, time to fall asleep, 12/24-hour clock, the mode it opens in, snooze length. English and Arabic. Works offline."
+    },
+    "ar": {
+      "console": "Arabic",
+      "name": "وقت النوم",
+      "short": "متى تنام أو تستيقظ لتكتمل دورات النوم (٩٠ دقيقة)، مع منبه خاص به",
+      "description": "استيقظ نشيطًا: اختر متى تريد أن تستيقظ أو تنام، فتعرض الساعة الأوقات التي تكتمل عندها دورات نوم كاملة مدة كل منها ٩٠ دقيقة، ومدة النوم لكل وقت، مع تمييز خمس دورات وست دورات. ثلاثة أوضاع: الاستيقاظ (يعرض أوقات النوم)، والنوم، والآن (يعرضان أوقات الاستيقاظ). اضغط على وقت ليوقظك منبه التطبيق فيه، مع الغفوة وتذكير بموعد النوم. الإعدادات: طول الدورة، ووقت الاستغراق في النوم، ونظام ١٢ أو ٢٤ ساعة، والوضع الذي يفتح عليه، ومدة الغفوة. بالعربية والإنجليزية، ويعمل دون إنترنت."
+    }
+  }
+}

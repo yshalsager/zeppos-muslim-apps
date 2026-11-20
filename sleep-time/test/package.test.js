@@ -16,10 +16,11 @@ test('every target registers every page', () => {
   }
 })
 
-test('committed previews are exactly the README images plus the store icon', () => {
+test('committed previews are exactly the README images plus the store icon and screenshots', () => {
   const readmes = ['../README.md', '../../README.md'].map((p) => readFileSync(new URL(p, import.meta.url), 'utf8')).join('\n')
   const shown = new Set([...readmes.matchAll(/docs\/sleep-time\/([\w-]+\.png)/g)].map((m) => m[1]))
   shown.add('icon.png')
-  assert.equal(shown.size, 7)
+  for (const lang of ['en', 'ar']) for (const shape of ['square', 'round']) shown.add(`${lang}-${shape}.png`) // the store's screenshots
+  assert.equal(shown.size, 11)
   assert.deepEqual(readdirSync(new URL('../../docs/sleep-time/', import.meta.url)).sort(), [...shown].sort())
 })

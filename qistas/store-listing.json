@@ -1,0 +1,26 @@
+{
+  "//": "Zepp store listing for qistas (the app form: .agents/skills/zepp-store-release/fill_app_form.py). Names <= 30 characters and the same as app.json's i18n appName, short descriptions <= 100 (the search text), descriptions <= 1500. Console language names in 'console'. category: the form's App Classification (Workout, Health & Fitness, Utilities, Lifestyle, Productivity, Games); service_category: General unless the app sells or handles health or insurance. permissions: the form's values (none, heartrate, network, location, background, other).",
+  "category": "Utilities",
+  "service_category": "General",
+  "permissions": [
+    "none"
+  ],
+  "third_party_sdk": false,
+  "music": false,
+  "privacy": "Qistas does not collect, send or share any data. It has no network access and no phone-side component. It stores its settings (including the chosen Islamic-measure opinions and the last conversion), favourites and the last ten conversions on the watch. Uninstalling the app removes them. Full policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
+  "notes": "Pick a category, tap the value to enter a number on the keypad, tap a unit to change it; the arrows swap the units and the star saves a favourite. Recent conversions are on the home screen. Islamic measures (nisab, sa', travel distance) use the majority figures by default; Settings picks the alternatives. No network, no phone app, no data collection; only settings, favourites and recent conversions are stored on the watch. Source code (GPL-3.0): https://github.com/yshalsager/zeppos-muslim-apps . Privacy policy: https://github.com/yshalsager/zeppos-muslim-apps/blob/master/PRIVACY.md",
+  "langs": {
+    "en": {
+      "console": "English(Default)",
+      "name": "Qistas",
+      "short": "Offline units converter with cooking measures, running pace and Islamic measures",
+      "description": "An offline units converter: length, weight, cooking cups and spoons (US, metric, UK), ingredients from cups to grams, temperature and oven gas marks, speed and running pace, area, fuel economy, pressure and energy, plus Egyptian units such as the feddan and the ratl. Islamic measures: gold by karat, mithqal and dinar, silver dirham and the nisab of each, Sunnah mahr, sa' and mudd for zakat al-fitr, fidya and kaffara, and the dhira', mil, farsakh, barid and the travel distance for shortening prayers. Majority figures by default, alternatives in Settings. Big value, tap a unit to change it, swap, keypad, favourites and recent conversions. English and Arabic."
+    },
+    "ar": {
+      "console": "Arabic",
+      "name": "قسطاس",
+      "short": "محول وحدات يعمل دون إنترنت، مع مقادير الطبخ ووتيرة الجري والمقادير الشرعية",
+      "description": "محول وحدات يعمل دون إنترنت: الطول، والوزن، وأكواب الطبخ وملاعقه (الأمريكية والمترية والبريطانية)، والمكونات من الأكواب إلى الجرامات، والحرارة ودرجات فرن الغاز، والسرعة ووتيرة الجري، والمساحة، واستهلاك الوقود، والضغط، والطاقة، مع الوحدات المصرية كالفدان والرطل. والمقادير الشرعية: الذهب بالعيار والمثقال والدينار، والفضة بالدرهم، ونصاب كل منهما، ومهر السنة، والصاع والمد لزكاة الفطر والفدية والكفارة، والذراع والميل والفرسخ والبريد ومسافة القصر. أقوال الجمهور افتراضيًا، والأقوال الأخرى في الإعدادات. قيمة كبيرة، واختيار الوحدة باللمس، وتبديل، ولوحة أرقام، ومفضلة، وآخر التحويلات. بالعربية والإنجليزية."
+    }
+  }
+}
